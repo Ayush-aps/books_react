@@ -33,7 +33,7 @@ const Profile = () => {
       
       // Fetch addresses
       const addressResponse = await api.get('/buyer/addresses');
-      setAddresses(addressResponse.data.data || []);
+      setAddresses(addressResponse.data.data.addresses || []);
       
       setError(null);
     } catch (err) {

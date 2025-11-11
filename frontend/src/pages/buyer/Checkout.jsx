@@ -48,7 +48,7 @@ const Checkout = () => {
     try {
       setLoading(true);
       const response = await api.get('/buyer/addresses');
-      const addressList = response.data.data || [];
+      const addressList = response.data.data.addresses || [];
       setAddresses(addressList);
       
       // Select first address by default
@@ -58,6 +58,7 @@ const Checkout = () => {
       setError(null);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load addresses');
+      setAddresses([]); // Ensure addresses is always an array
     } finally {
       setLoading(false);
     }

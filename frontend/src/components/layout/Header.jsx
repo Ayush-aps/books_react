@@ -30,7 +30,7 @@ const Header = () => {
           <div className="flex items-center space-x-6">
             <Link to="/" className="text-gray-700 hover:text-primary-600 transition-colors">Home</Link>
             <Link to="/about" className="text-gray-700 hover:text-primary-600 transition-colors">About</Link>
-            <Link to="/pricing" className="text-gray-700 hover:text-primary-600 transition-colors">Pricing</Link>
+            <Link to="/pricing" className="text-gray-700 hover:text-primary-600 transition-colors">Subscription</Link>
             <Link to="/contact" className="text-gray-700 hover:text-primary-600 transition-colors">Contact</Link>
 
             {isAuthenticated ? (

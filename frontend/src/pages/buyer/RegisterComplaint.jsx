@@ -72,9 +72,10 @@ const RegisterComplaint = () => {
     try {
       setLoadingOrders(true);
       const response = await api.get('/buyer/orders');
-      setOrders(response.data.data || []);
+      setOrders(response.data.data.orders || []);
     } catch (err) {
       console.error('Failed to load orders:', err);
+      setOrders([]); // Ensure orders is always an array
     } finally {
       setLoadingOrders(false);
     }
