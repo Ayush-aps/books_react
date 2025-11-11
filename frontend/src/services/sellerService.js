@@ -1,0 +1,102 @@
+/**
+ * Seller Service
+ * API calls for seller operations
+ */
+
+import api from './api';
+
+const sellerService = {
+  // Get dashboard analytics
+  getDashboard: async () => {
+    const response = await api.get('/seller/dashboard');
+    return response.data;
+  },
+
+  // Get inventory
+  getInventory: async (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.search) params.append('search', filters.search);
+    if (filters.status) params.append('status', filters.status);
+    if (filters.sort) params.append('sort', filters.sort);
+
+    const response = await api.get(`/seller/inventory?${params.toString()}`);
+    return response.data;
+  },
+
+  // Upload a new book
+  uploadBook: async (bookData) => {
+    const response = await api.post('/seller/upload', bookData);
+    return response.data;
+  },
+
+  // Get book details
+  getBook: async (bookId) => {
+    const response = await api.get(`/seller/book/${bookId}`);
+    return response.data;
+  },
+
+  // Update book
+  updateBook: async (bookId, bookData) => {
+    const response = await api.put(`/seller/book/${bookId}`, bookData);
+    return response.data;
+  },
+
+  // Delete book
+  deleteBook: async (bookId) => {
+    const response = await api.delete(`/seller/book/${bookId}`);
+    return response.data;
+  },
+
+  // Get orders
+  getOrders: async (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.status) params.append('status', filters.status);
+    if (filters.page) params.append('page', filters.page);
+    if (filters.limit) params.append('limit', filters.limit);
+
+    const response = await api.get(`/seller/orders?${params.toString()}`);
+    return response.data;
+  },
+
+  // Get order details
+  getOrderDetails: async (orderId) => {
+    const response = await api.get(`/seller/orders/${orderId}`);
+    return response.data;
+  },
+
+  // Update order status
+  updateOrderStatus: async (orderId, status) => {
+    const response = await api.put(`/seller/order/${orderId}/status`, { status });
+    return response.data;
+  },
+
+  // Get complaints
+  getComplaints: async () => {
+    const response = await api.get('/seller/complaints');
+    return response.data;
+  },
+
+  // Submit complaint
+  submitComplaint: async (complaintData) => {
+    const response = await api.post('/seller/complaints', complaintData);
+    return response.data;
+  },
+
+  // Browse all books
+  browseBooks: async (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.search) params.append('search', filters.search);
+    if (filters.genre) params.append('genre', filters.genre);
+    if (filters.condition) params.append('condition', filters.condition);
+    if (filters.minPrice) params.append('minPrice', filters.minPrice);
+    if (filters.maxPrice) params.append('maxPrice', filters.maxPrice);
+    if (filters.sort) params.append('sort', filters.sort);
+    if (filters.approvalStatus) params.append('approvalStatus', filters.approvalStatus);
+
+    const response = await api.get(`/seller/books?${params.toString()}`);
+    return response.data;
+  },
+};
+
+export default sellerService;
+export { sellerService };
