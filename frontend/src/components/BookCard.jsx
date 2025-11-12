@@ -1,6 +1,6 @@
 /**
  * Book Card Component
- * Display a book in a card format
+ * Display a book in a card format with components!
  */
 
 import { Link } from 'react-router-dom';
