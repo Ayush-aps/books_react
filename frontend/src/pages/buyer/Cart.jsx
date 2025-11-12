@@ -5,9 +5,14 @@
 
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { getCart, updateCartItem, removeFromCart, clearCart } from '../../redux/actions/cartActions';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import Button from '../../components/Button';
+import Card from '../../components/Card';
+import Badge from '../../components/Badge';
 import { useState, useEffect } from 'react';
+import { fadeInUp, staggerContainer, staggerItem } from '../../utils/animations';
 
 const Cart = () => {
   const dispatch = useDispatch();
@@ -57,54 +62,84 @@ const Cart = () => {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">Shopping Cart</h1>
+      <div className="min-h-screen bg-background-primary py-12">
+        <div className="container-custom">
+          <motion.h1
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="heading-1 mb-12"
+          >
+            Shopping Cart
+          </motion.h1>
           
-          <div className="bg-white rounded-lg shadow-md p-12 text-center">
-            <svg
-              className="mx-auto h-24 w-24 text-gray-300 mb-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1}
-                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-              />
-            </svg>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-2">Your cart is empty</h2>
-            <p className="text-gray-600 mb-6">Add some books to get started!</p>
-            <Link
-              to="/buyer/browse"
-              className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-            >
-              Browse Books
-            </Link>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            <Card elevated padding="lg" className="text-center py-16">
+              <svg
+                className="mx-auto h-24 w-24 text-text-tertiary mb-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1}
+                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                />
+              </svg>
+              <h2 className="heading-2 mb-3">Your cart is empty</h2>
+              <p className="body-lg text-text-secondary mb-8">Add some books to get started!</p>
+              <Link to="/buyer/browse">
+                <Button variant="primary" size="lg">
+                  Browse Books
+                  <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </Button>
+              </Link>
+            </Card>
+          </motion.div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Shopping Cart</h1>
-          <button
+    <div className="min-h-screen bg-background-primary py-12">
+      <div className="container-custom">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center justify-between mb-12"
+        >
+          <div>
+            <h1 className="heading-1 mb-2">Shopping Cart</h1>
+            <p className="body-lg text-text-secondary">
+              Review and manage your selected items
+            </p>
+          </div>
+          <Button
             onClick={() => setShowClearDialog(true)}
-            className="text-red-600 hover:text-red-800 font-medium"
+            variant="outline"
+            size="md"
+            className="text-error border-error hover:bg-error/10"
           >
             Clear Cart
-          </button>
-        </div>
+          </Button>
+        </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Cart Items */}
-          <div className="lg:col-span-2 space-y-4">
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+            className="lg:col-span-2 space-y-4"
+          >
             {items.map((item) => {
               const book = item.book || item;
               const bookId = book._id || item._id;
@@ -113,115 +148,131 @@ const Cart = () => {
               const hasDiscount = discountedPrice < originalPrice;
 
               return (
-                <div key={item._id} className="bg-white rounded-lg shadow-md p-6">
-                  <div className="flex gap-6">
-                    {/* Book Image */}
-                    <Link to={`/buyer/book/${bookId}`} className="flex-shrink-0">
-                      <img
-                        src={book.coverImage || '/placeholder-book.png'}
-                        alt={book.title}
-                        className="w-24 h-32 object-cover rounded"
-                      />
-                    </Link>
-
-                    {/* Book Info */}
-                    <div className="flex-1">
-                      <Link 
-                        to={`/buyer/book/${bookId}`}
-                        className="text-lg font-semibold text-gray-900 hover:text-blue-600"
-                      >
-                        {book.title}
+                <motion.div key={item._id} variants={staggerItem}>
+                  <Card elevated padding="lg">
+                    <div className="flex gap-6">
+                      {/* Book Image */}
+                      <Link to={`/buyer/book/${bookId}`} className="flex-shrink-0">
+                        <img
+                          src={book.coverImage || '/placeholder-book.png'}
+                          alt={book.title}
+                          className="w-24 h-32 object-cover rounded-lg"
+                        />
                       </Link>
-                      <p className="text-gray-600 mt-1">{book.author}</p>
-                      <p className="text-sm text-gray-500 mt-1 capitalize">{book.condition}</p>
 
-                      {/* Price */}
-                      <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-xl font-bold text-gray-900">
-                          ${discountedPrice?.toFixed(2) || '0.00'}
-                        </span>
-                        {hasDiscount && (
-                          <span className="text-sm text-gray-500 line-through">
-                            ${originalPrice?.toFixed(2) || '0.00'}
+                      {/* Book Info */}
+                      <div className="flex-1">
+                        <Link 
+                          to={`/buyer/book/${bookId}`}
+                          className="heading-4 hover:text-accent-brown transition-colors"
+                        >
+                          {book.title}
+                        </Link>
+                        <p className="text-text-secondary mt-1 body">{book.author}</p>
+                        <Badge variant={book.condition === 'new' ? 'success' : 'brown'} size="sm" className="mt-2">
+                          {book.condition}
+                        </Badge>
+
+                        {/* Price */}
+                        <div className="mt-4 flex items-baseline gap-2">
+                          <span className="text-xl font-bold text-text-primary">
+                            ${discountedPrice?.toFixed(2) || '0.00'}
                           </span>
-                        )}
-                      </div>
-
-                      {/* Quantity and Remove */}
-                      <div className="mt-4 flex items-center gap-4">
-                        <div className="flex items-center border border-gray-300 rounded">
-                          <button
-                            onClick={() => handleUpdateQuantity(item._id, item.quantity - 1)}
-                            disabled={item.quantity <= 1}
-                            className="px-3 py-1 text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            −
-                          </button>
-                          <span className="px-4 py-1 border-x border-gray-300">{item.quantity}</span>
-                          <button
-                            onClick={() => handleUpdateQuantity(item._id, item.quantity + 1)}
-                            disabled={item.quantity >= item.stock}
-                            className="px-3 py-1 text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            +
-                          </button>
+                          {hasDiscount && (
+                            <span className="text-sm text-text-tertiary line-through">
+                              ${originalPrice?.toFixed(2) || '0.00'}
+                            </span>
+                          )}
                         </div>
 
-                        <button
-                          onClick={() => handleRemoveItem(item._id)}
-                          className="text-red-600 hover:text-red-800 text-sm font-medium"
-                        >
-                          Remove
-                        </button>
+                        {/* Quantity and Remove */}
+                        <div className="mt-4 flex items-center gap-4">
+                          <div className="flex items-center border border-border-primary rounded-lg overflow-hidden">
+                            <button
+                              onClick={() => handleUpdateQuantity(item._id, item.quantity - 1)}
+                              disabled={item.quantity <= 1}
+                              className="px-4 py-2 text-text-primary hover:bg-background-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                              −
+                            </button>
+                            <span className="px-4 py-2 border-x border-border-primary font-medium">{item.quantity}</span>
+                            <button
+                              onClick={() => handleUpdateQuantity(item._id, item.quantity + 1)}
+                              disabled={item.quantity >= item.stock}
+                              className="px-4 py-2 text-text-primary hover:bg-background-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                              +
+                            </button>
+                          </div>
+
+                          <button
+                            onClick={() => handleRemoveItem(item._id)}
+                            className="text-error hover:text-error/80 text-sm font-medium transition-colors"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Item Total */}
+                      <div className="text-right">
+                        <p className="text-xl font-bold text-text-primary">
+                          ${(discountedPrice * item.quantity).toFixed(2)}
+                        </p>
                       </div>
                     </div>
-
-                    {/* Item Total */}
-                    <div className="text-right">
-                      <p className="text-xl font-bold text-gray-900">
-                        ${(discountedPrice * item.quantity).toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                  </Card>
+                </motion.div>
               );
             })}
-          </div>
+          </motion.div>
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-md p-6 sticky top-4">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Order Summary</h2>
-              
-              <div className="space-y-3 mb-4">
-                <div className="flex justify-between text-gray-600">
-                  <span>Subtotal ({items.length} {items.length === 1 ? 'item' : 'items'})</span>
-                  <span>${subtotal.toFixed(2)}</span>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="sticky top-24"
+            >
+              <Card elevated padding="lg">
+                <h2 className="heading-3 mb-6">Order Summary</h2>
+                
+                <div className="space-y-4 mb-6">
+                  <div className="flex justify-between body text-text-secondary">
+                    <span>Subtotal ({items.length} {items.length === 1 ? 'item' : 'items'})</span>
+                    <span className="font-medium text-text-primary">${subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between body text-text-secondary">
+                    <span>Tax (8%)</span>
+                    <span className="font-medium text-text-primary">${tax.toFixed(2)}</span>
+                  </div>
+                  <div className="border-t border-border-primary pt-4 flex justify-between">
+                    <span className="heading-4">Total</span>
+                    <span className="heading-3 text-accent-brown">${total.toFixed(2)}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Tax (8%)</span>
-                  <span>${tax.toFixed(2)}</span>
-                </div>
-                <div className="border-t border-gray-200 pt-3 flex justify-between text-lg font-bold text-gray-900">
-                  <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
-                </div>
-              </div>
 
-              <button
-                onClick={handleCheckout}
-                className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-              >
-                Proceed to Checkout
-              </button>
+                <Button
+                  onClick={handleCheckout}
+                  variant="primary"
+                  size="lg"
+                  fullWidth
+                  className="mb-4"
+                >
+                  Proceed to Checkout
+                  <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </Button>
 
-              <Link
-                to="/buyer/browse"
-                className="block text-center mt-4 text-blue-600 hover:text-blue-800 font-medium"
-              >
-                Continue Shopping
-              </Link>
-            </div>
+                <Link to="/buyer/browse">
+                  <Button variant="ghost" size="md" fullWidth>
+                    Continue Shopping
+                  </Button>
+                </Link>
+              </Card>
+            </motion.div>
           </div>
         </div>
       </div>

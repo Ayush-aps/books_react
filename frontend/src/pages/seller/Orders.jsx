@@ -9,6 +9,12 @@ import { sellerService } from '../../services/sellerService';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
 import SuccessToast from '../../components/SuccessToast';
+import Button from '../../components/Button';
+import Card from '../../components/Card';
+import Badge from '../../components/Badge';
+import Input from '../../components/Input';
+import { motion } from 'framer-motion';
+import { fadeInUp, staggerContainer, staggerItem } from '../../utils/animations';
 
 const Orders = () => {
   const navigate = useNavigate();
@@ -56,15 +62,15 @@ const Orders = () => {
     }
   };
 
-  const getStatusColor = (status) => {
-    const colors = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      processing: 'bg-blue-100 text-blue-800',
-      shipped: 'bg-purple-100 text-purple-800',
-      delivered: 'bg-green-100 text-green-800',
-      cancelled: 'bg-red-100 text-red-800'
+  const getStatusVariant = (status) => {
+    const variants = {
+      pending: 'warning',
+      processing: 'info',
+      shipped: 'default',
+      delivered: 'success',
+      cancelled: 'error'
     };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+    return variants[status] || 'default';
   };
 
   const filteredOrders = filter === 'all' 
@@ -88,164 +94,218 @@ const Orders = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-cream py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Orders</h1>
-          <p className="text-gray-600 mt-2">Manage and process your orders</p>
-        </div>
+        <motion.div 
+          className="mb-12"
+          variants={fadeInUp}
+          initial="hidden"
+          animate="visible"
+        >
+          <h1 className="heading-1 text-charcoal mb-2">Orders</h1>
+          <p className="body text-charcoal/70">Manage and process your orders</p>
+        </motion.div>
 
         {error && (
-          <div className="mb-6">
+          <motion.div 
+            className="mb-6"
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+          >
             <ErrorMessage message={error} />
-          </div>
+          </motion.div>
         )}
 
         {/* Filter Tabs */}
-        <div className="mb-6 border-b border-gray-200">
-          <nav className="flex space-x-8 overflow-x-auto">
-            {filterTabs.map(tab => (
-              <button
-                key={tab.value}
-                onClick={() => setFilter(tab.value)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                  filter === tab.value
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                {tab.label}
-                <span className={`ml-2 py-0.5 px-2.5 rounded-full text-xs ${
-                  filter === tab.value ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
-                }`}>
-                  {tab.count}
-                </span>
-              </button>
-            ))}
-          </nav>
-        </div>
+        <motion.div 
+          className="mb-8"
+          variants={fadeInUp}
+          initial="hidden"
+          animate="visible"
+        >
+          <Card>
+            <Card.Body className="p-0">
+              <nav className="flex space-x-1 overflow-x-auto p-2">
+                {filterTabs.map(tab => (
+                  <button
+                    key={tab.value}
+                    onClick={() => setFilter(tab.value)}
+                    className={`px-6 py-3 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
+                      filter === tab.value
+                        ? 'bg-brown text-white shadow-sm'
+                        : 'text-charcoal/70 hover:bg-taupe/10'
+                    }`}
+                  >
+                    {tab.label}
+                    <Badge 
+                      variant={filter === tab.value ? 'light' : 'default'} 
+                      size="sm" 
+                      className="ml-2"
+                    >
+                      {tab.count}
+                    </Badge>
+                  </button>
+                ))}
+              </nav>
+            </Card.Body>
+          </Card>
+        </motion.div>
 
         {/* Orders List */}
         {filteredOrders.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-            <div className="max-w-md mx-auto">
-              <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                {filter === 'all' ? 'No orders yet' : `No ${filter} orders`}
-              </h3>
-              <p className="text-gray-600">
-                {filter === 'all' 
-                  ? 'Orders will appear here when customers purchase your books.'
-                  : `There are no orders with status "${filter}" at the moment.`
-                }
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {filteredOrders.map(order => (
-              <div key={order._id} className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow">
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                  {/* Order Info */}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        Order #{order._id.slice(-8)}
-                      </h3>
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(order.status)}`}>
-                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                      </span>
-                    </div>
-                    <div className="text-sm text-gray-600 space-y-1">
-                      <p>
-                        <span className="font-medium">Date:</span> {new Date(order.createdAt).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })}
-                      </p>
-                      <p>
-                        <span className="font-medium">Items:</span> {order.items.length} book{order.items.length > 1 ? 's' : ''}
-                      </p>
-                      <p>
-                        <span className="font-medium">Total:</span> <span className="text-lg font-semibold text-gray-900">${order.totalAmount.toFixed(2)}</span>
-                      </p>
-                      <p>
-                        <span className="font-medium">Buyer:</span> {order.userId?.name || 'N/A'}
-                      </p>
-                    </div>
-
-                    {/* Order Items Preview */}
-                    <div className="mt-4">
-                      <p className="text-sm font-medium text-gray-700 mb-2">Items in this order:</p>
-                      <div className="space-y-2">
-                        {order.items.slice(0, 2).map((item, index) => (
-                          <div key={index} className="flex items-center gap-3 text-sm">
-                            {item.bookId?.coverImage && (
-                              <img 
-                                src={item.bookId.coverImage} 
-                                alt={item.bookId.title}
-                                className="w-12 h-16 object-cover rounded"
-                              />
-                            )}
-                            <div className="flex-1">
-                              <p className="font-medium text-gray-900">{item.bookId?.title || 'Unknown Book'}</p>
-                              <p className="text-gray-600">Qty: {item.quantity} × ${item.price.toFixed(2)}</p>
-                            </div>
-                          </div>
-                        ))}
-                        {order.items.length > 2 && (
-                          <p className="text-sm text-gray-500 italic">+ {order.items.length - 2} more item(s)</p>
-                        )}
-                      </div>
-                    </div>
+          <motion.div
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+          >
+            <Card>
+              <Card.Body className="py-16 text-center">
+                <div className="max-w-md mx-auto">
+                  <div className="w-24 h-24 bg-taupe/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg className="w-12 h-12 text-taupe" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
                   </div>
-
-                  {/* Actions */}
-                  <div className="flex flex-col gap-3 lg:w-64">
-                    {/* Status Update Dropdown */}
-                    {order.status !== 'delivered' && order.status !== 'cancelled' && (
-                      <div>
-                        <label htmlFor={`status-${order._id}`} className="block text-sm font-medium text-gray-700 mb-1">
-                          Update Status
-                        </label>
-                        <select
-                          id={`status-${order._id}`}
-                          value={order.status}
-                          onChange={(e) => handleStatusUpdate(order._id, e.target.value)}
-                          disabled={updatingOrderId === order._id}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                        >
-                          <option value="pending">Pending</option>
-                          <option value="processing">Processing</option>
-                          <option value="shipped">Shipped</option>
-                          <option value="delivered">Delivered</option>
-                          <option value="cancelled">Cancelled</option>
-                        </select>
-                      </div>
-                    )}
-
-                    {/* View Details Button */}
-                    <Link
-                      to={`/seller/orders/${order._id}`}
-                      className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-                    >
-                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                      View Details
-                    </Link>
-                  </div>
+                  <h3 className="heading-4 text-charcoal mb-3">
+                    {filter === 'all' ? 'No orders yet' : `No ${filter} orders`}
+                  </h3>
+                  <p className="body text-charcoal/70">
+                    {filter === 'all' 
+                      ? 'Orders will appear here when customers purchase your books.'
+                      : `There are no orders with status "${filter}" at the moment.`
+                    }
+                  </p>
                 </div>
-              </div>
+              </Card.Body>
+            </Card>
+          </motion.div>
+        ) : (
+          <motion.div 
+            className="space-y-6"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
+            {filteredOrders.map(order => (
+              <motion.div key={order._id} variants={staggerItem}>
+                <Card hoverable>
+                  <Card.Body>
+                    <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+                      {/* Order Info */}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-4">
+                          <h3 className="heading-4 text-charcoal">
+                            Order #{order._id.slice(-8)}
+                          </h3>
+                          <Badge variant={getStatusVariant(order.status)}>
+                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                          <div>
+                            <p className="body-sm text-charcoal/60 mb-1">Date</p>
+                            <p className="body-sm font-medium text-charcoal">
+                              {new Date(order.createdAt).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                              })}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="body-sm text-charcoal/60 mb-1">Items</p>
+                            <p className="body-sm font-medium text-charcoal">
+                              {order.items.length} book{order.items.length > 1 ? 's' : ''}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="body-sm text-charcoal/60 mb-1">Total</p>
+                            <p className="heading-5 text-brown">
+                              ${order.totalAmount.toFixed(2)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="body-sm text-charcoal/60 mb-1">Buyer</p>
+                            <p className="body-sm font-medium text-charcoal">
+                              {order.userId?.name || 'N/A'}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Order Items Preview */}
+                        <div>
+                          <p className="body-sm font-medium text-charcoal mb-3">Items in this order:</p>
+                          <div className="space-y-3">
+                            {order.items.slice(0, 2).map((item, index) => (
+                              <div key={index} className="flex items-center gap-4">
+                                {item.bookId?.coverImage && (
+                                  <img 
+                                    src={item.bookId.coverImage} 
+                                    alt={item.bookId.title}
+                                    className="w-12 h-16 object-cover rounded shadow-sm"
+                                  />
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <p className="body-sm font-medium text-charcoal truncate">
+                                    {item.bookId?.title || 'Unknown Book'}
+                                  </p>
+                                  <p className="body-sm text-charcoal/60">
+                                    Qty: {item.quantity} × ${item.price.toFixed(2)}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                            {order.items.length > 2 && (
+                              <p className="body-sm text-charcoal/60 italic">
+                                + {order.items.length - 2} more item(s)
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex flex-col gap-4 lg:w-64">
+                        {/* Status Update Dropdown */}
+                        {order.status !== 'delivered' && order.status !== 'cancelled' && (
+                          <Input.Select
+                            id={`status-${order._id}`}
+                            label="Update Status"
+                            value={order.status}
+                            onChange={(e) => handleStatusUpdate(order._id, e.target.value)}
+                            disabled={updatingOrderId === order._id}
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="processing">Processing</option>
+                            <option value="shipped">Shipped</option>
+                            <option value="delivered">Delivered</option>
+                            <option value="cancelled">Cancelled</option>
+                          </Input.Select>
+                        )}
+
+                        {/* View Details Button */}
+                        <Button
+                          as={Link}
+                          to={`/seller/orders/${order._id}`}
+                          variant="outline"
+                          size="md"
+                          fullWidth
+                        >
+                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                          View Details
+                        </Button>
+                      </div>
+                    </div>
+                  </Card.Body>
+                </Card>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
 
         {/* Success Toast */}

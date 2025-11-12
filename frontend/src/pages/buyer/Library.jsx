@@ -1,12 +1,17 @@
 /**
- * Library Page (Buyer)
- * Display user's purchased books with reading progress
+ * Library Page - Premium Design
+ * User's purchased books with reading progress and premium styling
  */
 
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { fadeInUp, staggerContainer, staggerItem } from '../../utils/animations';
 import { fetchLibrary } from '../../redux/actions/libraryActions';
+import Card from '../../components/Card';
+import Button from '../../components/Button';
+import Badge from '../../components/Badge';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
 
@@ -20,74 +25,103 @@ const Library = () => {
   }, [dispatch]);
 
   const getProgressColor = (progress) => {
-    if (progress === 0) return 'bg-gray-200';
-    if (progress < 30) return 'bg-red-500';
-    if (progress < 70) return 'bg-yellow-500';
-    return 'bg-green-500';
+    if (progress === 0) return 'bg-border';
+    if (progress < 30) return 'bg-error';
+    if (progress < 70) return 'bg-warning';
+    return 'bg-success';
+  };
+
+  const getProgressVariant = (progress) => {
+    if (progress === 0) return 'secondary';
+    if (progress < 30) return 'error';
+    if (progress < 70) return 'warning';
+    return 'success';
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-cream">
         <LoadingSpinner size="lg" message="Loading library..." />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-cream py-8 md:py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <motion.div 
+          className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4"
+          initial="hidden"
+          animate="visible"
+          variants={fadeInUp}
+        >
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">My Library</h1>
-            <p className="text-gray-600 mt-2">
+            <h1 className="heading-1 mb-2">My Library</h1>
+            <p className="body-lg text-text-secondary">
               {books.length} {books.length === 1 ? 'book' : 'books'} in your library
             </p>
           </div>
           {currentSubscription && (
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-2 rounded-lg">
-              <p className="text-sm opacity-90">Active Subscription</p>
-              <p className="font-bold">{currentSubscription.planName}</p>
-            </div>
+            <Card className="bg-gradient-to-r from-brown to-accent-brown text-white border-0">
+              <Card.Body className="py-3 px-5">
+                <p className="body-sm opacity-90">Active Subscription</p>
+                <p className="heading-5">{currentSubscription.planName}</p>
+              </Card.Body>
+            </Card>
           )}
-        </div>
+        </motion.div>
 
         {error && (
-          <div className="mb-6">
+          <motion.div 
+            className="mb-6"
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+          >
             <ErrorMessage message={error} onRetry={() => dispatch(fetchLibrary())} />
-          </div>
+          </motion.div>
         )}
 
         {/* Library Grid */}
         {books.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-md p-12 text-center">
-            <svg
-              className="mx-auto h-24 w-24 text-gray-300 mb-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1}
-                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-              />
-            </svg>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-2">Your library is empty</h2>
-            <p className="text-gray-600 mb-6">
-              Purchase books to start building your digital library
-            </p>
-            <Link
-              to="/buyer/browse"
-              className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-            >
-              Browse Books
-            </Link>
-          </div>
+          <motion.div
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+          >
+            <Card elevated className="text-center py-16 px-6">
+              <Card.Body>
+                <svg
+                  className="mx-auto h-24 w-24 text-text-secondary/30 mb-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1}
+                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                  />
+                </svg>
+                <h2 className="heading-2 mb-3">Your library is empty</h2>
+                <p className="body-lg text-text-secondary mb-8 max-w-md mx-auto">
+                  Purchase books to start building your digital library
+                </p>
+                <Button variant="primary" size="lg" asChild>
+                  <Link to="/buyer/browse">Browse Books</Link>
+                </Button>
+              </Card.Body>
+            </Card>
+          </motion.div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <motion.div 
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
             {books.map((libraryItem) => {
               const book = libraryItem.bookId || libraryItem.book;
               const progress = libraryItem.progress || 0;
@@ -98,94 +132,130 @@ const Library = () => {
               }
 
               return (
-                <div key={libraryItem._id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-                  {/* Book Cover */}
-                  <Link to={`/buyer/reader/${book._id}`} className="block relative">
-                    <div className="relative" style={{ paddingBottom: '140%' }}>
-                      <img
-                        src={book.coverImage || '/placeholder-book.png'}
-                        alt={book.title}
-                        className="absolute inset-0 w-full h-full object-cover"
-                      />
-                      {/* Progress Overlay */}
-                      {progress > 0 && (
-                        <div className="absolute top-2 right-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded text-xs font-semibold">
-                          {progress}%
-                        </div>
-                      )}
-                    </div>
-                  </Link>
-
-                  {/* Book Info */}
-                  <div className="p-4">
-                    <Link
-                      to={`/buyer/reader/${book._id}`}
-                      className="font-semibold text-gray-900 hover:text-blue-600 line-clamp-2 mb-1"
-                    >
-                      {book.title}
-                    </Link>
-                    <p className="text-sm text-gray-600 mb-3">{book.author}</p>
-
-                    {/* Progress Bar */}
-                    <div className="mb-3">
-                      <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
-                        <span>Progress</span>
-                        <span>{progress}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className={`h-2 rounded-full transition-all ${getProgressColor(progress)}`}
-                          style={{ width: `${progress}%` }}
+                <motion.div key={libraryItem._id} variants={staggerItem}>
+                  <Card hoverable className="h-full overflow-hidden">
+                    {/* Book Cover */}
+                    <Link to={`/buyer/reader/${book._id}`} className="block relative">
+                      <div className="relative bg-charcoal" style={{ paddingBottom: '140%' }}>
+                        <img
+                          src={book.coverImage || '/placeholder-book.png'}
+                          alt={book.title}
+                          className="absolute inset-0 w-full h-full object-cover"
                         />
+                        {/* Progress Badge Overlay */}
+                        {progress > 0 && (
+                          <div className="absolute top-3 right-3">
+                            <Badge variant={getProgressVariant(progress)} size="lg">
+                              {progress}%
+                            </Badge>
+                          </div>
+                        )}
+                        {progress === 100 && (
+                          <div className="absolute top-3 left-3">
+                            <Badge variant="success">
+                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                              Completed
+                            </Badge>
+                          </div>
+                        )}
                       </div>
-                    </div>
+                    </Link>
 
-                    {/* Action Buttons */}
-                    <div className="flex gap-2">
+                    {/* Book Info */}
+                    <Card.Body>
                       <Link
                         to={`/buyer/reader/${book._id}`}
-                        className="flex-1 bg-blue-600 text-white text-center py-2 px-4 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors"
+                        className="heading-4 text-text-primary hover:text-brown line-clamp-2 mb-2 block transition-colors"
                       >
-                        {progress > 0 ? 'Continue Reading' : 'Start Reading'}
+                        {book.title}
                       </Link>
-                      <Link
-                        to={`/buyer/books/${book._id}`}
-                        className="border border-gray-300 text-gray-700 py-2 px-3 rounded-lg text-sm hover:bg-gray-50 transition-colors"
-                        title="View Details"
-                      >
-                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </Link>
-                    </div>
+                      <p className="body text-text-secondary mb-4">{book.author}</p>
 
-                    {/* Last Read */}
-                    {libraryItem.lastRead && (
-                      <p className="text-xs text-gray-500 mt-2">
-                        Last read: {new Date(libraryItem.lastRead).toLocaleDateString()}
-                      </p>
-                    )}
-                  </div>
-                </div>
+                      {/* Progress Bar */}
+                      <div className="mb-4">
+                        <div className="flex items-center justify-between body-sm text-text-secondary mb-2">
+                          <span>Progress</span>
+                          <span className="font-medium">{progress}%</span>
+                        </div>
+                        <div className="w-full bg-surface rounded-full h-2 overflow-hidden">
+                          <div
+                            className={`h-2 rounded-full transition-all duration-500 ${getProgressColor(progress)}`}
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-2">
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          className="flex-1"
+                          asChild
+                        >
+                          <Link to={`/buyer/reader/${book._id}`}>
+                            {progress > 0 ? 'Continue' : 'Start Reading'}
+                          </Link>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          asChild
+                        >
+                          <Link to={`/buyer/books/${book._id}`} title="View Details">
+                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </Link>
+                        </Button>
+                      </div>
+
+                      {/* Last Read */}
+                      {libraryItem.lastRead && (
+                        <p className="body-sm text-text-secondary mt-3 pt-3 border-t border-border">
+                          Last read: {new Date(libraryItem.lastRead).toLocaleDateString()}
+                        </p>
+                      )}
+                    </Card.Body>
+                  </Card>
+                </motion.div>
               );
             })}
-          </div>
+          </motion.div>
         )}
 
         {/* Subscription CTA */}
         {!currentSubscription && books.length > 0 && (
-          <div className="mt-8 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg p-8 text-white text-center">
-            <h3 className="text-2xl font-bold mb-2">Unlock Unlimited Reading</h3>
-            <p className="mb-6 opacity-90">
-              Subscribe to access our entire library and get unlimited downloads
-            </p>
-            <Link
-              to="/pricing"
-              className="inline-block bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
-            >
-              View Subscription Plans
-            </Link>
-          </div>
+          <motion.div
+            className="mt-12"
+            variants={fadeInUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
+            <Card className="bg-gradient-to-r from-brown to-accent-brown text-white border-0 overflow-hidden">
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute -right-20 -top-20 w-64 h-64 bg-white rounded-full blur-3xl" />
+                <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-white rounded-full blur-3xl" />
+              </div>
+              <Card.Body className="relative text-center py-12 px-6">
+                <h3 className="heading-2 mb-3">Unlock Unlimited Reading</h3>
+                <p className="body-xl opacity-90 mb-8 max-w-2xl mx-auto">
+                  Subscribe to access our entire library and get unlimited downloads
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  className="bg-white text-brown hover:bg-cream border-white"
+                  asChild
+                >
+                  <Link to="/pricing">View Subscription Plans</Link>
+                </Button>
+              </Card.Body>
+            </Card>
+          </motion.div>
         )}
       </div>
     </div>

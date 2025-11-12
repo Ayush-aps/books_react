@@ -7,6 +7,12 @@ import { useNavigate, Link } from 'react-router-dom';
 import { register } from '../../redux/actions/authActions';
 import useFormValidation from '../../hooks/useFormValidation';
 import { validateEmail, validatePassword, validateRequired, validateMatch } from '../../utils/validation';
+import Button from '../../components/Button';
+import Card from '../../components/Card';
+import Input from '../../components/Input';
+import ErrorMessage from '../../components/ErrorMessage';
+import { motion } from 'framer-motion';
+import { fadeInUp } from '../../utils/animations';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -45,156 +51,139 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Create your account
+    <div className="min-h-screen flex items-center justify-center bg-cream py-12 px-4 sm:px-6 lg:px-8">
+      <motion.div 
+        className="max-w-md w-full"
+        variants={fadeInUp}
+        initial="hidden"
+        animate="visible"
+      >
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h2 className="heading-1 text-charcoal mb-2">
+            Join Our Community
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Already have an account?{' '}
-            <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
-              Sign in
-            </Link>
+          <p className="body text-charcoal/70">
+            Create your account to start exploring
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
-          {registerErrors && registerErrors.length > 0 && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-              <ul className="list-disc list-inside">
-                {registerErrors.map((error, index) => (
-                  <li key={index}>{error.msg}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Full Name
-              </label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                className={`mt-1 appearance-none block w-full px-3 py-2 border ${
-                  touched.name && errors.name 
-                    ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
-                    : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
-                } rounded-md shadow-sm placeholder-gray-400 focus:outline-none sm:text-sm`}
-                placeholder="John Doe"
-                value={values.name}
-                onChange={handleChange}
-                onBlur={handleBlur}
-              />
-              {touched.name && errors.name && (
-                <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+        {/* Register Card */}
+        <Card>
+          <Card.Body className="p-8">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              {registerErrors && registerErrors.length > 0 && (
+                <div className="mb-6">
+                  {registerErrors.map((error, index) => (
+                    <ErrorMessage key={index} message={error.msg} />
+                  ))}
+                </div>
               )}
-            </div>
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                className={`mt-1 appearance-none block w-full px-3 py-2 border ${
-                  touched.email && errors.email 
-                    ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
-                    : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
-                } rounded-md shadow-sm placeholder-gray-400 focus:outline-none sm:text-sm`}
-                placeholder="john@example.com"
-                value={values.email}
-                onChange={handleChange}
-                onBlur={handleBlur}
-              />
-              {touched.email && errors.email && (
-                <p className="text-red-500 text-sm mt-1">{errors.email}</p>
-              )}
-            </div>
+              <div className="space-y-4">
+                <Input
+                  id="name"
+                  name="name"
+                  type="text"
+                  label="Full Name"
+                  placeholder="Enter your full name"
+                  value={values.name}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={touched.name && errors.name ? errors.name : ''}
+                  required
+                />
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                className={`mt-1 appearance-none block w-full px-3 py-2 border ${
-                  touched.password && errors.password 
-                    ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
-                    : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
-                } rounded-md shadow-sm placeholder-gray-400 focus:outline-none sm:text-sm`}
-                placeholder="••••••••"
-                value={values.password}
-                onChange={handleChange}
-                onBlur={handleBlur}
-              />
-              {touched.password && errors.password && (
-                <p className="text-red-500 text-sm mt-1">{errors.password}</p>
-              )}
-              <p className="text-gray-500 text-xs mt-1">
-                At least 6 characters with 1 letter and 1 number
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  label="Email Address"
+                  placeholder="Enter your email"
+                  value={values.email}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={touched.email && errors.email ? errors.email : ''}
+                  required
+                />
+
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  label="Password"
+                  placeholder="Create a password"
+                  value={values.password}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={touched.password && errors.password ? errors.password : ''}
+                  helpText="At least 6 characters with 1 letter and 1 number"
+                  required
+                />
+
+                <Input
+                  id="password2"
+                  name="password2"
+                  type="password"
+                  label="Confirm Password"
+                  placeholder="Confirm your password"
+                  value={values.password2}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={touched.password2 && errors.password2 ? errors.password2 : ''}
+                  required
+                />
+
+                <Input.Select
+                  id="role"
+                  name="role"
+                  label="Register As"
+                  value={values.role}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  required
+                >
+                  <option value="buyer">Buyer - Browse and purchase books</option>
+                  <option value="seller">Seller - List and sell books</option>
+                </Input.Select>
+              </div>
+
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                fullWidth
+                disabled={loading || !isValid}
+                loading={loading}
+              >
+                {loading ? 'Creating account...' : 'Create Account'}
+              </Button>
+            </form>
+
+            <div className="mt-6 text-center">
+              <p className="body-sm text-charcoal/70">
+                Already have an account?{' '}
+                <Link to="/login" className="text-brown hover:text-brown/80 font-semibold transition-colors">
+                  Sign in
+                </Link>
               </p>
             </div>
+          </Card.Body>
+        </Card>
 
-            <div>
-              <label htmlFor="password2" className="block text-sm font-medium text-gray-700">
-                Confirm Password
-              </label>
-              <input
-                id="password2"
-                name="password2"
-                type="password"
-                className={`mt-1 appearance-none block w-full px-3 py-2 border ${
-                  touched.password2 && errors.password2 
-                    ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
-                    : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
-                } rounded-md shadow-sm placeholder-gray-400 focus:outline-none sm:text-sm`}
-                placeholder="••••••••"
-                value={values.password2}
-                onChange={handleChange}
-                onBlur={handleBlur}
-              />
-              {touched.password2 && errors.password2 && (
-                <p className="text-red-500 text-sm mt-1">{errors.password2}</p>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700">
-                Register as
-              </label>
-              <select
-                id="role"
-                name="role"
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                value={values.role}
-                onChange={handleChange}
-                onBlur={handleBlur}
-              >
-                <option value="buyer">Buyer</option>
-                <option value="seller">Seller</option>
-              </select>
-            </div>
+        {/* Help Links */}
+        <div className="mt-8 text-center">
+          <p className="body-sm text-charcoal/60 mb-3">Need help?</p>
+          <div className="flex justify-center gap-6">
+            <Link to="/about" className="body-sm text-brown hover:text-brown/80 transition-colors">
+              About Us
+            </Link>
+            <Link to="/contact" className="body-sm text-brown hover:text-brown/80 transition-colors">
+              Contact Support
+            </Link>
           </div>
-
-          <div>
-            <button
-              type="submit"
-              disabled={loading || !isValid}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Creating account...' : 'Create account'}
-            </button>
-          </div>
-        </form>
-      </div>
+        </div>
+      </motion.div>
     </div>
   );
 };

@@ -9,6 +9,12 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import SuccessToast from '../../components/SuccessToast';
+import Button from '../../components/Button';
+import Card from '../../components/Card';
+import Badge from '../../components/Badge';
+import Input from '../../components/Input';
+import { motion } from 'framer-motion';
+import { fadeInUp, staggerContainer, staggerItem } from '../../utils/animations';
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -96,13 +102,13 @@ const Users = () => {
     ? users 
     : users.filter(user => user.role === roleFilter);
 
-  const getRoleBadgeColor = (role) => {
-    const colors = {
-      admin: 'bg-purple-100 text-purple-800',
-      seller: 'bg-blue-100 text-blue-800',
-      buyer: 'bg-green-100 text-green-800'
+  const getRoleVariant = (role) => {
+    const variants = {
+      admin: 'error',
+      seller: 'info',
+      buyer: 'success'
     };
-    return colors[role] || 'bg-gray-100 text-gray-800';
+    return variants[role] || 'default';
   };
 
   if (loading) {
@@ -114,150 +120,164 @@ const Users = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-cream py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-          <p className="text-gray-600 mt-2">Manage all users in the system</p>
-        </div>
+        <motion.div 
+          className="mb-12"
+          variants={fadeInUp}
+          initial="hidden"
+          animate="visible"
+        >
+          <h1 className="heading-1 text-charcoal mb-2">User Management</h1>
+          <p className="body text-charcoal/70">Manage all users in the system</p>
+        </motion.div>
 
         {error && (
-          <div className="mb-6">
+          <motion.div 
+            className="mb-6"
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+          >
             <ErrorMessage message={error} />
-          </div>
+          </motion.div>
         )}
 
         {/* Filter Tabs */}
-        <div className="mb-6 border-b border-gray-200">
-          <nav className="flex space-x-8">
-            {[
-              { value: 'all', label: 'All Users', count: users.length },
-              { value: 'buyer', label: 'Buyers', count: users.filter(u => u.role === 'buyer').length },
-              { value: 'seller', label: 'Sellers', count: users.filter(u => u.role === 'seller').length },
-              { value: 'admin', label: 'Admins', count: users.filter(u => u.role === 'admin').length }
-            ].map(tab => (
-              <button
-                key={tab.value}
-                onClick={() => setRoleFilter(tab.value)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                  roleFilter === tab.value
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                {tab.label}
-                <span className={`ml-2 py-0.5 px-2.5 rounded-full text-xs ${
-                  roleFilter === tab.value ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
-                }`}>
-                  {tab.count}
-                </span>
-              </button>
-            ))}
-          </nav>
-        </div>
+        <motion.div 
+          className="mb-8"
+          variants={fadeInUp}
+          initial="hidden"
+          animate="visible"
+        >
+          <Card>
+            <Card.Body className="p-0">
+              <nav className="flex space-x-1 overflow-x-auto p-2">
+                {[
+                  { value: 'all', label: 'All Users', count: users.length },
+                  { value: 'buyer', label: 'Buyers', count: users.filter(u => u.role === 'buyer').length },
+                  { value: 'seller', label: 'Sellers', count: users.filter(u => u.role === 'seller').length },
+                  { value: 'admin', label: 'Admins', count: users.filter(u => u.role === 'admin').length }
+                ].map(tab => (
+                  <button
+                    key={tab.value}
+                    onClick={() => setRoleFilter(tab.value)}
+                    className={`px-6 py-3 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
+                      roleFilter === tab.value
+                        ? 'bg-brown text-white shadow-sm'
+                        : 'text-charcoal/70 hover:bg-taupe/10'
+                    }`}
+                  >
+                    {tab.label}
+                    <Badge 
+                      variant={roleFilter === tab.value ? 'light' : 'default'} 
+                      size="sm" 
+                      className="ml-2"
+                    >
+                      {tab.count}
+                    </Badge>
+                  </button>
+                ))}
+              </nav>
+            </Card.Body>
+          </Card>
+        </motion.div>
 
-        {/* Users Table */}
+        {/* Users List */}
         {filteredUsers.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-            <div className="max-w-md mx-auto">
-              <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                {roleFilter === 'all' ? 'No users found' : `No ${roleFilter}s found`}
-              </h3>
-            </div>
-          </div>
+          <motion.div
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+          >
+            <Card>
+              <Card.Body className="py-16 text-center">
+                <div className="max-w-md mx-auto">
+                  <div className="w-24 h-24 bg-taupe/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg className="w-12 h-12 text-taupe" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="heading-4 text-charcoal mb-3">
+                    {roleFilter === 'all' ? 'No users found' : `No ${roleFilter}s found`}
+                  </h3>
+                </div>
+              </Card.Body>
+            </Card>
+          </motion.div>
         ) : (
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      User
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Role
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Joined
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredUsers.map(user => (
-                    <tr key={user._id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                            <span className="text-blue-600 font-semibold text-sm">
-                              {user.name.charAt(0).toUpperCase()}
-                            </span>
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                          </div>
+          <motion.div 
+            className="space-y-4"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
+            {filteredUsers.map(user => (
+              <motion.div key={user._id} variants={staggerItem}>
+                <Card hoverable>
+                  <Card.Body>
+                    <div className="flex flex-col md:flex-row md:items-center gap-6">
+                      {/* User Info */}
+                      <div className="flex items-center gap-4 flex-1 min-w-0">
+                        <div className="w-12 h-12 rounded-full bg-brown/10 flex items-center justify-center flex-shrink-0">
+                          <span className="text-brown font-semibold text-lg">
+                            {user.name.charAt(0).toUpperCase()}
+                          </span>
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{user.email}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <select
-                          value={user.role}
-                          onChange={(e) => handleRoleChange(user._id, e.target.value)}
-                          disabled={updatingUserId === user._id}
-                          className={`text-xs font-semibold px-3 py-1 rounded-full border-0 focus:ring-2 focus:ring-blue-500 ${getRoleBadgeColor(user.role)}`}
-                        >
-                          <option value="buyer">Buyer</option>
-                          <option value="seller">Seller</option>
-                          <option value="admin">Admin</option>
-                        </select>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <button
-                          onClick={() => handleToggleStatus(user._id, user.status)}
-                          disabled={updatingUserId === user._id}
-                          className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                            user.status === 'active' 
-                              ? 'bg-green-100 text-green-800 hover:bg-green-200' 
-                              : 'bg-red-100 text-red-800 hover:bg-red-200'
-                          } transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
-                        >
-                          {user.status === 'active' ? 'Active' : 'Inactive'}
-                        </button>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(user.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button
+                        <div className="flex-1 min-w-0">
+                          <h3 className="heading-5 text-charcoal truncate">{user.name}</h3>
+                          <p className="body-sm text-charcoal/60 truncate">{user.email}</p>
+                          <p className="body-sm text-charcoal/50 mt-1">
+                            Joined {new Date(user.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Role & Status */}
+                      <div className="flex items-center gap-4">
+                        <div className="w-40">
+                          <Input.Select
+                            id={`role-${user._id}`}
+                            label="Role"
+                            value={user.role}
+                            onChange={(e) => handleRoleChange(user._id, e.target.value)}
+                            disabled={updatingUserId === user._id}
+                          >
+                            <option value="buyer">Buyer</option>
+                            <option value="seller">Seller</option>
+                            <option value="admin">Admin</option>
+                          </Input.Select>
+                        </div>
+
+                        <div className="flex flex-col items-center gap-2">
+                          <p className="body-sm text-charcoal/60">Status</p>
+                          <Button
+                            variant={user.status === 'active' ? 'success' : 'error'}
+                            size="sm"
+                            onClick={() => handleToggleStatus(user._id, user.status)}
+                            disabled={updatingUserId === user._id}
+                          >
+                            {user.status === 'active' ? 'Active' : 'Inactive'}
+                          </Button>
+                        </div>
+
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => handleDeleteClick(user)}
-                          className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
                           disabled={updatingUserId === user._id}
+                          className="text-error hover:text-error"
                         >
                           Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                        </Button>
+                      </div>
+                    </div>
+                  </Card.Body>
+                </Card>
+              </motion.div>
+            ))}
+          </motion.div>
         )}
 
         {/* Delete Confirmation Dialog */}

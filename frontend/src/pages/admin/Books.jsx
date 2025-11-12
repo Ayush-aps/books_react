@@ -10,6 +10,12 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
 import Modal from '../../components/Modal';
 import SuccessToast from '../../components/SuccessToast';
+import Button from '../../components/Button';
+import Card from '../../components/Card';
+import Badge from '../../components/Badge';
+import Input from '../../components/Input';
+import { motion } from 'framer-motion';
+import { fadeInUp, staggerContainer, staggerItem } from '../../utils/animations';
 
 const Books = () => {
   const [books, setBooks] = useState([]);
@@ -89,13 +95,13 @@ const Books = () => {
     ? books 
     : books.filter(book => (book.approvalStatus || 'pending') === statusFilter);
 
-  const getStatusBadgeColor = (status) => {
-    const colors = {
-      approved: 'bg-green-100 text-green-800',
-      pending: 'bg-yellow-100 text-yellow-800',
-      rejected: 'bg-red-100 text-red-800'
+  const getStatusVariant = (status) => {
+    const variants = {
+      approved: 'success',
+      pending: 'warning',
+      rejected: 'error'
     };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+    return variants[status] || 'default';
   };
 
   if (loading) {
@@ -107,145 +113,188 @@ const Books = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-cream py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Content Moderation</h1>
-          <p className="text-gray-600 mt-2">Review and moderate books in the system</p>
-        </div>
+        <motion.div 
+          className="mb-12"
+          variants={fadeInUp}
+          initial="hidden"
+          animate="visible"
+        >
+          <h1 className="heading-1 text-charcoal mb-2">Content Moderation</h1>
+          <p className="body text-charcoal/70">Review and moderate books in the system</p>
+        </motion.div>
 
         {error && (
-          <div className="mb-6">
+          <motion.div 
+            className="mb-6"
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+          >
             <ErrorMessage message={error} />
-          </div>
+          </motion.div>
         )}
 
         {/* Filter Tabs */}
-        <div className="mb-6 border-b border-gray-200">
-          <nav className="flex space-x-8">
-            {[
-              { value: 'pending', label: 'Pending Review', count: books.filter(b => b.approvalStatus === 'pending').length },
-              { value: 'approved', label: 'Approved', count: books.filter(b => b.approvalStatus === 'approved').length },
-              { value: 'rejected', label: 'Rejected', count: books.filter(b => b.approvalStatus === 'rejected').length },
-              { value: 'all', label: 'All Books', count: books.length }
-            ].map(tab => (
-              <button
-                key={tab.value}
-                onClick={() => setStatusFilter(tab.value)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                  statusFilter === tab.value
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                {tab.label}
-                <span className={`ml-2 py-0.5 px-2.5 rounded-full text-xs ${
-                  statusFilter === tab.value ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
-                }`}>
-                  {tab.count}
-                </span>
-              </button>
-            ))}
-          </nav>
-        </div>
+        <motion.div 
+          className="mb-8"
+          variants={fadeInUp}
+          initial="hidden"
+          animate="visible"
+        >
+          <Card>
+            <Card.Body className="p-0">
+              <nav className="flex space-x-1 overflow-x-auto p-2">
+                {[
+                  { value: 'pending', label: 'Pending Review', count: books.filter(b => b.approvalStatus === 'pending').length },
+                  { value: 'approved', label: 'Approved', count: books.filter(b => b.approvalStatus === 'approved').length },
+                  { value: 'rejected', label: 'Rejected', count: books.filter(b => b.approvalStatus === 'rejected').length },
+                  { value: 'all', label: 'All Books', count: books.length }
+                ].map(tab => (
+                  <button
+                    key={tab.value}
+                    onClick={() => setStatusFilter(tab.value)}
+                    className={`px-6 py-3 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
+                      statusFilter === tab.value
+                        ? 'bg-brown text-white shadow-sm'
+                        : 'text-charcoal/70 hover:bg-taupe/10'
+                    }`}
+                  >
+                    {tab.label}
+                    <Badge 
+                      variant={statusFilter === tab.value ? 'light' : 'default'} 
+                      size="sm" 
+                      className="ml-2"
+                    >
+                      {tab.count}
+                    </Badge>
+                  </button>
+                ))}
+              </nav>
+            </Card.Body>
+          </Card>
+        </motion.div>
 
         {/* Books Grid */}
         {filteredBooks.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-            <div className="max-w-md mx-auto">
-              <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                {statusFilter === 'all' ? 'No books found' : `No ${statusFilter} books`}
-              </h3>
-            </div>
-          </div>
+          <motion.div
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+          >
+            <Card>
+              <Card.Body className="py-16 text-center">
+                <div className="max-w-md mx-auto">
+                  <div className="w-24 h-24 bg-taupe/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg className="w-12 h-12 text-taupe" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                  </div>
+                  <h3 className="heading-4 text-charcoal mb-3">
+                    {statusFilter === 'all' ? 'No books found' : `No ${statusFilter} books`}
+                  </h3>
+                </div>
+              </Card.Body>
+            </Card>
+          </motion.div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
             {filteredBooks.map(book => (
-              <div key={book._id} className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-                {/* Book Cover */}
-                <div className="aspect-[3/4] bg-gray-200 relative">
-                  {book.coverImage ? (
-                    <img 
-                      src={book.coverImage} 
-                      alt={book.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                      </svg>
-                    </div>
-                  )}
-                  <div className="absolute top-2 right-2">
-                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusBadgeColor(book.approvalStatus)}`}>
-                      {book.approvalStatus ? book.approvalStatus.charAt(0).toUpperCase() + book.approvalStatus.slice(1) : 'Pending'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Book Info */}
-                <div className="p-4">
-                  <h3 className="font-semibold text-gray-900 line-clamp-2 mb-1">{book.title || 'Untitled'}</h3>
-                  <p className="text-sm text-gray-600 mb-2">by {book.author || 'Unknown'}</p>
-                  
-                  <div className="flex items-center gap-2 mb-3 text-sm text-gray-500">
-                    <span className="px-2 py-1 bg-gray-100 rounded">{book.genre || 'N/A'}</span>
-                    <span className="px-2 py-1 bg-gray-100 rounded">{book.condition || 'N/A'}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <p className="text-lg font-bold text-gray-900">${book.price ? book.price.toFixed(2) : '0.00'}</p>
-                      <p className="text-xs text-gray-500">Stock: {book.stock || 0}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm text-gray-600">Seller</p>
-                      <p className="text-sm font-medium text-gray-900">{book.sellerId?.name || 'N/A'}</p>
-                    </div>
-                  </div>
-
-                  {book.description && (
-                    <p className="text-sm text-gray-600 line-clamp-2 mb-3">{book.description}</p>
-                  )}
-
-                  {/* Actions */}
-                  <div className="flex gap-2">
-                    {(!book.approvalStatus || book.approvalStatus === 'pending') && (
-                      <>
-                        <button
-                          onClick={() => handleApprove(book._id)}
-                          disabled={processing}
-                          className="flex-1 px-3 py-2 bg-green-600 text-white rounded-md text-sm font-medium hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-                        >
-                          Approve
-                        </button>
-                        <button
-                          onClick={() => handleRejectClick(book)}
-                          disabled={processing}
-                          className="flex-1 px-3 py-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-                        >
-                          Reject
-                        </button>
-                      </>
+              <motion.div key={book._id} variants={staggerItem}>
+                <Card hoverable className="h-full flex flex-col">
+                  {/* Book Cover */}
+                  <div className="aspect-[3/4] bg-taupe/10 relative overflow-hidden">
+                    {book.coverImage ? (
+                      <img 
+                        src={book.coverImage} 
+                        alt={book.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <svg className="w-16 h-16 text-taupe" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                      </div>
                     )}
-                    <Link
-                      to={`/admin/books/${book._id}`}
-                      className="flex-1 px-3 py-2 border border-gray-300 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50 text-center transition-colors"
-                    >
-                      View Details
-                    </Link>
+                    <div className="absolute top-3 right-3">
+                      <Badge variant={getStatusVariant(book.approvalStatus)}>
+                        {book.approvalStatus ? book.approvalStatus.charAt(0).toUpperCase() + book.approvalStatus.slice(1) : 'Pending'}
+                      </Badge>
+                    </div>
                   </div>
-                </div>
-              </div>
+
+                  {/* Book Info */}
+                  <Card.Body className="flex-1 flex flex-col">
+                    <h3 className="heading-5 text-charcoal line-clamp-2 mb-2">{book.title || 'Untitled'}</h3>
+                    <p className="body-sm text-charcoal/60 mb-3">by {book.author || 'Unknown'}</p>
+                    
+                    <div className="flex items-center gap-2 mb-4">
+                      <Badge variant="default" size="sm">{book.genre || 'N/A'}</Badge>
+                      <Badge variant="default" size="sm">{book.condition || 'N/A'}</Badge>
+                    </div>
+
+                    <div className="flex items-center justify-between mb-4 pb-4 border-b border-charcoal/10">
+                      <div>
+                        <p className="heading-5 text-brown">${book.price ? book.price.toFixed(2) : '0.00'}</p>
+                        <p className="body-sm text-charcoal/60">Stock: {book.stock || 0}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="body-sm text-charcoal/60">Seller</p>
+                        <p className="body-sm font-medium text-charcoal">{book.sellerId?.name || 'N/A'}</p>
+                      </div>
+                    </div>
+
+                    {book.description && (
+                      <p className="body-sm text-charcoal/70 line-clamp-2 mb-4">{book.description}</p>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex gap-2 mt-auto">
+                      {(!book.approvalStatus || book.approvalStatus === 'pending') && (
+                        <>
+                          <Button
+                            variant="success"
+                            size="sm"
+                            fullWidth
+                            onClick={() => handleApprove(book._id)}
+                            disabled={processing}
+                          >
+                            Approve
+                          </Button>
+                          <Button
+                            variant="error"
+                            size="sm"
+                            fullWidth
+                            onClick={() => handleRejectClick(book)}
+                            disabled={processing}
+                          >
+                            Reject
+                          </Button>
+                        </>
+                      )}
+                      <Button
+                        as={Link}
+                        to={`/admin/books/${book._id}`}
+                        variant="outline"
+                        size="sm"
+                        fullWidth={book.approvalStatus !== 'pending'}
+                      >
+                        View Details
+                      </Button>
+                    </div>
+                  </Card.Body>
+                </Card>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
 
         {/* Reject Modal */}
@@ -261,35 +310,39 @@ const Books = () => {
             size="md"
           >
             <div className="p-6">
-              <p className="text-gray-700 mb-4">
+              <p className="body text-charcoal mb-4">
                 Provide a reason for rejecting <span className="font-semibold">{selectedBook?.title}</span>:
               </p>
-              <textarea
+              <Input.Textarea
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
-                rows="4"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                rows={4}
                 placeholder="Enter reason for rejection..."
               />
               <div className="flex gap-3 mt-6">
-                <button
+                <Button
+                  variant="outline"
+                  size="lg"
+                  fullWidth
                   onClick={() => {
                     setShowRejectModal(false);
                     setRejectReason('');
                     setSelectedBook(null);
                   }}
                   disabled={processing}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="error"
+                  size="lg"
+                  fullWidth
                   onClick={handleRejectConfirm}
                   disabled={processing || !rejectReason.trim()}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md font-medium hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                  loading={processing}
                 >
-                  {processing ? 'Rejecting...' : 'Confirm Rejection'}
-                </button>
+                  Confirm Rejection
+                </Button>
               </div>
             </div>
           </Modal>

@@ -1,58 +1,369 @@
+/* =================================
+   Premium Book Marketplace
+   Base Styles & Font Imports
+   ================================= */
+
+/* Import Google Fonts - Elegant Serif & Clean Sans-Serif */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* Import Premium Theme Variables */
+@import './styles/variables.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Import Theme Variables */
-@import './styles/variables.css';
+/* =================================
+   BASE LAYER - Global Resets & Styles
+   ================================= */
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
 
-/* Import existing custom styles if any */
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    font-weight: var(--font-normal);
+    line-height: var(--leading-normal);
+    color: var(--text-primary);
+    background-color: var(--bg-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Headings - Elegant Serif Typography */
+  h1, h2, h3, h4 {
+    font-family: var(--font-serif);
+    font-weight: var(--font-bold);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-tight);
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  h5, h6 {
+    font-family: var(--font-sans);
+    font-weight: var(--font-semibold);
+    line-height: var(--leading-normal);
+    letter-spacing: var(--tracking-wide);
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  h1 { font-size: var(--text-6xl); }
+  h2 { font-size: var(--text-5xl); }
+  h3 { font-size: var(--text-4xl); }
+  h4 { font-size: var(--text-3xl); }
+  h5 { font-size: var(--text-2xl); }
+  h6 { 
+    font-size: var(--text-xl); 
+    text-transform: uppercase;
+  }
+
+  /* Paragraphs */
+  p {
+    margin: 0;
+    line-height: var(--leading-relaxed);
+  }
+
+  /* Links */
+  a {
+    color: var(--accent-brown);
+    text-decoration: none;
+    transition: color var(--duration-base) var(--ease-elegant);
+  }
+
+  a:hover {
+    color: var(--accent-brown-hover);
+  }
+
+  a:focus {
+    outline: 2px solid var(--accent-brown);
+    outline-offset: 2px;
+  }
+
+  /* Lists */
+  ul, ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Images */
+  img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  /* Code */
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    background-color: var(--bg-cream);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-base);
+  }
+
+  /* Selection */
+  ::selection {
+    background-color: var(--primary-taupe);
+    color: var(--text-white);
+  }
+
+  ::-moz-selection {
+    background-color: var(--primary-taupe);
+    color: var(--text-white);
+  }
+
+  /* Scrollbar Styling - Premium Feel */
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--bg-cream);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--primary-taupe);
+    border-radius: var(--radius-full);
+    border: 3px solid var(--bg-cream);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-brown);
+  }
+
+  /* Focus Visible - Accessibility */
+  :focus-visible {
+    outline: 2px solid var(--accent-brown);
+    outline-offset: 2px;
+  }
+
+  /* Button Reset */
+  button {
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    cursor: pointer;
+    border: none;
+    background: none;
+    padding: 0;
+  }
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+/* =================================
+   COMPONENTS LAYER - Custom Components
+   ================================= */
+@layer components {
+  /* Container */
+  .container-custom {
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: var(--space-4);
+    padding-right: var(--space-4);
+  }
+
+  @media (min-width: 640px) {
+    .container-custom {
+      max-width: var(--container-sm);
+      padding-left: var(--space-6);
+      padding-right: var(--space-6);
+    }
+  }
+
+  @media (min-width: 768px) {
+    .container-custom {
+      max-width: var(--container-md);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .container-custom {
+      max-width: var(--container-lg);
+      padding-left: var(--space-8);
+      padding-right: var(--space-8);
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .container-custom {
+      max-width: var(--container-xl);
+    }
+  }
+
+  @media (min-width: 1536px) {
+    .container-custom {
+      max-width: var(--container-2xl);
+    }
+  }
+
+  /* Section Spacing */
+  .section {
+    padding-top: var(--space-16);
+    padding-bottom: var(--space-16);
+  }
+
+  .section-lg {
+    padding-top: var(--space-24);
+    padding-bottom: var(--space-24);
+  }
+
+  @media (min-width: 768px) {
+    .section {
+      padding-top: var(--space-20);
+      padding-bottom: var(--space-20);
+    }
+
+    .section-lg {
+      padding-top: var(--space-32);
+      padding-bottom: var(--space-32);
+    }
+  }
 }
 
-/* Add custom styles here */
-.btn {
-  @apply px-4 py-2 rounded font-medium transition-colors;
-}
+/* =================================
+   UTILITIES LAYER - Animation Classes
+   ================================= */
+@layer utilities {
+  /* Fade In Animation */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 
-.btn-primary {
-  @apply bg-blue-600 text-white hover:bg-blue-700;
-}
+  .animate-fade-in {
+    animation: fadeIn var(--duration-slow) var(--ease-elegant);
+  }
 
-.btn-secondary {
-  @apply bg-gray-600 text-white hover:bg-gray-700;
-}
+  /* Slide In Animations */
+  @keyframes slideInLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
 
-.btn-danger {
-  @apply bg-red-600 text-white hover:bg-red-700;
-}
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
 
-.card {
-  @apply bg-white rounded-lg shadow-md p-6;
-}
+  .animate-slide-in-left {
+    animation: slideInLeft var(--duration-medium) var(--ease-elegant);
+  }
 
-.input {
-  @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500;
-}
+  .animate-slide-in-right {
+    animation: slideInRight var(--duration-medium) var(--ease-elegant);
+  }
 
-.label {
-  @apply block text-sm font-medium text-gray-700 mb-1;
-}
+  /* Pulse Animation */
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
 
-.error-message {
-  @apply text-red-600 text-sm mt-1;
-}
+  .animate-pulse {
+    animation: pulse 2s var(--ease-in-out) infinite;
+  }
 
-.success-message {
-  @apply text-green-600 text-sm mt-1;
+  /* Shimmer Loading Effect */
+  @keyframes shimmer {
+    0% {
+      background-position: -1000px 0;
+    }
+    100% {
+      background-position: 1000px 0;
+    }
+  }
+
+  .animate-shimmer {
+    animation: shimmer 2s infinite;
+    background: linear-gradient(
+      90deg,
+      var(--bg-cream) 0%,
+      var(--bg-cream-dark) 50%,
+      var(--bg-cream) 100%
+    );
+    background-size: 1000px 100%;
+  }
+
+  /* Spin Animation */
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .animate-spin {
+    animation: spin 1s linear infinite;
+  }
+
+  /* Bounce Animation */
+  @keyframes bounce {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  .animate-bounce {
+    animation: bounce 1s var(--ease-in-out) infinite;
+  }
+
+  /* Scale Animation */
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-scale-in {
+    animation: scaleIn var(--duration-medium) var(--ease-elegant);
+  }
 }

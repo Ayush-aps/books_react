@@ -9,6 +9,12 @@ import { adminService } from '../../services/adminService';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
 import SuccessToast from '../../components/SuccessToast';
+import Button from '../../components/Button';
+import Card from '../../components/Card';
+import Badge from '../../components/Badge';
+import Input from '../../components/Input';
+import { motion } from 'framer-motion';
+import { fadeInUp, staggerContainer, staggerItem } from '../../utils/animations';
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
@@ -52,15 +58,15 @@ const Orders = () => {
     }
   };
 
-  const getStatusColor = (status) => {
-    const colors = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      processing: 'bg-blue-100 text-blue-800',
-      shipped: 'bg-purple-100 text-purple-800',
-      delivered: 'bg-green-100 text-green-800',
-      cancelled: 'bg-red-100 text-red-800'
+  const getStatusVariant = (status) => {
+    const variants = {
+      pending: 'warning',
+      processing: 'info',
+      shipped: 'default',
+      delivered: 'success',
+      cancelled: 'error'
     };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+    return variants[status] || 'default';
   };
 
   const filteredOrders = statusFilter === 'all' 
@@ -85,138 +91,164 @@ const Orders = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-cream py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Order Management</h1>
-          <p className="text-gray-600 mt-2">View and manage all orders in the system</p>
-        </div>
+        <motion.div 
+          className="mb-12"
+          variants={fadeInUp}
+          initial="hidden"
+          animate="visible"
+        >
+          <h1 className="heading-1 text-charcoal mb-2">Order Management</h1>
+          <p className="body text-charcoal/70">View and manage all orders in the system</p>
+        </motion.div>
 
         {error && (
-          <div className="mb-6">
+          <motion.div 
+            className="mb-6"
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+          >
             <ErrorMessage message={error} />
-          </div>
+          </motion.div>
         )}
 
         {/* Filter Tabs */}
-        <div className="mb-6 border-b border-gray-200">
-          <nav className="flex space-x-8 overflow-x-auto">
-            {filterTabs.map(tab => (
-              <button
-                key={tab.value}
-                onClick={() => setStatusFilter(tab.value)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                  statusFilter === tab.value
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                {tab.label}
-                <span className={`ml-2 py-0.5 px-2.5 rounded-full text-xs ${
-                  statusFilter === tab.value ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
-                }`}>
-                  {tab.count}
-                </span>
-              </button>
-            ))}
-          </nav>
-        </div>
+        <motion.div 
+          className="mb-8"
+          variants={fadeInUp}
+          initial="hidden"
+          animate="visible"
+        >
+          <Card>
+            <Card.Body className="p-0">
+              <nav className="flex space-x-1 overflow-x-auto p-2">
+                {filterTabs.map(tab => (
+                  <button
+                    key={tab.value}
+                    onClick={() => setStatusFilter(tab.value)}
+                    className={`px-6 py-3 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
+                      statusFilter === tab.value
+                        ? 'bg-brown text-white shadow-sm'
+                        : 'text-charcoal/70 hover:bg-taupe/10'
+                    }`}
+                  >
+                    {tab.label}
+                    <Badge 
+                      variant={statusFilter === tab.value ? 'light' : 'default'} 
+                      size="sm" 
+                      className="ml-2"
+                    >
+                      {tab.count}
+                    </Badge>
+                  </button>
+                ))}
+              </nav>
+            </Card.Body>
+          </Card>
+        </motion.div>
 
-        {/* Orders Table */}
+        {/* Orders List */}
         {filteredOrders.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-            <div className="max-w-md mx-auto">
-              <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                {statusFilter === 'all' ? 'No orders yet' : `No ${statusFilter} orders`}
-              </h3>
-            </div>
-          </div>
+          <motion.div
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+          >
+            <Card>
+              <Card.Body className="py-16 text-center">
+                <div className="max-w-md mx-auto">
+                  <div className="w-24 h-24 bg-taupe/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg className="w-12 h-12 text-taupe" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <h3 className="heading-4 text-charcoal mb-3">
+                    {statusFilter === 'all' ? 'No orders yet' : `No ${statusFilter} orders`}
+                  </h3>
+                </div>
+              </Card.Body>
+            </Card>
+          </motion.div>
         ) : (
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Order ID
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Buyer
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Items
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Total
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Date
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredOrders.map(order => (
-                    <tr key={order._id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          #{order._id.slice(-8)}
+          <motion.div 
+            className="space-y-4"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
+            {filteredOrders.map(order => (
+              <motion.div key={order._id} variants={staggerItem}>
+                <Card hoverable>
+                  <Card.Body>
+                    <div className="flex flex-col lg:flex-row lg:items-center gap-6">
+                      {/* Order Info */}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-4">
+                          <h3 className="heading-4 text-charcoal">
+                            Order #{order._id.slice(-8)}
+                          </h3>
+                          <Badge variant={getStatusVariant(order.status)}>
+                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                          </Badge>
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{order.userId?.name || 'N/A'}</div>
-                        <div className="text-xs text-gray-500">{order.userId?.email || ''}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{order.items.length} item(s)</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-semibold text-gray-900">
-                          ${order.totalAmount.toFixed(2)}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <div>
+                            <p className="body-sm text-charcoal/60 mb-1">Buyer</p>
+                            <p className="body-sm font-medium text-charcoal">{order.userId?.name || 'N/A'}</p>
+                            <p className="body-sm text-charcoal/50 truncate">{order.userId?.email || ''}</p>
+                          </div>
+                          <div>
+                            <p className="body-sm text-charcoal/60 mb-1">Items</p>
+                            <p className="body-sm font-medium text-charcoal">{order.items.length} item(s)</p>
+                          </div>
+                          <div>
+                            <p className="body-sm text-charcoal/60 mb-1">Total</p>
+                            <p className="heading-5 text-brown">${order.totalAmount.toFixed(2)}</p>
+                          </div>
+                          <div>
+                            <p className="body-sm text-charcoal/60 mb-1">Date</p>
+                            <p className="body-sm font-medium text-charcoal">
+                              {new Date(order.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <select
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex flex-col gap-4 lg:w-64">
+                        <Input.Select
+                          id={`status-${order._id}`}
+                          label="Update Status"
                           value={order.status}
                           onChange={(e) => handleStatusUpdate(order._id, e.target.value)}
                           disabled={updatingOrderId === order._id}
-                          className={`text-xs font-semibold px-3 py-1 rounded-full border-0 focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed ${getStatusColor(order.status)}`}
                         >
                           <option value="pending">Pending</option>
                           <option value="processing">Processing</option>
                           <option value="shipped">Shipped</option>
                           <option value="delivered">Delivered</option>
                           <option value="cancelled">Cancelled</option>
-                        </select>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(order.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <Link
+                        </Input.Select>
+
+                        <Button
+                          as={Link}
                           to={`/admin/orders/${order._id}`}
-                          className="text-blue-600 hover:text-blue-900"
+                          variant="outline"
+                          size="md"
+                          fullWidth
                         >
                           View Details
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                        </Button>
+                      </div>
+                    </div>
+                  </Card.Body>
+                </Card>
+              </motion.div>
+            ))}
+          </motion.div>
         )}
 
         {/* Success Toast */}

@@ -7,6 +7,12 @@ import { useNavigate, Link } from 'react-router-dom';
 import { login } from '../../redux/actions/authActions';
 import useFormValidation from '../../hooks/useFormValidation';
 import { validateEmail, validateRequired } from '../../utils/validation';
+import Button from '../../components/Button';
+import Card from '../../components/Card';
+import Input from '../../components/Input';
+import ErrorMessage from '../../components/ErrorMessage';
+import { motion } from 'framer-motion';
+import { fadeInUp } from '../../utils/animations';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -43,81 +49,97 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to your account
+    <div className="min-h-screen flex items-center justify-center bg-cream py-12 px-4 sm:px-6 lg:px-8">
+      <motion.div 
+        className="max-w-md w-full"
+        variants={fadeInUp}
+        initial="hidden"
+        animate="visible"
+      >
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h2 className="heading-1 text-charcoal mb-2">
+            Welcome Back
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Or{' '}
-            <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500">
-              create a new account
-            </Link>
+          <p className="body text-charcoal/70">
+            Sign in to access your account
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-
-          <div className="rounded-md shadow-sm space-y-4">
-            <div>
-              <label htmlFor="email" className="sr-only">Email address</label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                className={`appearance-none rounded-md relative block w-full px-3 py-2 border ${
-                  touched.email && errors.email 
-                    ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
-                    : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
-                } placeholder-gray-500 text-gray-900 focus:outline-none focus:z-10 sm:text-sm`}
-                placeholder="Email address"
-                value={values.email}
-                onChange={handleChange}
-                onBlur={handleBlur}
-              />
-              {touched.email && errors.email && (
-                <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+        {/* Login Card */}
+        <Card>
+          <Card.Body className="p-8">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              {error && (
+                <div className="mb-6">
+                  <ErrorMessage message={error} />
+                </div>
               )}
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">Password</label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                className={`appearance-none rounded-md relative block w-full px-3 py-2 border ${
-                  touched.password && errors.password 
-                    ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
-                    : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
-                } placeholder-gray-500 text-gray-900 focus:outline-none focus:z-10 sm:text-sm`}
-                placeholder="Password"
-                value={values.password}
-                onChange={handleChange}
-                onBlur={handleBlur}
-              />
-              {touched.password && errors.password && (
-                <p className="text-red-500 text-sm mt-1">{errors.password}</p>
-              )}
-            </div>
-          </div>
 
-          <div>
-            <button
-              type="submit"
-              disabled={loading || !isValid || !values.email || !values.password}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Signing in...' : 'Sign in'}
-            </button>
+              <div className="space-y-4">
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  label="Email Address"
+                  placeholder="Enter your email"
+                  value={values.email}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={touched.email && errors.email ? errors.email : ''}
+                  required
+                />
+
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  label="Password"
+                  placeholder="Enter your password"
+                  value={values.password}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={touched.password && errors.password ? errors.password : ''}
+                  required
+                />
+              </div>
+
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                fullWidth
+                disabled={loading || !isValid || !values.email || !values.password}
+                loading={loading}
+              >
+                {loading ? 'Signing in...' : 'Sign In'}
+              </Button>
+            </form>
+
+            <div className="mt-6 text-center">
+              <p className="body-sm text-charcoal/70">
+                Don't have an account?{' '}
+                <Link to="/register" className="text-brown hover:text-brown/80 font-semibold transition-colors">
+                  Create one now
+                </Link>
+              </p>
+            </div>
+          </Card.Body>
+        </Card>
+
+        {/* Help Links */}
+        <div className="mt-8 text-center">
+          <p className="body-sm text-charcoal/60 mb-3">Need assistance?</p>
+          <div className="flex justify-center gap-6">
+            <Link to="/about" className="body-sm text-brown hover:text-brown/80 transition-colors">
+              About Us
+            </Link>
+            <Link to="/contact" className="body-sm text-brown hover:text-brown/80 transition-colors">
+              Contact Support
+            </Link>
           </div>
-        </form>
-      </div>
+        </div>
+      </motion.div>
     </div>
   );
 };
