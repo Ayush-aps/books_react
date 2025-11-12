@@ -97,7 +97,7 @@ const Pricing = () => {
               <p className="text-gray-600 mb-6">Perfect for casual readers</p>
               
               <div className="mb-6">
-                <span className="text-5xl font-bold text-gray-900">$0</span>
+                <span className="text-5xl font-bold text-gray-900">₹0</span>
                 <span className="text-gray-600 ml-2">/ month</span>
               </div>
 
@@ -142,7 +142,7 @@ const Pricing = () => {
               <p className="text-gray-600 mb-6">Unlimited access, billed monthly</p>
               
               <div className="mb-6">
-                <span className="text-5xl font-bold text-gray-900">$9.99</span>
+                <span className="text-5xl font-bold text-gray-900">₹9.99</span>
                 <span className="text-gray-600 ml-2">/ month</span>
               </div>
 
@@ -199,10 +199,10 @@ const Pricing = () => {
               <p className="text-gray-600 mb-6">Save 20% with annual billing</p>
               
               <div className="mb-6">
-                <span className="text-5xl font-bold text-gray-900">$99.99</span>
+                <span className="text-5xl font-bold text-gray-900">₹99.99</span>
                 <span className="text-gray-600 ml-2">/ year</span>
                 <div className="text-sm text-green-600 font-semibold mt-2">
-                  Save $20 per year
+                  Save ₹20 per year
                 </div>
               </div>
 
@@ -310,15 +310,15 @@ const Pricing = () => {
                     <div className="border-b border-gray-200 pb-3">
                       <div className="flex justify-between mb-1">
                         <span className="text-gray-600">Book Price:</span>
-                        <span className="font-semibold">$20.00</span>
+                        <span className="font-semibold">₹20.00</span>
                       </div>
                       <div className="flex justify-between mb-1">
                         <span className="text-gray-600">Commission (10%):</span>
-                        <span className="text-red-600">-$2.00</span>
+                        <span className="text-red-600">-₹2.00</span>
                       </div>
                       <div className="flex justify-between font-bold text-lg">
                         <span className="text-gray-900">You Earn:</span>
-                        <span className="text-green-600">$18.00</span>
+                        <span className="text-green-600">₹18.00</span>
                       </div>
                     </div>
                     <p className="text-sm text-gray-600">

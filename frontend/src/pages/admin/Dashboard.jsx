@@ -76,7 +76,7 @@ const Dashboard = () => {
         .slice(0, 5)
         .map(order => ({
           type: 'order',
-          description: `New order #${order._id.slice(-8)} - $${order.totalAmount.toFixed(2)}`,
+          description: `New order #${order._id.slice(-8)} - ₹${order.totalAmount.toFixed(2)}`,
           time: new Date(order.createdAt).toLocaleString(),
           status: order.status
         }));
@@ -178,7 +178,7 @@ const Dashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Total Revenue</p>
-                <p className="text-3xl font-bold text-gray-900">${stats.totalRevenue.toFixed(2)}</p>
+                <p className="text-3xl font-bold text-gray-900">₹{stats.totalRevenue.toFixed(2)}</p>
                 <p className="mt-2 text-sm text-gray-500">From delivered orders</p>
               </div>
               <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">

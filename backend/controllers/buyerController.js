@@ -93,11 +93,25 @@ exports.getCart = async (req, res) => {
   try {
     let cart = await Cart.findOne({ user: req.user._id }).populate({
       path: "items.book",
-      select: "title author coverImage price discountPrice condition stock",
+      select: "title author coverImage price discountPrice discountPercentage condition stock isAvailable isApproved",
     });
 
     if (!cart) {
       cart = { items: [], totalAmount: 0 };
+    } else {
+      // Filter out items where book is null or not available
+      const originalLength = cart.items.length;
+      cart.items = cart.items.filter(item => 
+        item.book && 
+        item.book.isAvailable && 
+        item.book.isApproved
+      );
+
+      // If items were removed, save the cart
+      if (cart.items.length < originalLength) {
+        await cart.save();
+        console.log(`Removed ${originalLength - cart.items.length} unavailable items from cart`);
+      }
     }
 
     res.status(200).json({
@@ -845,7 +859,7 @@ exports.getBookDetails = async (req, res) => {
 exports.getAllOrders = async (req, res) => {
   try {
     const orders = await Order.find({ buyer: req.user._id })
-      .populate("items.book", "title author coverImage")
+      .populate("items.book", "title author coverImage condition")
       .populate("items.seller", "name email")
       .sort({ createdAt: -1 });
 
@@ -872,7 +886,7 @@ exports.getOrderDetails = async (req, res) => {
       _id: req.params.id,
       buyer: req.user._id,
     })
-      .populate("items.book", "title author coverImage")
+      .populate("items.book", "title author coverImage condition")
       .populate("items.seller", "name email");
 
     if (!order) {

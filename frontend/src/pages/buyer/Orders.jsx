@@ -115,11 +115,11 @@ const Orders = () => {
                         Order ID: <span className="font-mono font-medium text-gray-900">{order._id}</span>
                       </p>
                       <p className="text-sm text-gray-600 mt-1">
-                        Placed on {new Date(order.createdAt).toLocaleDateString('en-US', {
+                        Placed on {order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-US', {
                           year: 'numeric',
                           month: 'long',
                           day: 'numeric'
-                        })}
+                        }) : 'N/A'}
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
@@ -138,22 +138,26 @@ const Orders = () => {
                   {/* Order Items */}
                   <div className="border-t border-gray-200 pt-4">
                     <div className="space-y-3">
-                      {order.items.slice(0, 2).map((item) => (
-                        <div key={item._id} className="flex gap-4">
+                      {order.items.slice(0, 2).map((item, index) => (
+                        <div key={item._id || index} className="flex gap-4">
                           <img
-                            src={item.bookId?.coverImage || '/placeholder-book.png'}
-                            alt={item.bookId?.title}
+                            src={item.book?.coverImage || item.coverImage || '/img/books/default-cover.jpg'}
+                            alt={item.book?.title || item.title || 'Book'}
                             className="w-16 h-20 object-cover rounded"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = '/img/books/default-cover.jpg';
+                            }}
                           />
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-gray-900 truncate">
-                              {item.bookId?.title || 'Book Title'}
+                              {item.book?.title || item.title || 'Book Title'}
                             </p>
                             <p className="text-sm text-gray-600">
                               Quantity: {item.quantity}
                             </p>
                             <p className="text-sm font-semibold text-gray-900">
-                              ${item.price.toFixed(2)}
+                              ₹{item.price?.toFixed(2) || '0.00'}
                             </p>
                           </div>
                         </div>
@@ -170,7 +174,7 @@ const Orders = () => {
                   <div className="border-t border-gray-200 mt-4 pt-4 flex justify-between items-center">
                     <span className="text-gray-600">Total Amount</span>
                     <span className="text-xl font-bold text-gray-900">
-                      ${order.totalAmount.toFixed(2)}
+                      ₹{order.totalAmount.toFixed(2)}
                     </span>
                   </div>
                 </div>

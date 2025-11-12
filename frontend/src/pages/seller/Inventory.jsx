@@ -223,7 +223,7 @@ const Inventory = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">${book.price.toFixed(2)}</div>
+                          <div className="text-sm text-gray-900">₹{book.price.toFixed(2)}</div>
                           {book.discountPercentage > 0 && (
                             <div className="text-xs text-green-600">
                               {book.discountPercentage}% off

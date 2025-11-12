@@ -116,7 +116,7 @@ const SubscriptionCheckout = () => {
                 </div>
                 <div className="text-right">
                   <div className="text-4xl font-bold text-blue-600">
-                    ${selectedPlan.price}
+                    ₹{selectedPlan.price}
                   </div>
                   <div className="text-sm text-gray-600">per {selectedPlan.interval}</div>
                   {selectedPlan.savings && (
@@ -223,11 +223,11 @@ const SubscriptionCheckout = () => {
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-lg font-semibold text-gray-900">Total</span>
                   <span className="text-2xl font-bold text-blue-600">
-                    ${selectedPlan.price}
+                    ₹{selectedPlan.price}
                   </span>
                 </div>
                 <p className="text-sm text-gray-500">
-                  Due today, then ${selectedPlan.price} every {selectedPlan.interval}
+                  Due today, then ₹{selectedPlan.price} every {selectedPlan.interval}
                 </p>
               </div>
 

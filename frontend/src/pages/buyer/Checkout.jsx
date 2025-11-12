@@ -88,18 +88,46 @@ const Checkout = () => {
       setSubmitting(true);
       setError(null);
 
+      // Get the full address object
+      const addressObj = addresses.find(addr => addr._id === selectedAddress);
+      if (!addressObj) {
+        setError('Selected address not found');
+        setSubmitting(false);
+        return;
+      }
+
+      // Transform address to match Order schema
+      const shippingAddress = {
+        name: addressObj.name,
+        address: addressObj.street,
+        city: addressObj.city,
+        state: addressObj.state,
+        pincode: addressObj.zipCode,
+        phone: addressObj.phone
+      };
+
+      // Map payment method to match backend enum
+      const paymentMethodMap = {
+        'card': 'credit_card',
+        'cod': 'cash_on_delivery'
+      };
+      const mappedPaymentMethod = paymentMethodMap[paymentMethod] || 'cash_on_delivery';
+
       // If card payment, create payment intent first
       if (paymentMethod === 'card') {
         const response = await api.post('/orders/create-payment-intent', {
           amount: total,
-          items: items.map(item => ({
-            bookId: item._id,
-            quantity: item.quantity,
-            price: item.discountPercentage 
-              ? item.price - (item.price * item.discountPercentage / 100)
-              : item.price
-          })),
-          shippingAddress: selectedAddress
+          items: items.map(item => {
+            const book = item.book || item;
+            const bookId = book._id || item.book;
+            const price = book.discountPrice || book.price || item.price;
+            return {
+              bookId: bookId,
+              quantity: item.quantity,
+              price: price
+            };
+          }),
+          shippingAddress: shippingAddress
         });
         
         setClientSecret(response.data.data.clientSecret);
@@ -110,15 +138,18 @@ const Checkout = () => {
 
       // For COD, proceed with order creation directly
       const orderData = {
-        items: items.map(item => ({
-          bookId: item._id,
-          quantity: item.quantity,
-          price: item.discountPercentage 
-            ? item.price - (item.price * item.discountPercentage / 100)
-            : item.price
-        })),
-        shippingAddress: selectedAddress,
-        paymentMethod,
+        items: items.map(item => {
+          const book = item.book || item;
+          const bookId = book._id || item.book;
+          const price = book.discountPrice || book.price || item.price;
+          return {
+            bookId: bookId,
+            quantity: item.quantity,
+            price: price
+          };
+        }),
+        shippingAddress: shippingAddress,
+        paymentMethod: mappedPaymentMethod,
         totalAmount: total
       };
 
@@ -131,20 +162,91 @@ const Checkout = () => {
         // Navigate to success page with order ID
         navigate(`/buyer/payment-success?orderId=${result.order._id}`);
       } else {
-        setError(result.message || 'Failed to place order');
+        const errorMsg = result.message || 'Failed to place order';
+        setError(errorMsg);
+        
+        // If books are no longer available, suggest clearing cart
+        if (errorMsg.includes('no longer available') || errorMsg.includes('not found')) {
+          setError(errorMsg + ' Please remove unavailable items from your cart and try again.');
+        }
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to place order');
+      const errorMsg = err.response?.data?.message || 'Failed to place order';
+      setError(errorMsg);
+      
+      // If books are no longer available, suggest clearing cart
+      if (errorMsg.includes('no longer available') || errorMsg.includes('not found')) {
+        setError(errorMsg + ' Please remove unavailable items from your cart and try again.');
+      }
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handlePaymentSuccess = () => {
-    // Clear cart after successful payment
-    dispatch(clearCart());
-    // Navigate to success page
-    navigate('/buyer/payment-success');
+  const handlePaymentSuccess = async () => {
+    try {
+      // Get the full address object
+      const addressObj = addresses.find(addr => addr._id === selectedAddress);
+      if (!addressObj) {
+        setError('Selected address not found');
+        return;
+      }
+
+      // Transform address to match Order schema
+      const shippingAddress = {
+        name: addressObj.name,
+        address: addressObj.street,
+        city: addressObj.city,
+        state: addressObj.state,
+        pincode: addressObj.zipCode,
+        phone: addressObj.phone
+      };
+
+      // Create the order after successful payment
+      const orderData = {
+        items: items.map(item => {
+          const book = item.book || item;
+          const bookId = book._id || item.book;
+          const price = book.discountPrice || book.price || item.price;
+          return {
+            bookId: bookId,
+            quantity: item.quantity,
+            price: price
+          };
+        }),
+        shippingAddress: shippingAddress,
+        paymentMethod: 'credit_card',
+        totalAmount: total
+      };
+
+      const result = await dispatch(createOrder(orderData));
+      
+      if (result.success) {
+        // Clear cart after successful order
+        dispatch(clearCart());
+        
+        // Navigate to success page with order ID
+        navigate(`/buyer/payment-success?orderId=${result.order._id}`);
+      } else {
+        const errorMsg = result.message || 'Failed to create order after payment';
+        setError(errorMsg);
+        
+        // If books are no longer available after payment
+        if (errorMsg.includes('no longer available') || errorMsg.includes('not found')) {
+          setError('Payment successful but some items are no longer available. Please contact support for a refund.');
+        }
+      }
+    } catch (err) {
+      console.error('Error creating order after payment:', err);
+      const errorMsg = err.response?.data?.message || 'Payment successful but failed to create order';
+      
+      // If books are no longer available after payment
+      if (errorMsg.includes('no longer available') || errorMsg.includes('not found')) {
+        setError('Payment successful but some items are no longer available. Please contact support for a refund.');
+      } else {
+        setError(errorMsg + ' Please contact support.');
+      }
+    }
   };
 
   if (loading) {
@@ -336,7 +438,7 @@ const Checkout = () => {
                         <p className="text-sm font-medium text-gray-900 truncate">{item.title}</p>
                         <p className="text-xs text-gray-600">Qty: {item.quantity}</p>
                         <p className="text-sm font-semibold text-gray-900">
-                          ${(price * item.quantity).toFixed(2)}
+                          ₹{(price * item.quantity).toFixed(2)}
                         </p>
                       </div>
                     </div>
@@ -348,22 +450,22 @@ const Checkout = () => {
               <div className="border-t border-gray-200 pt-4 space-y-2">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>₹{subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Tax (8%)</span>
-                  <span>${tax.toFixed(2)}</span>
+                  <span>₹{tax.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Shipping</span>
-                  <span>{shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}</span>
+                  <span>{shipping === 0 ? 'FREE' : `₹${shipping.toFixed(2)}`}</span>
                 </div>
                 {shipping === 0 && (
-                  <p className="text-xs text-green-600">Free shipping on orders over $50!</p>
+                  <p className="text-xs text-green-600">Free shipping on orders over ₹50!</p>
                 )}
                 <div className="border-t border-gray-200 pt-2 flex justify-between text-lg font-bold text-gray-900">
                   <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>₹{total.toFixed(2)}</span>
                 </div>
               </div>
 
