@@ -861,7 +861,7 @@ exports.getAllOrders = async (req, res) => {
     const orders = await Order.find({ buyer: req.user._id })
       .populate("items.book", "title author coverImage condition")
       .populate("items.seller", "name email")
-      .sort({ createdAt: -1 });
+      .sort({ $natural: -1 }); // Sort by insertion order (newest first)
 
     res.json({
       success: true,

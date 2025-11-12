@@ -94,7 +94,7 @@ const OrderDetails = () => {
                 <h1 className="text-2xl font-bold mb-2">Order Details</h1>
                 <p className="text-blue-100">Order ID: {order._id}</p>
                 <p className="text-blue-100 text-sm mt-1">
-                  Placed on {new Date(order.createdAt).toLocaleDateString('en-US', {
+                  Placed on {new Date(order.createdAt || order.orderDate).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',

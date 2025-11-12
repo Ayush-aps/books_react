@@ -123,13 +123,13 @@ const OrderDetails = () => {
               <div>
                 <h1 className="text-2xl font-bold mb-2">Order #{order._id.slice(-8)}</h1>
                 <p className="text-blue-100">
-                  Placed on {new Date(order.createdAt).toLocaleDateString('en-US', {
+                  Placed on {(order.createdAt || order.orderDate) ? new Date(order.createdAt || order.orderDate).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',
                     hour: '2-digit',
                     minute: '2-digit'
-                  })}
+                  }) : 'N/A'}
                 </p>
               </div>
               <div className="text-right">

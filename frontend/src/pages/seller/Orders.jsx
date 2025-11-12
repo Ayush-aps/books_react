@@ -163,11 +163,11 @@ const Orders = () => {
                     </div>
                     <div className="text-sm text-gray-600 space-y-1">
                       <p>
-                        <span className="font-medium">Date:</span> {new Date(order.createdAt).toLocaleDateString('en-US', {
+                        <span className="font-medium">Date:</span> {(order.createdAt || order.orderDate) ? new Date(order.createdAt || order.orderDate).toLocaleDateString('en-US', {
                           year: 'numeric',
                           month: 'long',
                           day: 'numeric'
-                        })}
+                        }) : 'N/A'}
                       </p>
                       <p>
                         <span className="font-medium">Items:</span> {order.items.length} book{order.items.length > 1 ? 's' : ''}

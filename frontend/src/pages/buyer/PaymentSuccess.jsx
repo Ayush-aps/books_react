@@ -84,11 +84,11 @@ const PaymentSuccess = () => {
               <div>
                 <p className="text-sm text-gray-600 mb-1">Order Date</p>
                 <p className="font-semibold text-gray-900">
-                  {new Date(order.createdAt).toLocaleDateString('en-US', {
+                  {(order.createdAt || order.orderDate) ? new Date(order.createdAt || order.orderDate).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric'
-                  })}
+                  }) : 'N/A'}
                 </p>
               </div>
               <div>

@@ -115,7 +115,7 @@ const Orders = () => {
                         Order ID: <span className="font-mono font-medium text-gray-900">{order._id}</span>
                       </p>
                       <p className="text-sm text-gray-600 mt-1">
-                        Placed on {order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-US', {
+                        Placed on {(order.createdAt || order.orderDate) ? new Date(order.createdAt || order.orderDate).toLocaleDateString('en-US', {
                           year: 'numeric',
                           month: 'long',
                           day: 'numeric'

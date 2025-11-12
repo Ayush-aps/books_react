@@ -26,7 +26,7 @@ const Checkout = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('card'); // card or cod
+  const [paymentMethod] = useState('card'); // Only card payment available
   const [clientSecret, setClientSecret] = useState('');
   const [showStripeForm, setShowStripeForm] = useState(false);
 
@@ -106,38 +106,9 @@ const Checkout = () => {
         phone: addressObj.phone
       };
 
-      // Map payment method to match backend enum
-      const paymentMethodMap = {
-        'card': 'credit_card',
-        'cod': 'cash_on_delivery'
-      };
-      const mappedPaymentMethod = paymentMethodMap[paymentMethod] || 'cash_on_delivery';
-
-      // If card payment, create payment intent first
-      if (paymentMethod === 'card') {
-        const response = await api.post('/orders/create-payment-intent', {
-          amount: total,
-          items: items.map(item => {
-            const book = item.book || item;
-            const bookId = book._id || item.book;
-            const price = book.discountPrice || book.price || item.price;
-            return {
-              bookId: bookId,
-              quantity: item.quantity,
-              price: price
-            };
-          }),
-          shippingAddress: shippingAddress
-        });
-        
-        setClientSecret(response.data.data.clientSecret);
-        setShowStripeForm(true);
-        setSubmitting(false);
-        return;
-      }
-
-      // For COD, proceed with order creation directly
-      const orderData = {
+      // Create payment intent for card payment
+      const response = await api.post('/orders/create-payment-intent', {
+        amount: total,
         items: items.map(item => {
           const book = item.book || item;
           const bookId = book._id || item.book;
@@ -148,36 +119,13 @@ const Checkout = () => {
             price: price
           };
         }),
-        shippingAddress: shippingAddress,
-        paymentMethod: mappedPaymentMethod,
-        totalAmount: total
-      };
-
-      const result = await dispatch(createOrder(orderData));
+        shippingAddress: shippingAddress
+      });
       
-      if (result.success) {
-        // Clear cart after successful order
-        dispatch(clearCart());
-        
-        // Navigate to success page with order ID
-        navigate(`/buyer/payment-success?orderId=${result.order._id}`);
-      } else {
-        const errorMsg = result.message || 'Failed to place order';
-        setError(errorMsg);
-        
-        // If books are no longer available, suggest clearing cart
-        if (errorMsg.includes('no longer available') || errorMsg.includes('not found')) {
-          setError(errorMsg + ' Please remove unavailable items from your cart and try again.');
-        }
-      }
+      setClientSecret(response.data.data.clientSecret);
+      setShowStripeForm(true);
     } catch (err) {
-      const errorMsg = err.response?.data?.message || 'Failed to place order';
-      setError(errorMsg);
-      
-      // If books are no longer available, suggest clearing cart
-      if (errorMsg.includes('no longer available') || errorMsg.includes('not found')) {
-        setError(errorMsg + ' Please remove unavailable items from your cart and try again.');
-      }
+      setError(err.response?.data?.message || 'Failed to create payment intent');
     } finally {
       setSubmitting(false);
     }
@@ -314,7 +262,7 @@ const Checkout = () => {
                       />
                       <div className="flex items-start">
                         <div className="flex-1">
-                          <p className="font-semibold text-gray-900">{address.fullName}</p>
+                          <p className="font-semibold text-gray-900">{address.name || address.fullName}</p>
                           <p className="text-gray-600 text-sm mt-1">
                             {address.street}, {address.city}
                           </p>
@@ -338,73 +286,28 @@ const Checkout = () => {
             {/* Payment Method */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-4">Payment Method</h2>
-              <div className="space-y-3">
-                <label
-                  className={`block border-2 rounded-lg p-4 cursor-pointer transition-colors ${
-                    paymentMethod === 'card'
-                      ? 'border-blue-600 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="payment"
-                    value="card"
-                    checked={paymentMethod === 'card'}
-                    onChange={() => {
-                      setPaymentMethod('card');
-                      setShowStripeForm(false);
-                    }}
-                    className="mr-3"
-                  />
-                  <span className="font-medium">Credit/Debit Card</span>
-                  <div className="flex items-center gap-2 mt-2 ml-6">
-                    <img src="/img/visa.svg" alt="Visa" className="h-6" onError={(e) => e.target.style.display = 'none'} />
-                    <img src="/img/mastercard.svg" alt="Mastercard" className="h-6" onError={(e) => e.target.style.display = 'none'} />
-                    <img src="/img/amex.svg" alt="Amex" className="h-6" onError={(e) => e.target.style.display = 'none'} />
+              <div className="border-2 border-blue-600 bg-blue-50 rounded-lg p-4">
+                <div className="flex items-center gap-3">
+                  <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
+                    <path fillRule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clipRule="evenodd" />
+                  </svg>
+                  <div>
+                    <p className="font-semibold text-gray-900">Credit/Debit Card</p>
+                    <p className="text-xs text-gray-600 mt-1">Secure payment powered by Stripe</p>
                   </div>
-                </label>
-                <label
-                  className={`block border-2 rounded-lg p-4 cursor-pointer transition-colors ${
-                    paymentMethod === 'cod'
-                      ? 'border-blue-600 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="payment"
-                    value="cod"
-                    checked={paymentMethod === 'cod'}
-                    onChange={() => {
-                      setPaymentMethod('cod');
-                      setShowStripeForm(false);
-                    }}
-                    className="mr-3"
-                  />
-                  <span className="font-medium">Cash on Delivery</span>
-                  <p className="text-sm text-gray-600 mt-1 ml-6">Pay when you receive your order</p>
-                </label>
+                </div>
+                <div className="flex items-center gap-2 mt-3">
+                  <img src="/img/visa.svg" alt="Visa" className="h-6" onError={(e) => e.target.style.display = 'none'} />
+                  <img src="/img/mastercard.svg" alt="Mastercard" className="h-6" onError={(e) => e.target.style.display = 'none'} />
+                  <img src="/img/amex.svg" alt="Amex" className="h-6" onError={(e) => e.target.style.display = 'none'} />
+                </div>
               </div>
 
-              {/* Stripe Payment Form */}
-              {showStripeForm && clientSecret && paymentMethod === 'card' && (
-                <div className="mt-6">
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                    <div className="flex items-center gap-2">
-                      <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path
-                          fillRule="evenodd"
-                          d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                      <span className="text-sm text-blue-800 font-medium">
-                        Secure payment powered by Stripe
-                      </span>
-                    </div>
-                  </div>
 
+              {/* Stripe Payment Form */}
+              {showStripeForm && clientSecret && (
+                <div className="mt-6 border-t border-gray-200 pt-6">
                   <Elements stripe={stripePromise} options={{ clientSecret }}>
                     <StripeCheckoutForm
                       onSuccess={handlePaymentSuccess}
@@ -424,18 +327,24 @@ const Checkout = () => {
               {/* Order Items */}
               <div className="space-y-3 mb-4 max-h-60 overflow-y-auto">
                 {items.map((item) => {
-                  const price = item.discountPercentage 
-                    ? item.price - (item.price * item.discountPercentage / 100)
-                    : item.price;
+                  const book = item.book || item;
+                  const price = book.discountPrice || book.price || item.price;
+                  const coverImage = book.coverImage || item.coverImage;
+                  const title = book.title || item.title;
+                  
                   return (
                     <div key={item._id} className="flex gap-3">
                       <img
-                        src={item.coverImage || '/placeholder-book.png'}
-                        alt={item.title}
+                        src={coverImage || '/img/books/default-cover.jpg'}
+                        alt={title}
                         className="w-12 h-16 object-cover rounded"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = '/img/books/default-cover.jpg';
+                        }}
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{item.title}</p>
+                        <p className="text-sm font-medium text-gray-900 truncate">{title}</p>
                         <p className="text-xs text-gray-600">Qty: {item.quantity}</p>
                         <p className="text-sm font-semibold text-gray-900">
                           ₹{(price * item.quantity).toFixed(2)}
@@ -476,7 +385,7 @@ const Checkout = () => {
                   disabled={submitting || !selectedAddress}
                   className="w-full mt-6 bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                 >
-                  {submitting ? 'Processing...' : paymentMethod === 'card' ? 'Continue to Payment' : 'Place Order'}
+                  {submitting ? 'Processing...' : 'Continue to Payment'}
                 </button>
               )}
 

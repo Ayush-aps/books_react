@@ -72,12 +72,12 @@ const Dashboard = () => {
 
       // Create recent activity from orders (most recent 5)
       const recentOrders = orders
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .sort((a, b) => new Date(b.createdAt || b.orderDate) - new Date(a.createdAt || a.orderDate))
         .slice(0, 5)
         .map(order => ({
           type: 'order',
           description: `New order #${order._id.slice(-8)} - ₹${order.totalAmount.toFixed(2)}`,
-          time: new Date(order.createdAt).toLocaleString(),
+          time: (order.createdAt || order.orderDate) ? new Date(order.createdAt || order.orderDate).toLocaleString() : 'N/A',
           status: order.status
         }));
 

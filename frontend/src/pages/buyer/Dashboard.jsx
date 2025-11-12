@@ -134,7 +134,9 @@ function BuyerDashboard() {
                 <div key={order._id} className="flex items-center justify-between border-b pb-4 last:border-b-0">
                   <div className="flex-1">
                     <p className="font-medium">Order #{order._id.slice(-6)}</p>
-                    <p className="text-sm text-gray-600">{new Date(order.createdAt).toLocaleDateString()}</p>
+                    <p className="text-sm text-gray-600">
+                      {(order.createdAt || order.orderDate) ? new Date(order.createdAt || order.orderDate).toLocaleDateString() : 'N/A'}
+                    </p>
                   </div>
                   <div className="text-right">
                     <p className="font-bold">₹{order.totalAmount}</p>
