@@ -63,6 +63,9 @@ function BuyerDashboard() {
     );
   }
 
+  
+  // Stats cards shown at top of dashboard (library, orders, complaints)
+  // Configuration-based approach avoids repetitive UI code
   const statsCards = [
     {
       label: 'My Library',
