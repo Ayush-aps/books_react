@@ -26,6 +26,7 @@ function BuyerDashboard() {
     recentlyViewed: []
   });
 
+  // Fetch data immediately when component mounts
   useEffect(() => {
     fetchDashboardData();
   }, []);
