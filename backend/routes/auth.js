@@ -32,6 +32,11 @@ router.post("/register", async (req, res) => {
     errors.push({ msg: "Password should be at least 6 characters" });
   }
 
+  // Name should contain only alphabets and spaces
+  if (!/^[A-Za-z\s]+$/.test(name)) {
+    errors.push({ msg: "Name should contain only alphabets" });
+  }
+
   // Validate role
   const validRoles = ["buyer", "seller"];
   if (!validRoles.includes(role)) {
