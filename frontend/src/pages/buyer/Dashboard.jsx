@@ -1,3 +1,8 @@
+// BuyerDashboard.jsx
+// Dashboard screen for buyers showing key stats, recent activity, and quick actions.
+// Relies on backend `/api/buyer/dashboard` for aggregated buyer data.
+
+
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
