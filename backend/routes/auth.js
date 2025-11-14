@@ -16,12 +16,22 @@ const { ensureAuthenticated, forwardAuthenticated } = require("../middleware/aut
 router.post("/register", async (req, res) => {
   const { name, email, password, password2, role } = req.body;
   const errors = [];
-
+  
+  // Trim inputs
+  req.body.name = name?.trim();
+  req.body.email = email?.trim();
+  
   // Check required fields
   if (!name || !email || !password || !password2) {
     errors.push({ msg: "Please fill in all fields" });
   }
 
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    errors.push({ msg: "Invalid email format" });
+  }
+  
   // Check passwords match
   if (password !== password2) {
     errors.push({ msg: "Passwords do not match" });
