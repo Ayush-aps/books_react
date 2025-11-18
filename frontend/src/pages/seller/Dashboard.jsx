@@ -108,7 +108,7 @@ const Dashboard = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Revenue</p>
                 <p className="text-3xl font-bold text-gray-900 mt-2">
-                  ${stats.totalRevenue?.toFixed(2) || '0.00'}
+                  ₹{stats.totalRevenue?.toFixed(2) || '0.00'}
                 </p>
               </div>
               <div className="bg-purple-100 p-3 rounded-lg">
@@ -170,10 +170,10 @@ const Dashboard = () => {
                       </span>
                     </div>
                     <p className="text-sm text-gray-600">
-                      {order.items?.length || 0} item(s) • ${order.totalAmount?.toFixed(2) || '0.00'}
+                      {order.items?.length || 0} item(s) • ₹{order.totalAmount?.toFixed(2) || '0.00'}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      {new Date(order.createdAt).toLocaleDateString()}
+                      {(order.createdAt || order.orderDate) ? new Date(order.createdAt || order.orderDate).toLocaleDateString() : 'N/A'}
                     </p>
                   </div>
                 ))}

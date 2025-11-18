@@ -67,10 +67,11 @@ const Addresses = () => {
     try {
       setLoading(true);
       const response = await api.get('/buyer/addresses');
-      setAddresses(response.data.data || []);
+      setAddresses(response.data.data.addresses || []);
       setError(null);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load addresses');
+      setAddresses([]); // Ensure addresses is always an array
     } finally {
       setLoading(false);
     }

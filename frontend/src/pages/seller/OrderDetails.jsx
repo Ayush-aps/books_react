@@ -123,13 +123,13 @@ const OrderDetails = () => {
               <div>
                 <h1 className="text-2xl font-bold mb-2">Order #{order._id.slice(-8)}</h1>
                 <p className="text-blue-100">
-                  Placed on {new Date(order.createdAt).toLocaleDateString('en-US', {
+                  Placed on {(order.createdAt || order.orderDate) ? new Date(order.createdAt || order.orderDate).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',
                     hour: '2-digit',
                     minute: '2-digit'
-                  })}
+                  }) : 'N/A'}
                 </p>
               </div>
               <div className="text-right">
@@ -223,7 +223,7 @@ const OrderDetails = () => {
                       <p className="text-sm text-gray-600 mt-1">by {item.bookId?.author || 'Unknown Author'}</p>
                       <p className="text-sm text-gray-500 mt-2">Quantity: {item.quantity}</p>
                       <p className="text-lg font-semibold text-gray-900 mt-2">
-                        ${(item.price * item.quantity).toFixed(2)}
+                        ₹{(item.price * item.quantity).toFixed(2)}
                       </p>
                     </div>
                   </div>
@@ -268,11 +268,11 @@ const OrderDetails = () => {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Subtotal</span>
-                  <span className="text-gray-900">${subtotal.toFixed(2)}</span>
+                  <span className="text-gray-900">₹{subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Tax</span>
-                  <span className="text-gray-900">${tax.toFixed(2)}</span>
+                  <span className="text-gray-900">₹{tax.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Shipping</span>
@@ -281,7 +281,7 @@ const OrderDetails = () => {
                 <div className="pt-2 border-t border-gray-200">
                   <div className="flex justify-between items-center">
                     <span className="font-semibold text-gray-900">Total</span>
-                    <span className="text-xl font-bold text-gray-900">${order.totalAmount.toFixed(2)}</span>
+                    <span className="text-xl font-bold text-gray-900">₹{order.totalAmount.toFixed(2)}</span>
                   </div>
                 </div>
                 <div className="pt-2 mt-2 border-t border-gray-200">

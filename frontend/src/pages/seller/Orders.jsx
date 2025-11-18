@@ -163,17 +163,17 @@ const Orders = () => {
                     </div>
                     <div className="text-sm text-gray-600 space-y-1">
                       <p>
-                        <span className="font-medium">Date:</span> {new Date(order.createdAt).toLocaleDateString('en-US', {
+                        <span className="font-medium">Date:</span> {(order.createdAt || order.orderDate) ? new Date(order.createdAt || order.orderDate).toLocaleDateString('en-US', {
                           year: 'numeric',
                           month: 'long',
                           day: 'numeric'
-                        })}
+                        }) : 'N/A'}
                       </p>
                       <p>
                         <span className="font-medium">Items:</span> {order.items.length} book{order.items.length > 1 ? 's' : ''}
                       </p>
                       <p>
-                        <span className="font-medium">Total:</span> <span className="text-lg font-semibold text-gray-900">${order.totalAmount.toFixed(2)}</span>
+                        <span className="font-medium">Total:</span> <span className="text-lg font-semibold text-gray-900">₹{order.totalAmount.toFixed(2)}</span>
                       </p>
                       <p>
                         <span className="font-medium">Buyer:</span> {order.userId?.name || 'N/A'}
@@ -195,7 +195,7 @@ const Orders = () => {
                             )}
                             <div className="flex-1">
                               <p className="font-medium text-gray-900">{item.bookId?.title || 'Unknown Book'}</p>
-                              <p className="text-gray-600">Qty: {item.quantity} × ${item.price.toFixed(2)}</p>
+                              <p className="text-gray-600">Qty: {item.quantity} × ₹{item.price.toFixed(2)}</p>
                             </div>
                           </div>
                         ))}

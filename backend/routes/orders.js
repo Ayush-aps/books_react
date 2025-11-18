@@ -34,8 +34,8 @@ router.post('/create-payment-intent', ensureAuthenticated, ensureBuyer, async (r
 
     // Create a PaymentIntent with the order amount and currency
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount * 100), // Stripe expects amount in cents
-      currency: 'usd',
+      amount: Math.round(amount * 100), // Stripe expects amount in paise (INR smallest unit)
+      currency: 'inr',
       automatic_payment_methods: {
         enabled: true,
       },

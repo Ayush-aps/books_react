@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
 
@@ -23,12 +23,13 @@ function BuyerDashboard() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/buyer/dashboard');
+      const response = await api.get('/buyer/dashboard');
       setDashboardData(response.data);
       setError('');
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
-      setError(err.response?.data?.message || 'Failed to load dashboard data');
+      console.error('Error response:', err.response);
+      setError(err.response?.data?.message || err.response?.data?.error || 'Failed to load dashboard data');
     } finally {
       setLoading(false);
     }
@@ -133,10 +134,12 @@ function BuyerDashboard() {
                 <div key={order._id} className="flex items-center justify-between border-b pb-4 last:border-b-0">
                   <div className="flex-1">
                     <p className="font-medium">Order #{order._id.slice(-6)}</p>
-                    <p className="text-sm text-gray-600">{new Date(order.createdAt).toLocaleDateString()}</p>
+                    <p className="text-sm text-gray-600">
+                      {(order.createdAt || order.orderDate) ? new Date(order.createdAt || order.orderDate).toLocaleDateString() : 'N/A'}
+                    </p>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold">₹{order.total}</p>
+                    <p className="font-bold">₹{order.totalAmount}</p>
                     <span className={`text-xs px-2 py-1 rounded ${
                       order.status === 'delivered' ? 'bg-green-100 text-green-800' :
                       order.status === 'shipped' ? 'bg-blue-100 text-blue-800' :

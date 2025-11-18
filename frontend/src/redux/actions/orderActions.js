@@ -57,12 +57,12 @@ export const fetchOrderDetails = (orderId) => async (dispatch) => {
   try {
     dispatch({ type: FETCH_ORDER_DETAILS_REQUEST });
 
-    const response = await api.get(`/buyer/orders/${orderId}`);
+    const response = await api.get(`/orders/${orderId}`);
 
     if (response.data.success) {
       dispatch({
         type: FETCH_ORDER_DETAILS_SUCCESS,
-        payload: response.data.data.order,
+        payload: response.data.data || response.data.order,
       });
     } else {
       dispatch({
@@ -85,14 +85,14 @@ export const createOrder = (orderData) => async (dispatch) => {
   try {
     dispatch({ type: CREATE_ORDER_REQUEST });
 
-    const response = await api.post('/buyer/orders', orderData);
+    const response = await api.post('/orders', orderData);
 
     if (response.data.success) {
       dispatch({
         type: CREATE_ORDER_SUCCESS,
-        payload: response.data.data.order,
+        payload: response.data.data,
       });
-      return { success: true, order: response.data.data.order };
+      return { success: true, order: response.data.data };
     } else {
       dispatch({
         type: CREATE_ORDER_FAILURE,

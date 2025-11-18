@@ -138,11 +138,11 @@ const BookDetails = () => {
               <div className="border-t border-b border-gray-200 py-4">
                 <div className="flex items-baseline gap-3">
                   <span className="text-3xl font-bold text-gray-900">
-                    ${discountedPrice.toFixed(2)}
+                    ₹{discountedPrice.toFixed(2)}
                   </span>
                   {book.discountPercentage > 0 && (
                     <span className="text-xl text-gray-500 line-through">
-                      ${book.price.toFixed(2)}
+                      ₹{book.price.toFixed(2)}
                     </span>
                   )}
                 </div>

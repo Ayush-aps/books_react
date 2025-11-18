@@ -29,7 +29,6 @@ const publicRoutes = require("./routes/public");
 const { router: subscriptionRouter } = require('./routes/subscription');
 const libraryRouter = require('./routes/library');
 const videosRouter = require('./routes/videos');
-const booksRoutes = require("./routes/books");
 const ordersRoutes = require("./routes/orders");
 
 // Import database connection
@@ -113,7 +112,6 @@ app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/buyer", buyerRoutes);
 app.use("/api/seller", sellerRoutes);
 app.use("/api/admin", adminRoutes);
-app.use("/api/books", booksRoutes);
 app.use("/api/orders", ordersRoutes);
 
 // Health check endpoint

@@ -28,8 +28,8 @@ const PaymentSuccess = () => {
   const fetchOrderDetails = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/buyer/orders/${orderId}`);
-      setOrder(response.data?.data?.order || response.data?.order || response.data);
+      const response = await api.get(`/orders/${orderId}`);
+      setOrder(response.data?.data || response.data?.order || response.data);
     } catch (err) {
       console.error('Failed to load order details:', err);
     } finally {
@@ -84,11 +84,11 @@ const PaymentSuccess = () => {
               <div>
                 <p className="text-sm text-gray-600 mb-1">Order Date</p>
                 <p className="font-semibold text-gray-900">
-                  {new Date(order.createdAt).toLocaleDateString('en-US', {
+                  {(order.createdAt || order.orderDate) ? new Date(order.createdAt || order.orderDate).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric'
-                  })}
+                  }) : 'N/A'}
                 </p>
               </div>
               <div>
@@ -97,7 +97,7 @@ const PaymentSuccess = () => {
               </div>
               <div>
                 <p className="text-sm text-gray-600 mb-1">Total Amount</p>
-                <p className="font-semibold text-gray-900 text-xl">${order.totalAmount.toFixed(2)}</p>
+                <p className="font-semibold text-gray-900 text-xl">₹{order.totalAmount.toFixed(2)}</p>
               </div>
             </div>
 
@@ -120,19 +120,23 @@ const PaymentSuccess = () => {
               <div className="space-y-4">
                 {order.items.map((item, index) => (
                   <div key={index} className="flex items-center gap-4">
-                    {item.book.coverImage && (
+                    {(item.book?.coverImage || item.coverImage) && (
                       <img
-                        src={item.book.coverImage}
-                        alt={item.book.title}
+                        src={item.book?.coverImage || item.coverImage}
+                        alt={item.book?.title || item.title}
                         className="w-16 h-20 object-cover rounded"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = '/img/books/default-cover.jpg';
+                        }}
                       />
                     )}
                     <div className="flex-1">
-                      <h4 className="font-semibold text-gray-900">{item.book.title}</h4>
-                      <p className="text-sm text-gray-600">by {item.book.author}</p>
+                      <h4 className="font-semibold text-gray-900">{item.book?.title || item.title}</h4>
+                      <p className="text-sm text-gray-600">by {item.book?.author || item.author}</p>
                       <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
                     </div>
-                    <p className="font-semibold text-gray-900">${(item.price * item.quantity).toFixed(2)}</p>
+                    <p className="font-semibold text-gray-900">₹{(item.price * item.quantity).toFixed(2)}</p>
                   </div>
                 ))}
               </div>

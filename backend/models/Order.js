@@ -33,7 +33,7 @@ const OrderSchema = new mongoose.Schema({
   },
   orderId: {
     type: String,
-    required: true,
+    required: false,
     unique: true,
   },
   orderDate: {
@@ -123,6 +123,8 @@ const OrderSchema = new mongoose.Schema({
     },
     note: String
   }]
+}, {
+  timestamps: true  // This will add createdAt and updatedAt fields
 });
 
 // Generate orderId before saving

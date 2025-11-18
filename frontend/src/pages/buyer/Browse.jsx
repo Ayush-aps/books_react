@@ -5,6 +5,7 @@
 
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { fetchBooks, setFilters, clearFilters } from '../../redux/actions/bookActions';
 import { addToCart } from '../../redux/actions/cartActions';
 import BookCard from '../../components/BookCard';
@@ -15,8 +16,12 @@ import ErrorMessage from '../../components/ErrorMessage';
 
 const Browse = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { books, loading, error, filters, pagination, genres } = useSelector(state => state.books);
+  const { user } = useSelector(state => state.auth);
   const [localFilters, setLocalFilters] = useState(filters);
+  const [addingToCart, setAddingToCart] = useState(null);
+  const [cartMessage, setCartMessage] = useState(null);
 
   useEffect(() => {
     // Fetch books on mount and when filters change
@@ -45,16 +50,55 @@ const Browse = () => {
   };
 
   const handleAddToCart = async (bookId) => {
-    const result = await dispatch(addToCart(bookId, 1));
-    if (result.success) {
-      // Show success feedback (could add a toast notification here)
-      console.log('Added to cart successfully');
+    // Check if user is authenticated
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    try {
+      setAddingToCart(bookId);
+      const result = await dispatch(addToCart(bookId, 1));
+      
+      if (result.success) {
+        setCartMessage({ type: 'success', text: 'Added to cart successfully!' });
+        setTimeout(() => setCartMessage(null), 3000);
+      } else {
+        setCartMessage({ type: 'error', text: result.message || 'Failed to add to cart' });
+        setTimeout(() => setCartMessage(null), 3000);
+      }
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      setCartMessage({ type: 'error', text: 'An error occurred. Please try again.' });
+      setTimeout(() => setCartMessage(null), 3000);
+    } finally {
+      setAddingToCart(null);
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Cart Message Toast */}
+        {cartMessage && (
+          <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 ${
+            cartMessage.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+          } text-white`}>
+            <div className="flex items-center gap-2">
+              {cartMessage.type === 'success' ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              )}
+              <span>{cartMessage.text}</span>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Browse Books</h1>
@@ -107,7 +151,12 @@ const Browse = () => {
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {books.map((book) => (
-                    <BookCard key={book._id} book={book} onAddToCart={handleAddToCart} />
+                    <BookCard 
+                      key={book._id} 
+                      book={book} 
+                      onAddToCart={handleAddToCart}
+                      isAddingToCart={addingToCart === book._id}
+                    />
                   ))}
                 </div>
 
