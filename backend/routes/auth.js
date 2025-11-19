@@ -14,12 +14,14 @@ const { ensureAuthenticated, forwardAuthenticated } = require("../middleware/aut
  * @access  Public
  */
 router.post("/register", async (req, res) => {
-  const { name, email, password, password2, role } = req.body;
   const errors = [];
-  
+
   // Trim inputs
-  req.body.name = name?.trim();
-  req.body.email = email?.trim();
+  req.body.name = req.body.name?.trim();
+  req.body.email = req.body.email?.trim();
+
+  // Destructure trimmed values
+  const { name, email, password, password2, role } = req.body;
   
   // Check required fields
   if (!name || !email || !password || !password2) {
