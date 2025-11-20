@@ -9,6 +9,7 @@ import {
 } from "motion/react";
 
 import React, { useRef, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 
 
 export const Navbar = ({
@@ -82,6 +83,7 @@ export const NavItems = ({
   onItemClick
 }) => {
   const [hovered, setHovered] = useState(null);
+  const location = useLocation(); // Get the current URL path
 
   return (
     <motion.div
@@ -90,21 +92,42 @@ export const NavItems = ({
         "absolute inset-0 hidden flex-1 flex-row items-center justify-center space-x-2 text-sm font-medium text-zinc-600 transition duration-200 hover:text-zinc-800 lg:flex lg:space-x-2",
         className
       )}>
-      {items.map((item, idx) => (
-        <a
-          onMouseEnter={() => setHovered(idx)}
-          onClick={onItemClick}
-          className="relative px-4 py-2 text-neutral-600 dark:text-neutral-300"
-          key={`link-${idx}`}
-          href={item.link}>
-          {hovered === idx && (
-            <motion.div
-              layoutId="hovered"
-              className="absolute inset-0 h-full w-full rounded-full bg-gray-100 dark:bg-neutral-800" />
-          )}
-          <span className="relative z-20">{item.name}</span>
-        </a>
-      ))}
+      {items.map((item, idx) => {
+        // Check if the current path matches the link
+        const isActive = location.pathname === item.link;
+
+        return (
+          <Link
+            key={`link-${idx}`}
+            to={item.link} // Use 'to' instead of 'href'
+            onMouseEnter={() => setHovered(idx)}
+            onClick={onItemClick}
+            className={cn(
+              // 1. Base styles: Rounded, remove default blue border/outline
+              "relative px-4 py-2 outline-none focus:outline-none ring-0 rounded-full transition-colors duration-200",
+              "text-neutral-600 dark:text-neutral-300",
+
+              // 2. Conditional Styling:
+              // If Active: Darker background, darker text
+              // If Inactive: Add a click effect (active:) for feedback
+              isActive
+                ? "bg-neutral-200 dark:bg-neutral-700 text-neutral-900 dark:text-white"
+                : "active:bg-neutral-200 dark:active:bg-neutral-700"
+            )}
+          >
+            {/* Hover Animation Background */}
+            {hovered === idx && (
+              <motion.div
+                layoutId="hovered"
+                className="absolute inset-0 h-full w-full rounded-full bg-gray-100 dark:bg-neutral-800" 
+              />
+            )}
+            
+            {/* Link Text */}
+            <span className="relative z-20">{item.name}</span>
+          </Link>
+        );
+      })}
     </motion.div>
   );
 };
