@@ -144,28 +144,63 @@ exports.getCart = async (req, res) => {
 // @access  Private (Buyer)
 exports.saveForLater = async (req, res) => {
   try {
-    const itemId = req.params.itemId;
-    const cart = await Cart.findOne({ user: req.user._id });
+    const id = req.params.itemId; // Could be cart item ID or Book ID
+    let cart = await Cart.findOne({ user: req.user._id });
 
     if (!cart) {
-      return res.status(404).json({
-        success: false,
-        message: "Cart not found",
+      cart = new Cart({
+        user: req.user._id,
+        items: [],
+        savedItems: [],
+        totalAmount: 0
       });
     }
 
-    const itemIndex = cart.items.findIndex(item => item._id.toString() === itemId);
+    // 1. Try to find item in cart by Item ID
+    let itemIndex = cart.items.findIndex(item => item._id.toString() === id);
 
+    // 2. If not found, try to find item in cart by Book ID
     if (itemIndex === -1) {
-      return res.status(404).json({
-        success: false,
-        message: "Item not found in cart",
-      });
+      itemIndex = cart.items.findIndex(item => item.book.toString() === id);
     }
 
-    const item = cart.items[itemIndex];
-    cart.savedItems.push(item);
-    cart.items.splice(itemIndex, 1);
+    if (itemIndex !== -1) {
+      // Found in cart, move to saved
+      const item = cart.items[itemIndex];
+      
+      // Check if already in saved (by book ID) to avoid duplicates
+      const savedIndex = cart.savedItems.findIndex(saved => saved.book.toString() === item.book.toString());
+      
+      if (savedIndex === -1) {
+        cart.savedItems.push(item);
+      }
+      
+      // Remove from cart
+      cart.items.splice(itemIndex, 1);
+    } else {
+      // 3. Not in cart. Check if it's a valid Book ID to add directly to saved
+      
+      // Check if already in saved
+      const savedIndex = cart.savedItems.findIndex(saved => saved.book.toString() === id);
+      
+      if (savedIndex === -1) {
+        // Verify it's a book
+        const book = await Book.findById(id);
+        if (book) {
+          cart.savedItems.push({
+            book: book._id,
+            quantity: 1,
+            price: book.discountPrice || book.price
+          });
+        } else {
+          return res.status(404).json({
+            success: false,
+            message: "Item or Book not found",
+          });
+        }
+      }
+      // If already in saved, we just return success
+    }
 
     await cart.save();
 

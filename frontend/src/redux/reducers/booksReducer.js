@@ -19,6 +19,7 @@ import {
 const initialState = {
   books: [],
   currentBook: null,
+  recommendedBooks: [],
   genres: [],
   loading: false,
   error: null,
@@ -76,7 +77,8 @@ export default function booksReducer(state = initialState, action) {
       return {
         ...state,
         loading: false,
-        currentBook: action.payload,
+        currentBook: action.payload.book,
+        recommendedBooks: action.payload.recommendedBooks || [],
         error: null,
       };
 

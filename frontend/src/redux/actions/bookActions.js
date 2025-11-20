@@ -76,7 +76,10 @@ export const fetchBookDetails = (bookId) => async (dispatch) => {
     if (response.data.success) {
       dispatch({
         type: FETCH_BOOK_DETAILS_SUCCESS,
-        payload: response.data.data.book,
+        payload: {
+          book: response.data.data.book,
+          recommendedBooks: response.data.data.recommendedBooks,
+        },
       });
     } else {
       dispatch({
