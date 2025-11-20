@@ -504,6 +504,16 @@
   padding: var(--space-5) var(--space-4) var(--space-2);
 }
 
+/* Hide placeholder by default for floating labels */
+.form-floating .form-control::placeholder {
+  color: transparent;
+}
+
+/* Show placeholder when focused */
+.form-floating .form-control:focus::placeholder {
+  color: var(--text-light);
+}
+
 .form-floating label {
   position: absolute;
   top: 0;
