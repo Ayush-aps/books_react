@@ -1,15 +1,20 @@
 /**
- * Home Page
- * Public landing page with featured, new, and trending books
+ * Home Page - Premium Landing Experience
+ * Curated book discovery with hero carousel and collections
  */
 
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { motion, AnimatePresence } from 'framer-motion';
 import api from '../services/api';
 import BookCard from '../components/BookCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
+import Button from '../components/Button';
+import Card from '../components/Card';
+import Badge from '../components/Badge';
+import { fadeInUp, staggerContainer, staggerItem, imageZoom } from '../utils/animations';
 
 const Home = () => {
   const { isAuthenticated, user } = useSelector(state => state.auth);
@@ -24,25 +29,28 @@ const Home = () => {
 
   const heroSlides = [
     {
-      title: "Discover Your Next Adventure",
-      subtitle: "Thousands of books at your fingertips",
+      title: "Discover Your Next Great Read",
+      subtitle: "Curated selection of exceptional books from verified sellers",
       image: "https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=1200&h=600&fit=crop",
-      cta: "Browse Books",
-      link: "/buyer/browse"
+      cta: "Explore Collection",
+      link: "/buyer/browse",
+      theme: "primary"
     },
     {
-      title: "Sell Your Books",
-      subtitle: "Turn your unused books into cash",
+      title: "Share Your Literary Treasures",
+      subtitle: "Turn your beloved books into opportunities for others",
       image: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1200&h=600&fit=crop",
       cta: "Start Selling",
-      link: "/seller/upload"
+      link: "/seller/upload",
+      theme: "secondary"
     },
     {
-      title: "Premium Subscription",
-      subtitle: "Unlimited access to our digital library",
+      title: "Premium Reading Experience",
+      subtitle: "Unlimited access to our digital library and exclusive content",
       image: "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=1200&h=600&fit=crop",
       cta: "View Plans",
-      link: "/pricing"
+      link: "/pricing",
+      theme: "accent"
     }
   ];
 
@@ -58,10 +66,17 @@ const Home = () => {
     try {
       setLoading(true);
       const response = await api.get('/public/home');
-      setData(response.data.data);
+      const apiData = response.data.data;
+      // Map backend field names to frontend expectations
+      setData({
+        featuredBooks: apiData.featuredBooks || [],
+        newBooks: apiData.newArrivals || [],
+        trendingBooks: apiData.trendingBooks || []
+      });
       setError(null);
     } catch (err) {
-      setError(err.message || 'Failed to load home page data');
+      console.error('Home page error:', err);
+      setError(err.response?.data?.message || err.message || 'Failed to load home page data');
     } finally {
       setLoading(false);
     }
@@ -84,61 +99,87 @@ const Home = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero Carousel */}
-      <div className="relative h-[500px] md:h-[600px] overflow-hidden">
-        {heroSlides.map((slide, index) => (
-          <div
-            key={index}
-            className={`absolute inset-0 transition-opacity duration-1000 ${
-              index === currentSlide ? 'opacity-100' : 'opacity-0'
-            }`}
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-black/50 z-10" />
-            <img
-              src={slide.image}
-              alt={slide.title}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 z-20 flex items-center">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-                <div className="max-w-2xl">
-                  <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 animate-fade-in">
-                    {slide.title}
-                  </h1>
-                  <p className="text-xl md:text-2xl text-gray-200 mb-8">
-                    {slide.subtitle}
-                  </p>
-                  <Link
-                    to={slide.link}
-                    className="inline-block px-8 py-4 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition-colors shadow-lg"
-                  >
-                    {slide.cta} →
-                  </Link>
+    <div className="min-h-screen bg-white">
+      {/* Premium Hero Carousel */}
+      <section className="relative h-[600px] md:h-[700px] overflow-hidden bg-charcoal z-0">
+        <AnimatePresence mode="wait">
+          {heroSlides.map((slide, index) => (
+            index === currentSlide && (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, scale: 1.1 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.7 }}
+                className="absolute inset-0"
+              >
+                {/* Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-r from-charcoal via-charcoal/80 to-transparent z-10" />
+                
+                {/* Background Image */}
+                <motion.img
+                  variants={imageZoom}
+                  initial="initial"
+                  animate="animate"
+                  src={slide.image}
+                  alt={slide.title}
+                  className="w-full h-full object-cover"
+                />
+                
+                {/* Content */}
+                <div className="absolute inset-0 z-20 flex items-center">
+                  <div className="container-custom">
+                    <motion.div
+                      initial={{ opacity: 0, y: 30 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2, duration: 0.6 }}
+                      className="max-w-2xl"
+                    >
+                      <Badge variant="brown" size="lg" className="mb-6">
+                        Featured Collection
+                      </Badge>
+                      <h1 className="heading-1 text-white mb-6">
+                        {slide.title}
+                      </h1>
+                      <p className="text-xl md:text-2xl text-cream/90 mb-8 leading-relaxed">
+                        {slide.subtitle}
+                      </p>
+                      <Link to={slide.link}>
+                        <Button variant="primary" size="lg" className="shadow-lg">
+                          {slide.cta}
+                          <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                          </svg>
+                        </Button>
+                      </Link>
+                    </motion.div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        ))}
+              </motion.div>
+            )
+          ))}
+        </AnimatePresence>
         
-        {/* Carousel Indicators */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-30 flex gap-3">
+        {/* Elegant Carousel Indicators */}
+        <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 z-30 flex gap-3">
           {heroSlides.map((_, index) => (
             <button
               key={index}
               onClick={() => setCurrentSlide(index)}
-              className={`w-3 h-3 rounded-full transition-all ${
-                index === currentSlide ? 'bg-white w-8' : 'bg-white/50'
+              className={`h-1 rounded-full transition-all ${
+                index === currentSlide 
+                  ? 'bg-accent-brown w-12' 
+                  : 'bg-white/40 w-8 hover:bg-white/60'
               }`}
               aria-label={`Go to slide ${index + 1}`}
             />
           ))}
         </div>
 
-        {/* Navigation Arrows */}
+        {/* Premium Navigation Arrows */}
         <button
           onClick={() => setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length)}
-          className="absolute left-4 top-1/2 -translate-y-1/2 z-30 bg-white/20 hover:bg-white/30 text-white p-3 rounded-full backdrop-blur-sm transition-all"
+          className="absolute left-8 top-1/2 -translate-y-1/2 z-30 w-12 h-12 bg-white/10 backdrop-blur-md hover:bg-white/20 text-white rounded-full transition-all flex items-center justify-center"
           aria-label="Previous slide"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -147,200 +188,326 @@ const Home = () => {
         </button>
         <button
           onClick={() => setCurrentSlide((prev) => (prev + 1) % heroSlides.length)}
-          className="absolute right-4 top-1/2 -translate-y-1/2 z-30 bg-white/20 hover:bg-white/30 text-white p-3 rounded-full backdrop-blur-sm transition-all"
+          className="absolute right-8 top-1/2 -translate-y-1/2 z-30 w-12 h-12 bg-white/10 backdrop-blur-md hover:bg-white/20 text-white rounded-full transition-all flex items-center justify-center"
           aria-label="Next slide"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </button>
-      </div>
+      </section>
 
       {/* Quick Actions for Authenticated Users */}
       {isAuthenticated && user?.role === 'buyer' && (
-        <div className="bg-gradient-to-r from-primary-50 to-secondary-50 border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Link to="/buyer/browse" className="flex flex-col items-center p-4 bg-white rounded-lg hover:shadow-lg hover:scale-105 transition-all">
-                <svg className="w-8 h-8 text-primary-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <span className="text-sm font-medium text-gray-900">Browse Books</span>
-              </Link>
-              <Link to="/buyer/library" className="flex flex-col items-center p-4 bg-white rounded-lg hover:shadow-lg hover:scale-105 transition-all">
-                <svg className="w-8 h-8 text-secondary-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                </svg>
-                <span className="text-sm font-medium text-gray-900">My Library</span>
-              </Link>
-              <Link to="/buyer/video-feed" className="flex flex-col items-center p-4 bg-white rounded-lg hover:shadow-lg hover:scale-105 transition-all">
-                <svg className="w-8 h-8 text-purple-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span className="text-sm font-medium text-gray-900">Video Reviews</span>
-              </Link>
-              <Link to="/buyer/cart" className="flex flex-col items-center p-4 bg-white rounded-lg hover:shadow-lg hover:scale-105 transition-all">
-                <svg className="w-8 h-8 text-primary-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-                <span className="text-sm font-medium text-gray-900">Cart</span>
-              </Link>
-            </div>
+        <motion.section 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-cream border-b border-charcoal/10"
+        >
+          <div className="container-custom py-12">
+            <motion.div 
+              variants={staggerContainer}
+              initial="hidden"
+              animate="visible"
+              className="grid grid-cols-2 md:grid-cols-4 gap-4"
+            >
+              <motion.div variants={staggerItem}>
+                <Link to="/buyer/browse">
+                  <Card hoverable padding="lg" className="text-center group">
+                    <div className="w-12 h-12 bg-accent-brown/10 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-accent-brown/20 transition-colors">
+                      <svg className="w-6 h-6 text-accent-brown" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                    </div>
+                    <span className="text-sm font-medium text-text-primary">Browse Books</span>
+                  </Card>
+                </Link>
+              </motion.div>
+
+              <motion.div variants={staggerItem}>
+                <Link to="/buyer/library">
+                  <Card hoverable padding="lg" className="text-center group">
+                    <div className="w-12 h-12 bg-accent-green/10 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-accent-green/20 transition-colors">
+                      <svg className="w-6 h-6 text-accent-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                      </svg>
+                    </div>
+                    <span className="text-sm font-medium text-text-primary">My Library</span>
+                  </Card>
+                </Link>
+              </motion.div>
+
+              <motion.div variants={staggerItem}>
+                <Link to="/buyer/video-feed">
+                  <Card hoverable padding="lg" className="text-center group">
+                    <div className="w-12 h-12 bg-info/10 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-info/20 transition-colors">
+                      <svg className="w-6 h-6 text-info" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <span className="text-sm font-medium text-text-primary">Video Reviews</span>
+                  </Card>
+                </Link>
+              </motion.div>
+
+              <motion.div variants={staggerItem}>
+                <Link to="/buyer/cart">
+                  <Card hoverable padding="lg" className="text-center group">
+                    <div className="w-12 h-12 bg-accent-brown/10 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-accent-brown/20 transition-colors">
+                      <svg className="w-6 h-6 text-accent-brown" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    </div>
+                    <span className="text-sm font-medium text-text-primary">Shopping Cart</span>
+                  </Card>
+                </Link>
+              </motion.div>
+            </motion.div>
           </div>
-        </div>
+        </motion.section>
       )}
 
-      {/* Features Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow p-8 text-center group">
-            <div className="w-16 h-16 bg-primary-100 group-hover:bg-primary-200 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors">
-              <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-              </svg>
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Wide Selection</h3>
-            <p className="text-gray-600">
-              Browse thousands of books across multiple genres from verified sellers.
+      {/* Features Section - Premium */}
+      <section className="py-16 md:py-24 bg-white">
+        <div className="container-custom">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="heading-2 mb-4">Why Choose Bookish</h2>
+            <p className="body-lg text-text-secondary max-w-2xl mx-auto">
+              Experience a marketplace built for book lovers, by book lovers
             </p>
-          </div>
+          </motion.div>
 
-          <div className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow p-8 text-center group">
-            <div className="w-16 h-16 bg-secondary-100 group-hover:bg-secondary-200 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors">
-              <svg className="w-8 h-8 text-secondary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Trusted Marketplace</h3>
-            <p className="text-gray-600">
-              All books are reviewed and verified before listing to ensure quality.
-            </p>
-          </div>
+          <motion.div 
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-8"
+          >
+            <motion.div variants={staggerItem}>
+              <Card elevated hoverable padding="lg" className="text-center h-full">
+                <div className="w-16 h-16 bg-accent-brown/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-8 h-8 text-accent-brown" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                </div>
+                <h3 className="heading-4 mb-3">Curated Collection</h3>
+                <p className="body text-text-secondary">
+                  Browse thousands of hand-picked books across every genre, carefully selected by our community of readers.
+                </p>
+              </Card>
+            </motion.div>
 
-          <div className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow p-8 text-center group">
-            <div className="w-16 h-16 bg-purple-100 group-hover:bg-purple-200 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors">
-              <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Fast Delivery</h3>
-            <p className="text-gray-600">
-              Quick processing and reliable shipping to get your books to you fast.
-            </p>
-          </div>
+            <motion.div variants={staggerItem}>
+              <Card elevated hoverable padding="lg" className="text-center h-full">
+                <div className="w-16 h-16 bg-accent-green/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-8 h-8 text-accent-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                </div>
+                <h3 className="heading-4 mb-3">Trusted Platform</h3>
+                <p className="body text-text-secondary">
+                  All sellers are verified and every book is quality-checked to ensure you get exactly what you expect.
+                </p>
+              </Card>
+            </motion.div>
+
+            <motion.div variants={staggerItem}>
+              <Card elevated hoverable padding="lg" className="text-center h-full">
+                <div className="w-16 h-16 bg-info/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-8 h-8 text-info" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <h3 className="heading-4 mb-3">Swift Delivery</h3>
+                <p className="body text-text-secondary">
+                  Fast processing and reliable shipping partners ensure your books arrive quickly and in perfect condition.
+                </p>
+              </Card>
+            </motion.div>
+          </motion.div>
         </div>
-      </div>
+      </section>
 
       {/* Featured Books */}
       {data.featuredBooks && data.featuredBooks.length > 0 && (
-        <div className="bg-white py-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h2 className="text-3xl font-bold text-gray-900">Featured Books</h2>
-                <p className="text-gray-600 mt-2">Hand-picked selections just for you</p>
-              </div>
-              <Link
-                to="/books"
-                className="text-primary-600 hover:text-primary-700 font-semibold flex items-center gap-2 transition-colors"
+        <section className="py-16 md:py-24 bg-cream">
+          <div className="container-custom">
+            <div className="flex items-center justify-between mb-12">
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
               >
-                View All
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
+                <h2 className="heading-2 mb-2">Featured Collection</h2>
+                <p className="body-lg text-text-secondary">Handpicked selections curated just for you</p>
+              </motion.div>
+              <Link to="/books">
+                <Button variant="outline" size="md">
+                  View All
+                  <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </Button>
               </Link>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+            >
               {data.featuredBooks.slice(0, 4).map(book => (
-                <BookCard key={book._id} book={book} />
+                <motion.div key={book._id} variants={staggerItem}>
+                  <BookCard book={book} />
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
-        </div>
+        </section>
       )}
 
       {/* New Arrivals */}
       {data.newBooks && data.newBooks.length > 0 && (
-        <div className="py-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h2 className="text-3xl font-bold text-gray-900">New Arrivals</h2>
-                <p className="text-gray-600 mt-2">Recently added books</p>
-              </div>
-              <Link
-                to="/books?sort=newest"
-                className="text-primary-600 hover:text-primary-700 font-semibold flex items-center gap-2 transition-colors"
+        <section className="py-16 md:py-24 bg-white">
+          <div className="container-custom">
+            <div className="flex items-center justify-between mb-12">
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
               >
-                View All
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
+                <h2 className="heading-2 mb-2">New Arrivals</h2>
+                <p className="body-lg text-text-secondary">Discover the latest additions to our collection</p>
+              </motion.div>
+              <Link to="/books?sort=newest">
+                <Button variant="outline" size="md">
+                  View All
+                  <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </Button>
               </Link>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+            >
               {data.newBooks.slice(0, 4).map(book => (
-                <BookCard key={book._id} book={book} />
+                <motion.div key={book._id} variants={staggerItem}>
+                  <BookCard book={book} />
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
-        </div>
+        </section>
       )}
 
       {/* Trending Books */}
       {data.trendingBooks && data.trendingBooks.length > 0 && (
-        <div className="bg-white py-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h2 className="text-3xl font-bold text-gray-900">Trending Now</h2>
-                <p className="text-gray-600 mt-2">Most popular books this week</p>
-              </div>
-              <Link
-                to="/books?sort=rating"
-                className="text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-2"
+        <section className="py-16 md:py-24 bg-cream">
+          <div className="container-custom">
+            <div className="flex items-center justify-between mb-12">
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
               >
-                View All
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
+                <h2 className="heading-2 mb-2">Trending Now</h2>
+                <p className="body-lg text-text-secondary">Most popular books this week</p>
+              </motion.div>
+              <Link to="/books?sort=rating">
+                <Button variant="outline" size="md">
+                  View All
+                  <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </Button>
               </Link>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+            >
               {data.trendingBooks.slice(0, 4).map(book => (
-                <BookCard key={book._id} book={book} />
+                <motion.div key={book._id} variants={staggerItem}>
+                  <BookCard book={book} />
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
-        </div>
+        </section>
       )}
 
       {/* CTA Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Ready to Start Your Reading Journey?
-          </h2>
-          <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            Join thousands of book lovers. Browse our collection or start selling your own books today.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              to="/auth/register"
-              className="inline-block px-8 py-4 bg-white text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
+      <motion.section
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        className="relative py-24 bg-gradient-to-br from-charcoal via-charcoal to-accent-brown overflow-hidden"
+      >
+        {/* Decorative Elements */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 left-0 w-96 h-96 bg-accent-brown rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-accent-green rounded-full blur-3xl"></div>
+        </div>
+
+        <div className="container-custom relative z-10">
+          <div className="max-w-3xl mx-auto text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
             >
-              Sign Up Now
-            </Link>
-            <Link
-              to="/about"
-              className="inline-block px-8 py-4 bg-transparent text-white rounded-lg font-semibold hover:bg-white/10 transition-colors border-2 border-white"
+              <Badge variant="success" size="lg" className="mb-6">
+                Join Our Community
+              </Badge>
+              <h2 className="heading-1 text-cream mb-6">
+                Ready to Start Your Reading Journey?
+              </h2>
+              <p className="body-xl text-cream/80 mb-10 max-w-2xl mx-auto">
+                Join thousands of book lovers. Browse our curated collection or start sharing your own literary treasures today.
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.4 }}
+              className="flex flex-col sm:flex-row gap-4 justify-center"
             >
-              Learn More
-            </Link>
+              <Link to="/auth/register">
+                <Button variant="primary" size="lg">
+                  Sign Up Now
+                  <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </Button>
+              </Link>
+              <Link to="/about">
+                <Button variant="outline" size="lg" className="border-cream text-cream hover:bg-cream/10">
+                  Learn More
+                </Button>
+              </Link>
+            </motion.div>
           </div>
         </div>
-      </div>
+      </motion.section>
     </div>
   );
 };

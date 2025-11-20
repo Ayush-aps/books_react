@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { fetchBooks, setFilters, clearFilters } from '../../redux/actions/bookActions';
 import { addToCart } from '../../redux/actions/cartActions';
 import BookCard from '../../components/BookCard';
@@ -13,15 +13,14 @@ import Filter from '../../components/Filter';
 import Pagination from '../../components/Pagination';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
+import Button from '../../components/Button';
+import Badge from '../../components/Badge';
+import { fadeInUp, staggerContainer, staggerItem } from '../../utils/animations';
 
 const Browse = () => {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const { books, loading, error, filters, pagination, genres } = useSelector(state => state.books);
-  const { user } = useSelector(state => state.auth);
   const [localFilters, setLocalFilters] = useState(filters);
-  const [addingToCart, setAddingToCart] = useState(null);
-  const [cartMessage, setCartMessage] = useState(null);
 
   useEffect(() => {
     // Fetch books on mount and when filters change
@@ -50,67 +49,32 @@ const Browse = () => {
   };
 
   const handleAddToCart = async (bookId) => {
-    // Check if user is authenticated
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-
-    try {
-      setAddingToCart(bookId);
-      const result = await dispatch(addToCart(bookId, 1));
-      
-      if (result.success) {
-        setCartMessage({ type: 'success', text: 'Added to cart successfully!' });
-        setTimeout(() => setCartMessage(null), 3000);
-      } else {
-        setCartMessage({ type: 'error', text: result.message || 'Failed to add to cart' });
-        setTimeout(() => setCartMessage(null), 3000);
-      }
-    } catch (error) {
-      console.error('Error adding to cart:', error);
-      setCartMessage({ type: 'error', text: 'An error occurred. Please try again.' });
-      setTimeout(() => setCartMessage(null), 3000);
-    } finally {
-      setAddingToCart(null);
+    const result = await dispatch(addToCart(bookId, 1));
+    if (result.success) {
+      // Show success feedback (could add a toast notification here)
+      console.log('Added to cart successfully');
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Cart Message Toast */}
-        {cartMessage && (
-          <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 ${
-            cartMessage.type === 'success' ? 'bg-green-500' : 'bg-red-500'
-          } text-white`}>
-            <div className="flex items-center gap-2">
-              {cartMessage.type === 'success' ? (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              ) : (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              )}
-              <span>{cartMessage.text}</span>
-            </div>
-          </div>
-        )}
-
+    <div className="min-h-screen bg-background-primary py-12">
+      <div className="container-custom">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Browse Books</h1>
-          <p className="mt-2 text-gray-600">
-            Discover your next favorite read from our collection
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-12"
+        >
+          <h1 className="heading-1 mb-3">Browse Books</h1>
+          <p className="body-xl text-text-secondary">
+            Discover your next favorite read from our curated collection
           </p>
-        </div>
+        </motion.div>
 
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar Filter */}
-          <aside className="lg:w-64 flex-shrink-0">
-            <div className="sticky top-4">
+          <aside className="lg:w-80 flex-shrink-0">
+            <div className="sticky top-24">
               <Filter
                 filters={localFilters}
                 onFilterChange={handleFilterChange}
@@ -124,11 +88,26 @@ const Browse = () => {
           <main className="flex-1">
             {/* Results Info */}
             {!loading && !error && (
-              <div className="mb-6 flex items-center justify-between">
-                <p className="text-gray-600">
-                  {pagination.totalBooks} {pagination.totalBooks === 1 ? 'book' : 'books'} found
-                </p>
-              </div>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="mb-8 flex items-center justify-between bg-white border border-border-primary rounded-lg p-4"
+              >
+                <div className="flex items-center gap-3">
+                  <Badge variant="brown" size="md">
+                    {pagination.totalBooks} {pagination.totalBooks === 1 ? 'Book' : 'Books'}
+                  </Badge>
+                  <span className="text-text-secondary body">found</span>
+                </div>
+                {Object.keys(localFilters).length > 0 && (
+                  <button
+                    onClick={handleClearFilters}
+                    className="text-accent-brown hover:text-accent-brown/80 font-medium text-sm transition-colors"
+                  >
+                    Clear All Filters
+                  </button>
+                )}
+              </motion.div>
             )}
 
             {/* Loading State */}
@@ -149,35 +128,46 @@ const Browse = () => {
             {/* Books Grid */}
             {!loading && !error && books.length > 0 && (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <motion.div
+                  variants={staggerContainer}
+                  initial="hidden"
+                  animate="visible"
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                >
                   {books.map((book) => (
-                    <BookCard 
-                      key={book._id} 
-                      book={book} 
-                      onAddToCart={handleAddToCart}
-                      isAddingToCart={addingToCart === book._id}
-                    />
+                    <motion.div key={book._id} variants={staggerItem}>
+                      <BookCard book={book} onAddToCart={handleAddToCart} />
+                    </motion.div>
                   ))}
-                </div>
+                </motion.div>
 
                 {/* Pagination */}
                 {pagination.totalPages > 1 && (
-                  <div className="mt-8 flex justify-center">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="mt-12 flex justify-center"
+                  >
                     <Pagination
                       currentPage={pagination.currentPage}
                       totalPages={pagination.totalPages}
                       onPageChange={handlePageChange}
                     />
-                  </div>
+                  </motion.div>
                 )}
               </>
             )}
 
             {/* No Results */}
             {!loading && !error && books.length === 0 && (
-              <div className="text-center py-20">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center py-20 bg-white rounded-lg border border-border-primary"
+              >
                 <svg
-                  className="mx-auto h-24 w-24 text-gray-300"
+                  className="mx-auto h-24 w-24 text-text-tertiary"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -189,17 +179,16 @@ const Browse = () => {
                     d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
                   />
                 </svg>
-                <h3 className="mt-4 text-lg font-medium text-gray-900">No books found</h3>
-                <p className="mt-2 text-gray-500">
-                  Try adjusting your filters or search criteria
+                <h3 className="mt-6 heading-4">No books found</h3>
+                <p className="mt-3 body-lg text-text-secondary max-w-md mx-auto">
+                  Try adjusting your filters or search criteria to discover more books
                 </p>
-                <button
-                  onClick={handleClearFilters}
-                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  Clear All Filters
-                </button>
-              </div>
+                <div className="mt-6">
+                  <Button onClick={handleClearFilters} variant="primary" size="md">
+                    Clear All Filters
+                  </Button>
+                </div>
+              </motion.div>
             )}
           </main>
         </div>

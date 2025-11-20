@@ -63,11 +63,10 @@ const UploadVideo = () => {
   const fetchOwnedBooks = async () => {
     try {
       setLoadingBooks(true);
-      const response = await api.get('/library');
-      setOwnedBooks(response.data.data.library || []);
+      const response = await api.get('/buyer/library');
+      setOwnedBooks(response.data.data || []);
     } catch (err) {
       console.error('Failed to load owned books:', err);
-      setOwnedBooks([]); // Ensure ownedBooks is always an array
     } finally {
       setLoadingBooks(false);
     }

@@ -1,103 +1,234 @@
-/**
- * Header Component
- */
-
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
+import { motion, AnimatePresence } from 'framer-motion';
 import { logout } from '../../redux/actions/authActions';
+import { drawerSlide } from '../../utils/animations';
+import Button from '../Button';
+import Badge from '../Badge';
 
 const Header = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const { isAuthenticated, user } = useSelector(state => state.auth);
   const { items: cartItems } = useSelector(state => state.cart);
+
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+    setIsUserMenuOpen(false);
+  }, [location.pathname]);
 
   const handleLogout = async () => {
     await dispatch(logout());
     navigate('/login');
   };
 
+  const isActiveLink = (path) => location.pathname === path;
+
   return (
-    <header className="bg-white shadow-md border-b-2 border-primary-500">
-      <nav className="container mx-auto px-4 py-4">
-        <div className="flex items-center justify-between">
-          {/* Logo */}
-          <Link to="/" className="text-2xl font-bold text-primary-600 hover:text-primary-700 transition-colors">
-            Bookish
-          </Link>
-
-          {/* Navigation Links */}
-          <div className="flex items-center space-x-6">
-            <Link to="/" className="text-gray-700 hover:text-primary-600 transition-colors">Home</Link>
-            <Link to="/about" className="text-gray-700 hover:text-primary-600 transition-colors">About</Link>
-            <Link to="/pricing" className="text-gray-700 hover:text-primary-600 transition-colors">Subscription</Link>
-            <Link to="/contact" className="text-gray-700 hover:text-primary-600 transition-colors">Contact</Link>
-
-            {isAuthenticated ? (
-              <>
-                {/* Role-based navigation */}
-                {user.role === 'buyer' && (
-                  <>
-                    <Link to="/buyer/dashboard" className="text-gray-700 hover:text-primary-600 transition-colors">Dashboard</Link>
-                    <Link to="/buyer/browse" className="text-gray-700 hover:text-primary-600 transition-colors">Browse</Link>
-                    <Link to="/buyer/video-feed" className="text-gray-700 hover:text-primary-600 transition-colors flex items-center gap-1">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      Videos
-                    </Link>
-                    <Link to="/buyer/library" className="text-gray-700 hover:text-primary-600 transition-colors">Library</Link>
-                    <Link to="/buyer/cart" className="text-gray-700 hover:text-primary-600 transition-colors relative">
-                      Cart
-                      {cartItems.length > 0 && (
-                        <span className="absolute -top-2 -right-2 bg-primary-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                          {cartItems.length}
-                        </span>
-                      )}
-                    </Link>
-                  </>
-                )}
-
-                {user.role === 'seller' && (
-                  <>
-                    <Link to="/seller/dashboard" className="text-gray-700 hover:text-primary-600 transition-colors">Dashboard</Link>
-                    <Link to="/seller/inventory" className="text-gray-700 hover:text-primary-600 transition-colors">Inventory</Link>
-                    <Link to="/seller/upload" className="text-gray-700 hover:text-primary-600 transition-colors">Upload</Link>
-                  </>
-                )}
-
-                {user.role === 'admin' && (
-                  <>
-                    <Link to="/admin/dashboard" className="text-gray-700 hover:text-primary-600 transition-colors">Dashboard</Link>
-                    <Link to="/admin/users" className="text-gray-700 hover:text-primary-600 transition-colors">Users</Link>
-                    <Link to="/admin/books" className="text-gray-700 hover:text-primary-600 transition-colors">Books</Link>
-                  </>
-                )}
-
-                {/* User menu */}
-                <div className="flex items-center space-x-3">
-                  <span className="text-gray-700">Hello, {user.name}</span>
-                  <button
-                    onClick={handleLogout}
-                    className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-                  >
-                    Logout
-                  </button>
+    <>
+      <header className={`fixed top-0 left-0 right-0 z-fixed transition-all duration-300 ${isScrolled ? 'bg-white/90 backdrop-blur-md shadow-md border-b border-border-light' : 'bg-white border-b border-border-light'}`}>
+        <nav className="container-custom">
+          <div className="flex items-center justify-between h-20">
+            <Link to="/" className="flex items-center gap-3 group">
+              <motion.div whileHover={{ scale: 1.05 }} transition={{ duration: 0.2 }}>
+                <div className="w-10 h-10 bg-accent-brown rounded-lg flex items-center justify-center shadow-sm">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
                 </div>
-              </>
-            ) : (
-              <>
-                <Link to="/login" className="text-gray-700 hover:text-primary-600 transition-colors">Login</Link>
-                <Link to="/register" className="bg-primary-600 text-white px-4 py-2 rounded hover:bg-primary-700 transition-colors">
-                  Register
-                </Link>
-              </>
-            )}
+              </motion.div>
+              <div className="flex flex-col">
+                <span className="font-serif font-bold text-2xl text-charcoal group-hover:text-accent-brown transition-colors">
+                  Bookish
+                </span>
+                <span className="text-xs text-text-tertiary tracking-wider uppercase">
+                  Premium Books
+                </span>
+              </div>
+            </Link>
+
+            <div className="hidden lg:flex items-center gap-8">
+              <NavLink to="/" isActive={isActiveLink('/')}>Home</NavLink>
+              <NavLink to="/about" isActive={isActiveLink('/about')}>About</NavLink>
+              <NavLink to="/pricing" isActive={isActiveLink('/pricing')}>Pricing</NavLink>
+              <NavLink to="/contact" isActive={isActiveLink('/contact')}>Contact</NavLink>
+            </div>
+
+            <div className="hidden lg:flex items-center gap-4">
+              {isAuthenticated ? (
+                <>
+                  {user.role === 'buyer' && (
+                    <>
+                      <NavLink to="/buyer/browse" isActive={isActiveLink('/buyer/browse')}>Browse</NavLink>
+                      <NavLink to="/buyer/cart" isActive={isActiveLink('/buyer/cart')}>
+                        <span className="flex items-center gap-2">
+                          Cart
+                          {cartItems.length > 0 && <Badge variant="brown" size="sm">{cartItems.length}</Badge>}
+                        </span>
+                      </NavLink>
+                    </>
+                  )}
+                  <div className="relative">
+                    <button onClick={() => setIsUserMenuOpen(!isUserMenuOpen)} className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-background-secondary transition-colors">
+                      <div className="w-8 h-8 bg-accent-brown/10 text-accent-brown rounded-full flex items-center justify-center font-medium">
+                        {user.name?.charAt(0).toUpperCase()}
+                      </div>
+                      <span className="text-text-primary font-medium hidden xl:block">{user.name}</span>
+                    </button>
+                    <AnimatePresence>
+                      {isUserMenuOpen && (
+                        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-border-light py-2 z-[1060]">
+                          <div className="px-4 py-2 border-b border-border-light">
+                            <p className="text-sm text-text-secondary">Signed in as</p>
+                            <p className="font-medium text-text-primary">{user.name}</p>
+                            <Badge variant="green" size="sm" className="mt-1">{user.role}</Badge>
+                          </div>
+                          <div className="py-2">
+                            {user.role === 'buyer' && (
+                              <>
+                                <DropdownLink to="/buyer/dashboard">Dashboard</DropdownLink>
+                                <DropdownLink to="/buyer/library">My Library</DropdownLink>
+                              </>
+                            )}
+                            {user.role === 'seller' && (
+                              <>
+                                <DropdownLink to="/seller/dashboard">Dashboard</DropdownLink>
+                                <DropdownLink to="/seller/inventory">Inventory</DropdownLink>
+                              </>
+                            )}
+                            {user.role === 'admin' && (
+                              <>
+                                <DropdownLink to="/admin/dashboard">Dashboard</DropdownLink>
+                                <DropdownLink to="/admin/users">Manage Users</DropdownLink>
+                              </>
+                            )}
+                          </div>
+                          <div className="pt-2 border-t border-border-light px-2">
+                            <Button variant="ghost" size="sm" fullWidth onClick={handleLogout} className="justify-start">
+                              Logout
+                            </Button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <Button variant="ghost" size="sm" onClick={() => navigate('/login')}>Login</Button>
+                  <Button variant="primary" size="sm" onClick={() => navigate('/register')}>Sign Up</Button>
+                </div>
+              )}
+            </div>
+
+            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="lg:hidden p-2 rounded-lg hover:bg-background-secondary transition-colors" aria-label="Toggle menu">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {isMobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
           </div>
-        </div>
-      </nav>
-    </header>
+        </nav>
+      </header>
+
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsMobileMenuOpen(false)} className="fixed inset-0 bg-black/50 z-overlay lg:hidden" />
+            <motion.div variants={drawerSlide} initial="hidden" animate="visible" exit="exit" className="fixed top-0 right-0 bottom-0 w-80 bg-white shadow-2xl z-modal lg:hidden overflow-y-auto">
+              <div className="flex items-center justify-between p-6 border-b border-border-light">
+                <span className="font-serif font-bold text-xl">Bookish</span>
+                <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 rounded-lg hover:bg-background-secondary">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              {isAuthenticated && (
+                <div className="p-6 bg-background-secondary border-b border-border-light">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-accent-brown/10 text-accent-brown rounded-full flex items-center justify-center font-medium text-lg">
+                      {user.name?.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-medium">{user.name}</p>
+                      <Badge variant="green" size="sm">{user.role}</Badge>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div className="p-6 space-y-1">
+                <MobileNavLink to="/">Home</MobileNavLink>
+                <MobileNavLink to="/about">About</MobileNavLink>
+                <MobileNavLink to="/pricing">Pricing</MobileNavLink>
+                {isAuthenticated && user.role === 'buyer' && (
+                  <>
+                    <div className="my-4 border-t border-border-light"></div>
+                    <MobileNavLink to="/buyer/dashboard">Dashboard</MobileNavLink>
+                    <MobileNavLink to="/buyer/browse">Browse Books</MobileNavLink>
+                    <MobileNavLink to="/buyer/cart">
+                      <span className="flex justify-between w-full">
+                        Cart
+                        {cartItems.length > 0 && <Badge variant="brown" size="sm">{cartItems.length}</Badge>}
+                      </span>
+                    </MobileNavLink>
+                  </>
+                )}
+              </div>
+              <div className="p-6 border-t border-border-light">
+                {isAuthenticated ? (
+                  <Button variant="error" fullWidth onClick={handleLogout}>Logout</Button>
+                ) : (
+                  <div className="space-y-3">
+                    <Button variant="outline" fullWidth onClick={() => navigate('/login')}>Login</Button>
+                    <Button variant="primary" fullWidth onClick={() => navigate('/register')}>Sign Up</Button>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+      <div className="h-20"></div>
+    </>
+  );
+};
+
+const NavLink = ({ to, isActive, children }) => (
+  <Link to={to} className={`text-sm font-medium transition-colors relative py-1 ${isActive ? 'text-accent-brown' : 'text-text-primary hover:text-accent-brown'}`}>
+    {children}
+    {isActive && <motion.div layoutId="activeLink" className="absolute -bottom-1 left-0 right-0 h-0.5 bg-accent-brown" transition={{ type: "spring", stiffness: 380, damping: 30 }} />}
+  </Link>
+);
+
+const DropdownLink = ({ to, children }) => (
+  <Link to={to} className="block px-4 py-2 text-sm text-text-primary hover:bg-background-secondary transition-colors">
+    {children}
+  </Link>
+);
+
+const MobileNavLink = ({ to, children }) => {
+  const location = useLocation();
+  const isActive = location.pathname === to;
+  return (
+    <Link to={to} className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive ? 'bg-accent-brown/10 text-accent-brown' : 'text-text-primary hover:bg-background-secondary'}`}>
+      {children}
+    </Link>
   );
 };
 

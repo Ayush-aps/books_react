@@ -15,4 +15,6 @@ if (!stripePublishableKey) {
 // Initialize Stripe
 const stripePromise = loadStripe(stripePublishableKey);
 
+// Export both as default and named export for compatibility
+export { stripePromise };
 export default stripePromise;

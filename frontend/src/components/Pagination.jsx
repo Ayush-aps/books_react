@@ -3,6 +3,9 @@
  * Handle page navigation
  */
 
+import { motion } from 'framer-motion';
+import Button from './Button';
+
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   if (totalPages <= 1) return null;
 
@@ -38,14 +41,22 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   const pages = getPageNumbers();
 
   return (
-    <div className="flex items-center justify-center gap-2 my-8">
-      <button
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex items-center justify-center gap-2 my-8"
+    >
+      <Button
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
-        className="px-3 py-2 rounded-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        variant="outline"
+        size="sm"
       >
+        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
         Previous
-      </button>
+      </Button>
 
       <div className="flex gap-1">
         {pages.map((page, index) => (
@@ -53,12 +64,12 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
             key={index}
             onClick={() => typeof page === 'number' && onPageChange(page)}
             disabled={page === '...' || page === currentPage}
-            className={`min-w-[40px] px-3 py-2 rounded-md text-sm font-medium ${
+            className={`min-w-[40px] h-10 px-3 rounded-lg text-sm font-medium transition-all ${
               page === currentPage
-                ? 'bg-blue-600 text-white'
+                ? 'bg-accent-brown text-white shadow-md'
                 : page === '...'
-                ? 'bg-white text-gray-400 cursor-default'
-                : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                ? 'bg-transparent text-text-tertiary cursor-default'
+                : 'border border-border-primary bg-white text-text-primary hover:bg-background-secondary hover:border-accent-brown'
             }`}
           >
             {page}
@@ -66,14 +77,18 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
         ))}
       </div>
 
-      <button
+      <Button
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
-        className="px-3 py-2 rounded-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        variant="outline"
+        size="sm"
       >
         Next
-      </button>
-    </div>
+        <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </Button>
+    </motion.div>
   );
 };
 

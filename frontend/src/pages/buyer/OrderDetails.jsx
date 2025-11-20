@@ -94,7 +94,7 @@ const OrderDetails = () => {
                 <h1 className="text-2xl font-bold mb-2">Order Details</h1>
                 <p className="text-blue-100">Order ID: {order._id}</p>
                 <p className="text-blue-100 text-sm mt-1">
-                  Placed on {new Date(order.createdAt || order.orderDate).toLocaleDateString('en-US', {
+                  Placed on {new Date(order.createdAt).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',
@@ -152,37 +152,33 @@ const OrderDetails = () => {
               {order.items.map((item) => (
                 <div key={item._id} className="flex gap-4">
                   <img
-                    src={item.book?.coverImage || item.coverImage || '/img/books/default-cover.jpg'}
-                    alt={item.book?.title || item.title || 'Book'}
+                    src={item.bookId?.coverImage || '/placeholder-book.png'}
+                    alt={item.bookId?.title}
                     className="w-20 h-28 object-cover rounded"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = '/img/books/default-cover.jpg';
-                    }}
                   />
                   <div className="flex-1">
                     <Link
-                      to={`/buyer/books/${item.book?._id || item._id}`}
+                      to={`/buyer/books/${item.bookId?._id}`}
                       className="font-semibold text-gray-900 hover:text-blue-600"
                     >
-                      {item.book?.title || item.title || 'Book Title'}
+                      {item.bookId?.title || 'Book Title'}
                     </Link>
                     <p className="text-sm text-gray-600 mt-1">
-                      by {item.book?.author || item.author || 'Unknown'}
+                      by {item.bookId?.author || 'Unknown'}
                     </p>
                     <p className="text-sm text-gray-600 mt-1">
                       Quantity: {item.quantity}
                     </p>
                     <p className="text-sm text-gray-600 mt-1 capitalize">
-                      Condition: {item.book?.condition || item.condition || 'N/A'}
+                      Condition: {item.bookId?.condition}
                     </p>
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-gray-900">
-                      ₹{(item.price * item.quantity).toFixed(2)}
+                      ${(item.price * item.quantity).toFixed(2)}
                     </p>
                     <p className="text-sm text-gray-600 mt-1">
-                      ₹{item.price.toFixed(2)} each
+                      ${item.price.toFixed(2)} each
                     </p>
                   </div>
                 </div>
@@ -213,11 +209,11 @@ const OrderDetails = () => {
             <div className="space-y-2">
               <div className="flex justify-between text-gray-700">
                 <span>Subtotal</span>
-                <span>₹{(order.totalAmount / 1.08).toFixed(2)}</span>
+                <span>${(order.totalAmount / 1.08).toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-gray-700">
                 <span>Tax (8%)</span>
-                <span>₹{(order.totalAmount - (order.totalAmount / 1.08)).toFixed(2)}</span>
+                <span>${(order.totalAmount - (order.totalAmount / 1.08)).toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-gray-700">
                 <span>Shipping</span>
@@ -225,7 +221,7 @@ const OrderDetails = () => {
               </div>
               <div className="border-t border-gray-200 pt-2 flex justify-between text-lg font-bold text-gray-900">
                 <span>Total</span>
-                <span>₹{order.totalAmount.toFixed(2)}</span>
+                <span>${order.totalAmount.toFixed(2)}</span>
               </div>
               <div className="mt-4 pt-4 border-t border-gray-200">
                 <p className="text-sm text-gray-600">
