@@ -91,13 +91,18 @@ exports.getDashboard = async (req, res) => {
 // @access  Private (Buyer)
 exports.getCart = async (req, res) => {
   try {
-    let cart = await Cart.findOne({ user: req.user._id }).populate({
-      path: "items.book",
-      select: "title author coverImage price discountPrice discountPercentage condition stock isAvailable isApproved",
-    });
+    let cart = await Cart.findOne({ user: req.user._id })
+      .populate({
+        path: "items.book",
+        select: "title author coverImage price discountPrice discountPercentage condition stock isAvailable isApproved",
+      })
+      .populate({
+        path: "savedItems.book",
+        select: "title author coverImage price discountPrice discountPercentage condition stock isAvailable isApproved",
+      });
 
     if (!cart) {
-      cart = { items: [], totalAmount: 0 };
+      cart = { items: [], savedItems: [], totalAmount: 0 };
     } else {
       // Filter out items where book is null or not available
       const originalLength = cart.items.length;
@@ -106,6 +111,13 @@ exports.getCart = async (req, res) => {
         item.book.isAvailable && 
         item.book.isApproved
       );
+
+      // Filter out saved items where book is null
+      if (cart.savedItems) {
+        cart.savedItems = cart.savedItems.filter(item => item.book);
+      } else {
+        cart.savedItems = [];
+      }
 
       // If items were removed, save the cart
       if (cart.items.length < originalLength) {
@@ -123,6 +135,170 @@ exports.getCart = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error fetching cart",
+    });
+  }
+};
+
+// @desc    Save item for later
+// @route   POST /api/buyer/cart/save-for-later/:itemId
+// @access  Private (Buyer)
+exports.saveForLater = async (req, res) => {
+  try {
+    const itemId = req.params.itemId;
+    const cart = await Cart.findOne({ user: req.user._id });
+
+    if (!cart) {
+      return res.status(404).json({
+        success: false,
+        message: "Cart not found",
+      });
+    }
+
+    const itemIndex = cart.items.findIndex(item => item._id.toString() === itemId);
+
+    if (itemIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: "Item not found in cart",
+      });
+    }
+
+    const item = cart.items[itemIndex];
+    cart.savedItems.push(item);
+    cart.items.splice(itemIndex, 1);
+
+    await cart.save();
+
+    await cart.populate([
+      {
+        path: "items.book",
+        select: "title author coverImage price discountPrice",
+      },
+      {
+        path: "savedItems.book",
+        select: "title author coverImage price discountPrice",
+      }
+    ]);
+
+    res.status(200).json({
+      success: true,
+      message: "Item saved for later",
+      data: { cart },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: "Error saving item for later",
+    });
+  }
+};
+
+// @desc    Move item back to cart
+// @route   POST /api/buyer/cart/move-to-cart/:itemId
+// @access  Private (Buyer)
+exports.moveToCart = async (req, res) => {
+  try {
+    const itemId = req.params.itemId;
+    const cart = await Cart.findOne({ user: req.user._id });
+
+    if (!cart) {
+      return res.status(404).json({
+        success: false,
+        message: "Cart not found",
+      });
+    }
+
+    const itemIndex = cart.savedItems.findIndex(item => item._id.toString() === itemId);
+
+    if (itemIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: "Item not found in saved list",
+      });
+    }
+
+    const item = cart.savedItems[itemIndex];
+    
+    // Check if item already exists in cart
+    const existingCartItemIndex = cart.items.findIndex(cartItem => 
+      cartItem.book.toString() === item.book.toString()
+    );
+
+    if (existingCartItemIndex > -1) {
+      cart.items[existingCartItemIndex].quantity += item.quantity;
+    } else {
+      cart.items.push(item);
+    }
+
+    cart.savedItems.splice(itemIndex, 1);
+
+    await cart.save();
+
+    await cart.populate([
+      {
+        path: "items.book",
+        select: "title author coverImage price discountPrice",
+      },
+      {
+        path: "savedItems.book",
+        select: "title author coverImage price discountPrice",
+      }
+    ]);
+
+    res.status(200).json({
+      success: true,
+      message: "Item moved to cart",
+      data: { cart },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: "Error moving item to cart",
+    });
+  }
+};
+
+// @desc    Remove item from saved list
+// @route   DELETE /api/buyer/cart/saved/:itemId
+// @access  Private (Buyer)
+exports.removeFromSaved = async (req, res) => {
+  try {
+    const itemId = req.params.itemId;
+    const cart = await Cart.findOne({ user: req.user._id });
+
+    if (!cart) {
+      return res.status(404).json({
+        success: false,
+        message: "Cart not found",
+      });
+    }
+
+    cart.savedItems.pull(itemId);
+    await cart.save();
+
+    await cart.populate([
+      {
+        path: "items.book",
+        select: "title author coverImage price discountPrice",
+      },
+      {
+        path: "savedItems.book",
+        select: "title author coverImage price discountPrice",
+      }
+    ]);
+
+    res.status(200).json({
+      success: true,
+      message: "Item removed from saved list",
+      data: { cart },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: "Error removing item from saved list",
     });
   }
 };

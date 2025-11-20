@@ -52,6 +52,12 @@ router.put("/cart/update/:itemId", ensureAuthenticated, updateCartItem);
 router.delete("/cart/remove/:itemId", ensureAuthenticated, removeFromCart);
 router.delete("/cart/clear", ensureAuthenticated, clearCart);
 
+// Save for Later
+const { saveForLater, moveToCart, removeFromSaved } = require("../controllers/buyerController");
+router.post("/cart/save-for-later/:itemId", ensureAuthenticated, saveForLater);
+router.post("/cart/move-to-cart/:itemId", ensureAuthenticated, moveToCart);
+router.delete("/cart/saved/:itemId", ensureAuthenticated, removeFromSaved);
+
 // ============================================
 // CHECKOUT ROUTES
 // ============================================

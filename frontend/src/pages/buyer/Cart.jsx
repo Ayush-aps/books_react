@@ -6,7 +6,7 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getCart, updateCartItem, removeFromCart, clearCart } from '../../redux/actions/cartActions';
+import { getCart, updateCartItem, removeFromCart, clearCart, saveForLater, moveToCart, removeFromSaved } from '../../redux/actions/cartActions';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
@@ -17,7 +17,7 @@ import { fadeInUp, staggerContainer, staggerItem } from '../../utils/animations'
 const Cart = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { items } = useSelector(state => state.cart);
+  const { items, savedItems } = useSelector(state => state.cart);
   const { user } = useSelector(state => state.auth);
   const [showClearDialog, setShowClearDialog] = useState(false);
 
@@ -43,6 +43,18 @@ const Cart = () => {
     dispatch(removeFromCart(bookId));
   };
 
+  const handleSaveForLater = (bookId) => {
+    dispatch(saveForLater(bookId));
+  };
+
+  const handleMoveToCart = (bookId) => {
+    dispatch(moveToCart(bookId));
+  };
+
+  const handleRemoveFromSaved = (bookId) => {
+    dispatch(removeFromSaved(bookId));
+  };
+
   const handleClearCart = () => {
     dispatch(clearCart());
     setShowClearDialog(false);
@@ -60,7 +72,7 @@ const Cart = () => {
   const tax = subtotal * 0.08; // 8% tax
   const total = subtotal + tax;
 
-  if (items.length === 0) {
+  if (items.length === 0 && (!savedItems || savedItems.length === 0)) {
     return (
       <div className="min-h-screen bg-background-primary py-12">
         <div className="container-custom">
@@ -122,110 +134,210 @@ const Cart = () => {
               Review and manage your selected items
             </p>
           </div>
-          <Button
-            onClick={() => setShowClearDialog(true)}
-            variant="outline"
-            size="md"
-            className="text-error border-error hover:bg-error/10"
-          >
-            Clear Cart
-          </Button>
+          {items.length > 0 && (
+            <Button
+              onClick={() => setShowClearDialog(true)}
+              variant="outline"
+              size="md"
+              className="text-error border-error hover:bg-error/10"
+            >
+              Clear Cart
+            </Button>
+          )}
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Cart Items */}
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            animate="visible"
-            className="lg:col-span-2 space-y-4"
-          >
-            {items.map((item) => {
-              const book = item.book || item;
-              const bookId = book._id || item._id;
-              const discountedPrice = book.discountPrice || item.price || book.price;
-              const originalPrice = book.price || item.price;
-              const hasDiscount = discountedPrice < originalPrice;
+          <div className="lg:col-span-2 space-y-8">
+            {items.length > 0 ? (
+              <motion.div
+                variants={staggerContainer}
+                initial="hidden"
+                animate="visible"
+                className="space-y-4"
+              >
+                {items.map((item) => {
+                  const book = item.book || item;
+                  const bookId = book._id || item._id;
+                  const discountedPrice = book.discountPrice || item.price || book.price;
+                  const originalPrice = book.price || item.price;
+                  const hasDiscount = discountedPrice < originalPrice;
 
-              return (
-                <motion.div key={item._id} variants={staggerItem}>
-                  <Card elevated padding="lg">
-                    <div className="flex gap-6">
-                      {/* Book Image */}
-                      <Link to={`/buyer/book/${bookId}`} className="flex-shrink-0">
-                        <img
-                          src={book.coverImage || '/placeholder-book.png'}
-                          alt={book.title}
-                          className="w-24 h-32 object-cover rounded-lg"
-                        />
-                      </Link>
+                  return (
+                    <motion.div key={item._id} variants={staggerItem}>
+                      <Card elevated padding="lg">
+                        <div className="flex gap-6">
+                          {/* Book Image */}
+                          <Link to={`/buyer/book/${bookId}`} className="flex-shrink-0">
+                            <img
+                              src={book.coverImage || '/placeholder-book.png'}
+                              alt={book.title}
+                              className="w-24 h-32 object-cover rounded-lg"
+                            />
+                          </Link>
 
-                      {/* Book Info */}
-                      <div className="flex-1">
-                        <Link 
-                          to={`/buyer/book/${bookId}`}
-                          className="heading-4 hover:text-accent-brown transition-colors"
-                        >
-                          {book.title}
-                        </Link>
-                        <p className="text-text-secondary mt-1 body">{book.author}</p>
-                        <Badge variant={book.condition === 'new' ? 'success' : 'brown'} size="sm" className="mt-2">
-                          {book.condition}
-                        </Badge>
-
-                        {/* Price */}
-                        <div className="mt-4 flex items-baseline gap-2">
-                          <span className="text-xl font-bold text-text-primary">
-                            ${discountedPrice?.toFixed(2) || '0.00'}
-                          </span>
-                          {hasDiscount && (
-                            <span className="text-sm text-text-tertiary line-through">
-                              ${originalPrice?.toFixed(2) || '0.00'}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Quantity and Remove */}
-                        <div className="mt-4 flex items-center gap-4">
-                          <div className="flex items-center border border-border-primary rounded-lg overflow-hidden">
-                            <button
-                              onClick={() => handleUpdateQuantity(item._id, item.quantity - 1)}
-                              disabled={item.quantity <= 1}
-                              className="px-4 py-2 text-text-primary hover:bg-background-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          {/* Book Info */}
+                          <div className="flex-1">
+                            <Link 
+                              to={`/buyer/book/${bookId}`}
+                              className="heading-4 hover:text-accent-brown transition-colors"
                             >
-                              −
-                            </button>
-                            <span className="px-4 py-2 border-x border-border-primary font-medium">{item.quantity}</span>
-                            <button
-                              onClick={() => handleUpdateQuantity(item._id, item.quantity + 1)}
-                              disabled={item.quantity >= item.stock}
-                              className="px-4 py-2 text-text-primary hover:bg-background-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                            >
-                              +
-                            </button>
+                              {book.title}
+                            </Link>
+                            <p className="text-text-secondary mt-1 body">{book.author}</p>
+                            <Badge variant={book.condition === 'new' ? 'success' : 'brown'} size="sm" className="mt-2">
+                              {book.condition}
+                            </Badge>
+
+                            {/* Price */}
+                            <div className="mt-4 flex items-baseline gap-2">
+                              <span className="text-xl font-bold text-text-primary">
+                                ${discountedPrice?.toFixed(2) || '0.00'}
+                              </span>
+                              {hasDiscount && (
+                                <span className="text-sm text-text-tertiary line-through">
+                                  ${originalPrice?.toFixed(2) || '0.00'}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Quantity and Actions */}
+                            <div className="mt-4 flex flex-wrap items-center gap-4">
+                              <div className="flex items-center border border-border-primary rounded-lg overflow-hidden">
+                                <button
+                                  onClick={() => handleUpdateQuantity(item._id, item.quantity - 1)}
+                                  disabled={item.quantity <= 1}
+                                  className="px-4 py-2 text-text-primary hover:bg-background-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                  −
+                                </button>
+                                <span className="px-4 py-2 border-x border-border-primary font-medium">{item.quantity}</span>
+                                <button
+                                  onClick={() => handleUpdateQuantity(item._id, item.quantity + 1)}
+                                  disabled={item.quantity >= item.stock}
+                                  className="px-4 py-2 text-text-primary hover:bg-background-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                  +
+                                </button>
+                              </div>
+
+                              <div className="flex items-center gap-3">
+                                <button
+                                  onClick={() => handleSaveForLater(item._id)}
+                                  className="text-accent-brown hover:text-accent-brown-hover text-sm font-medium transition-colors"
+                                >
+                                  Save for Later
+                                </button>
+                                <span className="text-border-primary">|</span>
+                                <button
+                                  onClick={() => handleRemoveItem(item._id)}
+                                  className="text-error hover:text-error/80 text-sm font-medium transition-colors"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            </div>
                           </div>
 
-                          <button
-                            onClick={() => handleRemoveItem(item._id)}
-                            className="text-error hover:text-error/80 text-sm font-medium transition-colors"
-                          >
-                            Remove
-                          </button>
+                          {/* Item Total */}
+                          <div className="text-right">
+                            <p className="text-xl font-bold text-text-primary">
+                              ${(discountedPrice * item.quantity).toFixed(2)}
+                            </p>
+                          </div>
                         </div>
-                      </div>
+                      </Card>
+                    </motion.div>
+                  );
+                })}
+              </motion.div>
+            ) : (
+              <Card padding="lg" className="text-center py-12 bg-background-secondary/50 border-dashed">
+                <p className="text-text-secondary mb-4">Your cart is empty</p>
+                <Link to="/buyer/browse">
+                  <Button variant="outline" size="sm">Browse Books</Button>
+                </Link>
+              </Card>
+            )}
 
-                      {/* Item Total */}
-                      <div className="text-right">
-                        <p className="text-xl font-bold text-text-primary">
-                          ${(discountedPrice * item.quantity).toFixed(2)}
-                        </p>
-                      </div>
-                    </div>
-                  </Card>
+            {/* Saved for Later Section */}
+            {savedItems && savedItems.length > 0 && (
+              <div className="mt-12">
+                <h2 className="heading-3 mb-6">Saved for Later ({savedItems.length})</h2>
+                <motion.div
+                  variants={staggerContainer}
+                  initial="hidden"
+                  animate="visible"
+                  className="space-y-4"
+                >
+                  {savedItems.map((item) => {
+                    const book = item.book || item;
+                    const bookId = book._id || item._id;
+                    const discountedPrice = book.discountPrice || item.price || book.price;
+                    const originalPrice = book.price || item.price;
+                    const hasDiscount = discountedPrice < originalPrice;
+
+                    return (
+                      <motion.div key={item._id} variants={staggerItem}>
+                        <Card padding="lg" className="bg-background-secondary/30">
+                          <div className="flex gap-6">
+                            {/* Book Image */}
+                            <Link to={`/buyer/book/${bookId}`} className="flex-shrink-0">
+                              <img
+                                src={book.coverImage || '/placeholder-book.png'}
+                                alt={book.title}
+                                className="w-20 h-28 object-cover rounded-lg opacity-90"
+                              />
+                            </Link>
+
+                            {/* Book Info */}
+                            <div className="flex-1">
+                              <Link 
+                                to={`/buyer/book/${bookId}`}
+                                className="heading-5 hover:text-accent-brown transition-colors"
+                              >
+                                {book.title}
+                              </Link>
+                              <p className="text-text-secondary mt-1 body-sm">{book.author}</p>
+                              
+                              {/* Price */}
+                              <div className="mt-2 flex items-baseline gap-2">
+                                <span className="text-lg font-bold text-text-primary">
+                                  ${discountedPrice?.toFixed(2) || '0.00'}
+                                </span>
+                                {hasDiscount && (
+                                  <span className="text-xs text-text-tertiary line-through">
+                                    ${originalPrice?.toFixed(2) || '0.00'}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Actions */}
+                              <div className="mt-4 flex items-center gap-4">
+                                <Button
+                                  onClick={() => handleMoveToCart(item._id)}
+                                  variant="outline"
+                                  size="sm"
+                                >
+                                  Move to Cart
+                                </Button>
+                                <button
+                                  onClick={() => handleRemoveFromSaved(item._id)}
+                                  className="text-error hover:text-error/80 text-sm font-medium transition-colors"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </Card>
+                      </motion.div>
+                    );
+                  })}
                 </motion.div>
-              );
-            })}
-          </motion.div>
+              </div>
+            )}
+          </div>
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
@@ -259,6 +371,7 @@ const Cart = () => {
                   size="lg"
                   fullWidth
                   className="mb-4"
+                  disabled={items.length === 0}
                 >
                   Proceed to Checkout
                   <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

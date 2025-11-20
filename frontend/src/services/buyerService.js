@@ -38,6 +38,19 @@ export const buyerService = {
     return await api.delete('/buyer/cart/clear');
   },
 
+  // Save for Later
+  saveForLater: async (itemId) => {
+    return await api.post(`/buyer/cart/save-for-later/${itemId}`);
+  },
+
+  moveToCart: async (itemId) => {
+    return await api.post(`/buyer/cart/move-to-cart/${itemId}`);
+  },
+
+  removeFromSaved: async (itemId) => {
+    return await api.delete(`/buyer/cart/saved/${itemId}`);
+  },
+
   // Checkout
   getCheckoutData: async () => {
     return await api.get('/buyer/checkout');

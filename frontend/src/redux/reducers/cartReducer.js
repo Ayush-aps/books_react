@@ -12,10 +12,14 @@ import {
   UPDATE_CART_ITEM_SUCCESS,
   REMOVE_FROM_CART_SUCCESS,
   CLEAR_CART_SUCCESS,
+  SAVE_FOR_LATER_SUCCESS,
+  MOVE_TO_CART_SUCCESS,
+  REMOVE_FROM_SAVED_SUCCESS,
 } from '../actions/cartActions';
 
 const initialState = {
   items: [],
+  savedItems: [],
   totalAmount: 0,
   loading: false,
   error: null,
@@ -35,9 +39,13 @@ export default function cartReducer(state = initialState, action) {
     case ADD_TO_CART_SUCCESS:
     case UPDATE_CART_ITEM_SUCCESS:
     case REMOVE_FROM_CART_SUCCESS:
+    case SAVE_FOR_LATER_SUCCESS:
+    case MOVE_TO_CART_SUCCESS:
+    case REMOVE_FROM_SAVED_SUCCESS:
       return {
         ...state,
         items: action.payload.items || [],
+        savedItems: action.payload.savedItems || [],
         totalAmount: action.payload.totalAmount || 0,
         loading: false,
         error: null,
