@@ -32,7 +32,7 @@ exports.getDashboard = async (req, res) => {
     // Get orders
     const allOrders = await Order.find({ buyer: userId });
     console.log("Total orders found:", allOrders.length);
-    
+
     const activeOrders = allOrders.filter((order) => ["pending", "processing", "shipped"].includes(order.status)).length;
     const completedOrders = allOrders.filter((order) => order.status === "delivered").length;
     console.log("Active orders:", activeOrders, "Completed orders:", completedOrders);
@@ -63,19 +63,27 @@ exports.getDashboard = async (req, res) => {
       .select("_id title author price coverImage");
     console.log("Recently viewed books:", recentlyViewed.length);
 
+    // Transform recentOrders to include 'total' field for frontend compatibility
+    const transformedRecentOrders = recentOrders.map(order => ({
+      _id: order._id,
+      total: order.totalAmount,
+      status: order.status,
+      createdAt: order.createdAt
+    }));
+
     res.json({
       libraryCount,
       activeOrders,
       completedOrders,
-      recentOrders,
+      recentOrders: transformedRecentOrders,
       complaints,
       recentlyViewed,
     });
   } catch (err) {
     console.error("Buyer dashboard error:", err);
     console.error("Error stack:", err.stack);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: "Server error loading dashboard",
       error: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
@@ -106,9 +114,9 @@ exports.getCart = async (req, res) => {
     } else {
       // Filter out items where book is null or not available
       const originalLength = cart.items.length;
-      cart.items = cart.items.filter(item => 
-        item.book && 
-        item.book.isAvailable && 
+      cart.items = cart.items.filter(item =>
+        item.book &&
+        item.book.isAvailable &&
         item.book.isApproved
       );
 
@@ -167,22 +175,22 @@ exports.saveForLater = async (req, res) => {
     if (itemIndex !== -1) {
       // Found in cart, move to saved
       const item = cart.items[itemIndex];
-      
+
       // Check if already in saved (by book ID) to avoid duplicates
       const savedIndex = cart.savedItems.findIndex(saved => saved.book.toString() === item.book.toString());
-      
+
       if (savedIndex === -1) {
         cart.savedItems.push(item);
       }
-      
+
       // Remove from cart
       cart.items.splice(itemIndex, 1);
     } else {
       // 3. Not in cart. Check if it's a valid Book ID to add directly to saved
-      
+
       // Check if already in saved
       const savedIndex = cart.savedItems.findIndex(saved => saved.book.toString() === id);
-      
+
       if (savedIndex === -1) {
         // Verify it's a book
         const book = await Book.findById(id);
@@ -254,9 +262,9 @@ exports.moveToCart = async (req, res) => {
     }
 
     const item = cart.savedItems[itemIndex];
-    
+
     // Check if item already exists in cart
-    const existingCartItemIndex = cart.items.findIndex(cartItem => 
+    const existingCartItemIndex = cart.items.findIndex(cartItem =>
       cartItem.book.toString() === item.book.toString()
     );
 
@@ -626,36 +634,42 @@ exports.getAllAddresses = async (req, res) => {
 // @access  Private (Buyer)
 exports.createAddress = async (req, res) => {
   try {
-    const { fullName, phone, addressLine1, addressLine2, city, state, pincode, isDefault } = req.body;
+    console.log('Creating address with data:', req.body);
+    const { fullName, phone, street, city, state, zipCode, country, isDefault } = req.body;
 
     if (isDefault) {
       await Address.updateMany({ user: req.user._id }, { $set: { isDefault: false } });
     }
 
-    const address = new Address({
+    const addressData = {
       user: req.user._id,
-      fullName,
+      name: fullName,
       phone,
-      addressLine1,
-      addressLine2,
+      street,
       city,
       state,
-      pincode,
+      zipCode,
+      country: country || 'India',
       isDefault: isDefault || false,
-    });
+    };
 
-    await address.save();
+    console.log('Address data to save:', addressData);
+
+    const address = await Address.create(addressData);
+
+    console.log('Address created successfully:', address._id);
 
     res.status(201).json({
       success: true,
       message: "Address created successfully",
-      data: { address },
+      data: address,
     });
   } catch (err) {
-    console.error(err);
+    console.error('Error creating address:', err);
+    console.error('Error details:', err.message, err.stack);
     res.status(500).json({
       success: false,
-      message: "Error creating address",
+      message: err.message || "Error creating address",
     });
   }
 };
@@ -665,7 +679,7 @@ exports.createAddress = async (req, res) => {
 // @access  Private (Buyer)
 exports.updateAddress = async (req, res) => {
   try {
-    const { fullName, phone, addressLine1, addressLine2, city, state, pincode, isDefault } = req.body;
+    const { fullName, phone, street, city, state, zipCode, isDefault } = req.body;
 
     const address = await Address.findOne({ _id: req.params.id, user: req.user._id });
 
@@ -680,13 +694,13 @@ exports.updateAddress = async (req, res) => {
       await Address.updateMany({ user: req.user._id, _id: { $ne: req.params.id } }, { $set: { isDefault: false } });
     }
 
-    address.fullName = fullName || address.fullName;
+    // Update fields - map frontend fields to model fields
+    address.name = fullName || address.name;
     address.phone = phone || address.phone;
-    address.addressLine1 = addressLine1 || address.addressLine1;
-    address.addressLine2 = addressLine2;
+    address.street = street || address.street;
     address.city = city || address.city;
     address.state = state || address.state;
-    address.pincode = pincode || address.pincode;
+    address.zipCode = zipCode || address.zipCode;
     address.isDefault = isDefault !== undefined ? isDefault : address.isDefault;
 
     await address.save();
@@ -694,13 +708,13 @@ exports.updateAddress = async (req, res) => {
     res.json({
       success: true,
       message: "Address updated successfully",
-      data: { address },
+      data: address,
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({
       success: false,
-      message: "Error updating address",
+      message: err.message || "Error updating address",
     });
   }
 };

@@ -38,9 +38,10 @@ const Checkout = () => {
     try {
       setLoading(true);
       const response = await api.get('/buyer/addresses');
-      setAddresses(response.data);
-      if (response.data.length > 0) {
-        setSelectedAddress(response.data[0]._id);
+      const addressesData = response.data.data.addresses || [];
+      setAddresses(addressesData);
+      if (addressesData.length > 0) {
+        setSelectedAddress(addressesData[0]._id);
       }
     } catch (err) {
       setError('Failed to load addresses');
@@ -51,7 +52,7 @@ const Checkout = () => {
 
   const calculateSubtotal = () => {
     return items.reduce((total, item) => {
-      const price = item.discountPercentage 
+      const price = item.discountPercentage
         ? item.price - (item.price * item.discountPercentage / 100)
         : item.price;
       return total + (price * item.quantity);
@@ -80,12 +81,12 @@ const Checkout = () => {
           items: items.map(item => ({
             bookId: item._id,
             quantity: item.quantity,
-            price: item.discountPercentage 
+            price: item.discountPercentage
               ? item.price - (item.price * item.discountPercentage / 100)
               : item.price
           }))
         });
-        
+
         setClientSecret(response.data.clientSecret);
         setShowStripeForm(true);
       } else {
@@ -94,7 +95,7 @@ const Checkout = () => {
           items: items.map(item => ({
             book: item._id,
             quantity: item.quantity,
-            price: item.discountPercentage 
+            price: item.discountPercentage
               ? item.price - (item.price * item.discountPercentage / 100)
               : item.price
           })),
@@ -123,7 +124,7 @@ const Checkout = () => {
         items: items.map(item => ({
           book: item._id,
           quantity: item.quantity,
-          price: item.discountPercentage 
+          price: item.discountPercentage
             ? item.price - (item.price * item.discountPercentage / 100)
             : item.price
         })),
@@ -150,7 +151,7 @@ const Checkout = () => {
     <div className="min-h-screen bg-cream py-12">
       <div className="container-custom">
         {/* Header */}
-        <motion.div 
+        <motion.div
           className="mb-12"
           variants={fadeInUp}
           initial="hidden"
@@ -161,7 +162,7 @@ const Checkout = () => {
         </motion.div>
 
         {error && (
-          <motion.div 
+          <motion.div
             className="mb-6"
             variants={fadeInUp}
             initial="hidden"
@@ -191,7 +192,7 @@ const Checkout = () => {
         ) : (
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Left Column - Address & Payment */}
-            <motion.div 
+            <motion.div
               className="lg:col-span-2 space-y-6"
               variants={staggerContainer}
               initial="hidden"
@@ -220,7 +221,7 @@ const Checkout = () => {
                     {addresses.length === 0 ? (
                       <div className="text-center py-8">
                         <p className="body text-charcoal/60 mb-4">No addresses saved</p>
-                        <Link to="/buyer/addresses/new">
+                        <Link to="/buyer/addresses">
                           <Button variant="outline">Add New Address</Button>
                         </Link>
                       </div>
@@ -229,11 +230,10 @@ const Checkout = () => {
                         {addresses.map((address) => (
                           <label
                             key={address._id}
-                            className={`block border-2 rounded-lg p-4 cursor-pointer transition-all duration-200 ${
-                              selectedAddress === address._id
-                                ? 'border-brown bg-brown/5 shadow-sm'
-                                : 'border-surface hover:border-taupe/40'
-                            }`}
+                            className={`block border-2 rounded-lg p-4 cursor-pointer transition-all duration-200 ${selectedAddress === address._id
+                              ? 'border-brown bg-brown/5 shadow-sm'
+                              : 'border-surface hover:border-taupe/40'
+                              }`}
                           >
                             <input
                               type="radio"
@@ -245,7 +245,7 @@ const Checkout = () => {
                             />
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
-                                <p className="font-semibold text-charcoal mb-1">{address.fullName}</p>
+                                <p className="font-semibold text-charcoal mb-1">{address.name || address.fullName}</p>
                                 <p className="body-sm text-charcoal/70">
                                   {address.street}, {address.city}
                                 </p>
@@ -287,11 +287,10 @@ const Checkout = () => {
                     <div className="space-y-3">
                       {/* Card Payment */}
                       <label
-                        className={`block border-2 rounded-lg p-4 cursor-pointer transition-all duration-200 ${
-                          paymentMethod === 'card'
-                            ? 'border-brown bg-brown/5 shadow-sm'
-                            : 'border-surface hover:border-taupe/40'
-                        }`}
+                        className={`block border-2 rounded-lg p-4 cursor-pointer transition-all duration-200 ${paymentMethod === 'card'
+                          ? 'border-brown bg-brown/5 shadow-sm'
+                          : 'border-surface hover:border-taupe/40'
+                          }`}
                       >
                         <input
                           type="radio"
@@ -334,11 +333,10 @@ const Checkout = () => {
 
                       {/* COD Payment */}
                       <label
-                        className={`block border-2 rounded-lg p-4 cursor-pointer transition-all duration-200 ${
-                          paymentMethod === 'cod'
-                            ? 'border-brown bg-brown/5 shadow-sm'
-                            : 'border-surface hover:border-taupe/40'
-                        }`}
+                        className={`block border-2 rounded-lg p-4 cursor-pointer transition-all duration-200 ${paymentMethod === 'cod'
+                          ? 'border-brown bg-brown/5 shadow-sm'
+                          : 'border-surface hover:border-taupe/40'
+                          }`}
                       >
                         <input
                           type="radio"
@@ -372,7 +370,7 @@ const Checkout = () => {
 
                     {/* Stripe Payment Form */}
                     {showStripeForm && clientSecret && paymentMethod === 'card' && (
-                      <motion.div 
+                      <motion.div
                         className="mt-6"
                         variants={fadeInUp}
                         initial="hidden"
@@ -409,7 +407,7 @@ const Checkout = () => {
             </motion.div>
 
             {/* Right Column - Order Summary */}
-            <motion.div 
+            <motion.div
               className="lg:col-span-1"
               variants={fadeInUp}
               initial="hidden"
@@ -423,18 +421,19 @@ const Checkout = () => {
                   {/* Order Items */}
                   <div className="space-y-4 mb-6 max-h-80 overflow-y-auto pr-2">
                     {items.map((item) => {
-                      const price = item.discountPercentage 
+                      const book = item.book || item;
+                      const price = item.discountPercentage
                         ? item.price - (item.price * item.discountPercentage / 100)
                         : item.price;
                       return (
                         <div key={item._id} className="flex gap-3 pb-4 border-b border-surface last:border-0 last:pb-0">
                           <img
-                            src={item.coverImage || '/placeholder-book.png'}
-                            alt={item.title}
+                            src={book.coverImage || item.coverImage || '/placeholder-book.png'}
+                            alt={book.title || item.title}
                             className="w-16 h-20 object-cover rounded shadow-sm"
                           />
                           <div className="flex-1 min-w-0">
-                            <p className="body font-medium text-charcoal truncate mb-1">{item.title}</p>
+                            <p className="body font-medium text-charcoal truncate mb-1">{book.title || item.title}</p>
                             <div className="flex items-center gap-2 mb-2">
                               <span className="body-sm text-charcoal/60">Qty: {item.quantity}</span>
                               {item.discountPercentage > 0 && (
@@ -490,7 +489,7 @@ const Checkout = () => {
                       <Button
                         onClick={handlePlaceOrder}
                         disabled={submitting || !selectedAddress}
-                        loading={submitting}
+                        isLoading={submitting}
                         variant="primary"
                         size="lg"
                         fullWidth

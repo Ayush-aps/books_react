@@ -18,7 +18,7 @@ const AddressSchema = new mongoose.Schema({
   phone: {
     type: String,
     required: true,
-    match: [/^\d{10}$/, "Please enter a valid 10-digit phone number"],
+    trim: true,
   },
   street: {
     type: String,
@@ -39,7 +39,6 @@ const AddressSchema = new mongoose.Schema({
     type: String,
     required: true,
     trim: true,
-    match: [/^\d{6}$/, "Please enter a valid 6-digit PIN code"],
   },
   country: {
     type: String,

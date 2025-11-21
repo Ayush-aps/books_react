@@ -72,7 +72,7 @@ const RegisterComplaint = () => {
     try {
       setLoadingOrders(true);
       const response = await api.get('/buyer/orders');
-      setOrders(response.data.data || []);
+      setOrders(response.data.data.orders || []);
     } catch (err) {
       console.error('Failed to load orders:', err);
     } finally {
@@ -85,8 +85,8 @@ const RegisterComplaint = () => {
 
     try {
       await api.post('/buyer/complaints', formData);
-      navigate('/buyer/profile', { 
-        state: { success: 'Complaint registered successfully. We will review it and get back to you soon.' } 
+      navigate('/buyer/profile', {
+        state: { success: 'Complaint registered successfully. We will review it and get back to you soon.' }
       });
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to submit complaint');
@@ -131,11 +131,10 @@ const RegisterComplaint = () => {
               value={values.orderId}
               onChange={handleChange}
               onBlur={handleBlur}
-              className={`w-full px-3 py-2 border ${
-                touched.orderId && errors.orderId
-                  ? 'border-red-500 focus:ring-red-500'
-                  : 'border-gray-300 focus:ring-blue-500'
-              } rounded-md focus:outline-none focus:ring-2`}
+              className={`w-full px-3 py-2 border ${touched.orderId && errors.orderId
+                ? 'border-red-500 focus:ring-red-500'
+                : 'border-gray-300 focus:ring-blue-500'
+                } rounded-md focus:outline-none focus:ring-2`}
             >
               <option value="">Choose an order...</option>
               {orders.map((order) => (
@@ -165,11 +164,10 @@ const RegisterComplaint = () => {
               value={values.category}
               onChange={handleChange}
               onBlur={handleBlur}
-              className={`w-full px-3 py-2 border ${
-                touched.category && errors.category
-                  ? 'border-red-500 focus:ring-red-500'
-                  : 'border-gray-300 focus:ring-blue-500'
-              } rounded-md focus:outline-none focus:ring-2`}
+              className={`w-full px-3 py-2 border ${touched.category && errors.category
+                ? 'border-red-500 focus:ring-red-500'
+                : 'border-gray-300 focus:ring-blue-500'
+                } rounded-md focus:outline-none focus:ring-2`}
             >
               <option value="">Select category...</option>
               {complaintCategories.map((cat) => (
@@ -193,11 +191,10 @@ const RegisterComplaint = () => {
               value={values.subject}
               onChange={handleChange}
               onBlur={handleBlur}
-              className={`w-full px-3 py-2 border ${
-                touched.subject && errors.subject
-                  ? 'border-red-500 focus:ring-red-500'
-                  : 'border-gray-300 focus:ring-blue-500'
-              } rounded-md focus:outline-none focus:ring-2`}
+              className={`w-full px-3 py-2 border ${touched.subject && errors.subject
+                ? 'border-red-500 focus:ring-red-500'
+                : 'border-gray-300 focus:ring-blue-500'
+                } rounded-md focus:outline-none focus:ring-2`}
               placeholder="Brief summary of your issue"
             />
             {touched.subject && errors.subject && (
@@ -217,11 +214,10 @@ const RegisterComplaint = () => {
               onChange={handleChange}
               onBlur={handleBlur}
               rows="6"
-              className={`w-full px-3 py-2 border ${
-                touched.description && errors.description
-                  ? 'border-red-500 focus:ring-red-500'
-                  : 'border-gray-300 focus:ring-blue-500'
-              } rounded-md focus:outline-none focus:ring-2 resize-none`}
+              className={`w-full px-3 py-2 border ${touched.description && errors.description
+                ? 'border-red-500 focus:ring-red-500'
+                : 'border-gray-300 focus:ring-blue-500'
+                } rounded-md focus:outline-none focus:ring-2 resize-none`}
               placeholder="Please provide detailed information about your complaint (minimum 20 characters)..."
             />
             {touched.description && errors.description && (

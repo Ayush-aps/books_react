@@ -67,7 +67,7 @@ const Addresses = () => {
     try {
       setLoading(true);
       const response = await api.get('/buyer/addresses');
-      setAddresses(response.data.data || []);
+      setAddresses(response.data.data.addresses || []);
       setError(null);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load addresses');
@@ -84,7 +84,7 @@ const Addresses = () => {
 
   const handleEditAddress = (address) => {
     setEditingAddress(address);
-    setFieldValue('fullName', address.fullName);
+    setFieldValue('fullName', address.name || address.fullName); // Backend uses 'name'
     setFieldValue('phone', address.phone);
     setFieldValue('street', address.street);
     setFieldValue('city', address.city);
@@ -98,11 +98,11 @@ const Addresses = () => {
   const onSubmitAddress = async (formData) => {
     try {
       if (editingAddress) {
-        await api.put(`/api/buyer/addresses/${editingAddress._id}`, formData);
+        await api.put(`/buyer/addresses/${editingAddress._id}`, formData);
       } else {
         await api.post('/buyer/addresses', formData);
       }
-      
+
       setShowAddModal(false);
       fetchAddresses();
     } catch (err) {
@@ -112,7 +112,7 @@ const Addresses = () => {
 
   const handleSetDefault = async (addressId) => {
     try {
-      await api.put(`/api/buyer/addresses/${addressId}/default`);
+      await api.put(`/buyer/addresses/${addressId}`, { isDefault: true });
       fetchAddresses();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to set default address');
@@ -121,7 +121,7 @@ const Addresses = () => {
 
   const handleDeleteAddress = async (addressId) => {
     try {
-      await api.delete(`/api/buyer/addresses/${addressId}`);
+      await api.delete(`/buyer/addresses/${addressId}`);
       setDeleteConfirm(null);
       fetchAddresses();
     } catch (err) {
@@ -196,17 +196,16 @@ const Addresses = () => {
             {addresses.map((address) => (
               <div
                 key={address._id}
-                className={`bg-white rounded-lg shadow-sm p-6 border-2 ${
-                  address.isDefault ? 'border-blue-500' : 'border-transparent'
-                } hover:shadow-md transition-shadow`}
+                className={`bg-white rounded-lg shadow-sm p-6 border-2 ${address.isDefault ? 'border-blue-500' : 'border-transparent'
+                  } hover:shadow-md transition-shadow`}
               >
                 {address.isDefault && (
                   <span className="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded mb-3">
                     DEFAULT
                   </span>
                 )}
-                
-                <h3 className="font-semibold text-gray-900 mb-2">{address.fullName}</h3>
+
+                <h3 className="font-semibold text-gray-900 mb-2">{address.name || address.fullName}</h3>
                 <p className="text-gray-600 text-sm mb-1">{address.phone}</p>
                 <p className="text-gray-600 text-sm">{address.street}</p>
                 <p className="text-gray-600 text-sm">
@@ -259,11 +258,10 @@ const Addresses = () => {
                   value={values.fullName}
                   onChange={handleChange}
                   onBlur={handleBlur}
-                  className={`w-full px-3 py-2 border ${
-                    touched.fullName && errors.fullName
-                      ? 'border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:ring-blue-500'
-                  } rounded-md focus:outline-none focus:ring-2`}
+                  className={`w-full px-3 py-2 border ${touched.fullName && errors.fullName
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300 focus:ring-blue-500'
+                    } rounded-md focus:outline-none focus:ring-2`}
                 />
                 {touched.fullName && errors.fullName && (
                   <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>
@@ -280,11 +278,10 @@ const Addresses = () => {
                   value={values.phone}
                   onChange={handleChange}
                   onBlur={handleBlur}
-                  className={`w-full px-3 py-2 border ${
-                    touched.phone && errors.phone
-                      ? 'border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:ring-blue-500'
-                  } rounded-md focus:outline-none focus:ring-2`}
+                  className={`w-full px-3 py-2 border ${touched.phone && errors.phone
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300 focus:ring-blue-500'
+                    } rounded-md focus:outline-none focus:ring-2`}
                 />
                 {touched.phone && errors.phone && (
                   <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
@@ -301,11 +298,10 @@ const Addresses = () => {
                   value={values.street}
                   onChange={handleChange}
                   onBlur={handleBlur}
-                  className={`w-full px-3 py-2 border ${
-                    touched.street && errors.street
-                      ? 'border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:ring-blue-500'
-                  } rounded-md focus:outline-none focus:ring-2`}
+                  className={`w-full px-3 py-2 border ${touched.street && errors.street
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300 focus:ring-blue-500'
+                    } rounded-md focus:outline-none focus:ring-2`}
                 />
                 {touched.street && errors.street && (
                   <p className="text-red-500 text-sm mt-1">{errors.street}</p>
@@ -323,11 +319,10 @@ const Addresses = () => {
                     value={values.city}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    className={`w-full px-3 py-2 border ${
-                      touched.city && errors.city
-                        ? 'border-red-500 focus:ring-red-500'
-                        : 'border-gray-300 focus:ring-blue-500'
-                    } rounded-md focus:outline-none focus:ring-2`}
+                    className={`w-full px-3 py-2 border ${touched.city && errors.city
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-gray-300 focus:ring-blue-500'
+                      } rounded-md focus:outline-none focus:ring-2`}
                   />
                   {touched.city && errors.city && (
                     <p className="text-red-500 text-sm mt-1">{errors.city}</p>
@@ -344,11 +339,10 @@ const Addresses = () => {
                     value={values.state}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    className={`w-full px-3 py-2 border ${
-                      touched.state && errors.state
-                        ? 'border-red-500 focus:ring-red-500'
-                        : 'border-gray-300 focus:ring-blue-500'
-                    } rounded-md focus:outline-none focus:ring-2`}
+                    className={`w-full px-3 py-2 border ${touched.state && errors.state
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-gray-300 focus:ring-blue-500'
+                      } rounded-md focus:outline-none focus:ring-2`}
                   />
                   {touched.state && errors.state && (
                     <p className="text-red-500 text-sm mt-1">{errors.state}</p>
@@ -367,11 +361,10 @@ const Addresses = () => {
                     value={values.zipCode}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    className={`w-full px-3 py-2 border ${
-                      touched.zipCode && errors.zipCode
-                        ? 'border-red-500 focus:ring-red-500'
-                        : 'border-gray-300 focus:ring-blue-500'
-                    } rounded-md focus:outline-none focus:ring-2`}
+                    className={`w-full px-3 py-2 border ${touched.zipCode && errors.zipCode
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-gray-300 focus:ring-blue-500'
+                      } rounded-md focus:outline-none focus:ring-2`}
                   />
                   {touched.zipCode && errors.zipCode && (
                     <p className="text-red-500 text-sm mt-1">{errors.zipCode}</p>

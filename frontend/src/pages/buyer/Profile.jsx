@@ -20,7 +20,7 @@ const Profile = () => {
   const dispatch = useDispatch();
   const { user } = useSelector(state => state.auth);
   const { currentSubscription } = useSelector(state => state.subscription);
-  
+
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -32,14 +32,14 @@ const Profile = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch subscription status
       dispatch(fetchSubscriptionStatus());
-      
+
       // Fetch addresses
       const addressResponse = await api.get('/buyer/addresses');
-      setAddresses(addressResponse.data.data || []);
-      
+      setAddresses(addressResponse.data.data.addresses || []);
+
       setError(null);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load profile data');
@@ -69,7 +69,7 @@ const Profile = () => {
         </motion.div>
 
         {error && (
-          <motion.div 
+          <motion.div
             className="mb-6"
             variants={fadeInUp}
             initial="hidden"
@@ -79,7 +79,7 @@ const Profile = () => {
           </motion.div>
         )}
 
-        <motion.div 
+        <motion.div
           className="grid grid-cols-1 lg:grid-cols-3 gap-8"
           variants={staggerContainer}
           initial="hidden"
@@ -126,12 +126,12 @@ const Profile = () => {
                     <div>
                       <label className="body-sm font-medium text-charcoal/60 mb-2 block">Member Since</label>
                       <p className="body text-charcoal">
-                        {user?.createdAt 
+                        {user?.createdAt
                           ? new Date(user.createdAt).toLocaleDateString('en-US', {
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric'
-                            })
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })
                           : 'N/A'}
                       </p>
                     </div>
@@ -237,7 +237,7 @@ const Profile = () => {
                         <p className="body-sm opacity-90 mb-1">Active Plan</p>
                         <p className="heading-3">{currentSubscription.planName}</p>
                       </div>
-                      
+
                       <div className="space-y-3">
                         <div className="flex justify-between items-center">
                           <span className="body-sm text-charcoal/60">Status</span>
