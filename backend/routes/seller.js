@@ -6,13 +6,15 @@
 const express = require("express");
 const router = express.Router();
 const { ensureAuthenticated, ensureSeller } = require("../middleware/auth");
-    const {
+const {
   // Dashboard
   getDashboard,
   // Inventory Management
   getInventory,
   // Book Management
   createBook,
+  searchBooks,
+  lookupBookByISBN,
   getBookDetails,
   updateBook,
   deleteBook,
@@ -42,6 +44,8 @@ router.get("/inventory", ensureAuthenticated, ensureSeller, getInventory);
 // BOOK MANAGEMENT ROUTES
 // ============================================
 router.get("/books", ensureAuthenticated, ensureSeller, getAllBooks);
+router.get("/books/search", ensureAuthenticated, ensureSeller, searchBooks);
+router.get("/books/lookup/:isbn", ensureAuthenticated, ensureSeller, lookupBookByISBN);
 router.post("/books", ensureAuthenticated, ensureSeller, createBook);
 router.get("/books/:id", ensureAuthenticated, ensureSeller, getBookDetails);
 router.put("/books/:id", ensureAuthenticated, ensureSeller, updateBook);

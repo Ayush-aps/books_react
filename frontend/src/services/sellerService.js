@@ -23,9 +23,24 @@ const sellerService = {
     return response.data;
   },
 
+  // Search books by title/author from Google Books API
+  searchBooks: async (query, maxResults = 10) => {
+    const params = new URLSearchParams();
+    params.append('query', query);
+    params.append('maxResults', maxResults);
+    const response = await api.get(`/seller/books/search?${params.toString()}`);
+    return response.data;
+  },
+
+  // Lookup book by ISBN from Google Books API
+  lookupBookByISBN: async (isbn) => {
+    const response = await api.get(`/seller/books/lookup/${isbn}`);
+    return response.data;
+  },
+
   // Upload a new book
   uploadBook: async (bookData) => {
-    const response = await api.post('/seller/upload', bookData);
+    const response = await api.post('/seller/books', bookData);
     return response.data;
   },
 
