@@ -15,17 +15,10 @@ const Header = () => {
   const { isAuthenticated, user } = useSelector(state => state.auth);
   const { items: cartItems } = useSelector(state => state.cart);
 
-  const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [showRestrictedToast, setShowRestrictedToast] = useState(false);
   const [restrictedMessage, setRestrictedMessage] = useState('');
-
-  useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
@@ -52,19 +45,19 @@ const Header = () => {
 
   return (
     <>
-      <header className={`fixed top-0 left-0 right-0 z-fixed transition-all duration-300 ${isScrolled ? 'bg-white/90 backdrop-blur-md shadow-md border-b border-border-light' : 'bg-white border-b border-border-light'}`}>
+      <header className="bg-white border-b border-border-light shadow-sm">
         <nav className="container-custom">
           <div className="flex items-center justify-between h-20">
-            <Link to="/" className="flex items-center gap-3 group">
+            <Link to="/" className="flex items-center gap-3 group focus:outline-none">
               <motion.div whileHover={{ scale: 1.05 }} transition={{ duration: 0.2 }}>
-                <div className="w-10 h-10 bg-accent-brown rounded-lg flex items-center justify-center shadow-sm">
+                <div className="w-10 h-10 bg-accent-brown rounded-lg flex items-center justify-center shadow-sm transition-all duration-300 group-hover:shadow-md" style={{ backgroundColor: '#8B7355' }}>
                   <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                   </svg>
                 </div>
               </motion.div>
               <div className="flex flex-col">
-                <span className="font-serif font-bold text-2xl text-charcoal group-hover:text-accent-brown transition-colors">
+                <span className="font-serif font-bold text-2xl text-charcoal group-hover:text-accent-brown transition-all duration-300">
                   Bookish
                 </span>
                 <span className="text-xs text-text-tertiary tracking-wider uppercase">
@@ -218,7 +211,6 @@ const Header = () => {
           </>
         )}
       </AnimatePresence>
-      <div className="h-20"></div>
 
       {/* Restricted Access Toast */}
       {showRestrictedToast && (
@@ -233,14 +225,14 @@ const Header = () => {
 };
 
 const NavLink = ({ to, isActive, children, onClick }) => (
-  <Link to={to} onClick={onClick} className={`text-sm font-medium transition-colors relative py-1 ${isActive ? 'text-accent-brown' : 'text-text-primary hover:text-accent-brown'}`}>
+  <Link to={to} onClick={onClick} className={`text-sm font-medium transition-all duration-300 relative py-1 hover:scale-110 focus:outline-none ${isActive ? 'text-accent-brown' : 'text-text-primary hover:text-accent-brown'}`}>
     {children}
     {isActive && <motion.div layoutId="activeLink" className="absolute -bottom-1 left-0 right-0 h-0.5 bg-accent-brown" transition={{ type: "spring", stiffness: 380, damping: 30 }} />}
   </Link>
 );
 
 const DropdownLink = ({ to, children }) => (
-  <Link to={to} className="block px-4 py-2 text-sm text-text-primary hover:bg-background-secondary transition-colors">
+  <Link to={to} className="block px-4 py-2 text-sm text-text-primary hover:bg-background-secondary transition-all duration-300 hover:pl-6 focus:outline-none rounded">
     {children}
   </Link>
 );
@@ -249,7 +241,7 @@ const MobileNavLink = ({ to, children, onClick }) => {
   const location = useLocation();
   const isActive = location.pathname === to;
   return (
-    <Link to={to} onClick={onClick} className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive ? 'bg-accent-brown/10 text-accent-brown' : 'text-text-primary hover:bg-background-secondary'}`}>
+    <Link to={to} onClick={onClick} className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 hover:pl-6 focus:outline-none ${isActive ? 'bg-accent-brown/10 text-accent-brown' : 'text-text-primary hover:bg-background-secondary'}`}>
       {children}
     </Link>
   );

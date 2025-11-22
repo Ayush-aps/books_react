@@ -38,7 +38,7 @@ const Footer = () => {
             {/* Newsletter */}
             <div>
               <h4 className="text-white font-medium mb-3">Stay Updated</h4>
-              <form onSubmit={handleNewsletter} className="flex gap-2">
+              <form onSubmit={handleNewsletter} className="flex gap-2 items-stretch">
                 <Input 
                   type="email"
                   placeholder="Enter your email"
@@ -47,9 +47,20 @@ const Footer = () => {
                   required
                   className="flex-1 bg-charcoal-light border-border-dark text-white"
                 />
-                <Button type="submit" variant="primary" size="sm">
+                <button 
+                   type="submit" 
+                   className="text-white text-base rounded-lg transition-all duration-300 hover:scale-105 hover:brightness-110 focus:outline-none shadow-sm hover:shadow-md whitespace-nowrap"
+                   style={{ 
+                     backgroundColor: '#8B7355',
+                     padding: '0.625rem 1.5rem',
+                     border: '1px solid transparent',
+                     lineHeight: '1.5',
+                     height: '50px',
+                     fontWeight: '500'
+                  }}
+                >
                   Subscribe
-                </Button>
+                </button>
               </form>
               {subscribeStatus === 'success' && (
                 <motion.p 

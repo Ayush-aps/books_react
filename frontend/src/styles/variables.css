@@ -270,14 +270,16 @@
   transition: all var(--duration-base) var(--ease-elegant);
   cursor: pointer;
   letter-spacing: var(--tracking-wide);
+  outline: none;
 }
 
 .btn:hover {
-  transform: translateY(-1px);
+  transform: translateY(-1px) scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .btn:active {
-  transform: translateY(0);
+  transform: translateY(0) scale(1);
 }
 
 .btn:disabled {

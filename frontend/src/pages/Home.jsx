@@ -58,7 +58,7 @@ const Home = () => {
     fetchHomeData();
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
-    }, 5000);
+    }, 8000);
     return () => clearInterval(interval);
   }, []);
 
@@ -133,24 +133,24 @@ const Home = () => {
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.2, duration: 0.6 }}
-                      className="max-w-2xl"
+                      className="max-w-2xl pl-12 md:pl-16"
                     >
-                      <Badge variant="brown" size="lg" className="mb-6">
-                        Featured Collection
-                      </Badge>
+                      <div className="inline-block mb-6 px-4 py-2 rounded-full" style={{ backgroundColor: 'rgba(139, 115, 85, 0.9)' }}>
+                        <span className="text-white text-sm font-semibold">Featured Collection</span>
+                      </div>
                       <h1 className="heading-1 text-white mb-6">
                         {slide.title}
                       </h1>
-                      <p className="text-xl md:text-2xl text-cream/90 mb-8 leading-relaxed">
+                      <p className="text-xl md:text-2xl text-white mb-8 leading-relaxed">
                         {slide.subtitle}
                       </p>
                       <Link to={slide.link}>
-                        <Button variant="primary" size="lg" className="shadow-lg">
+                        <button className="inline-flex items-center gap-2 text-white px-6 py-3 rounded-lg font-medium text-sm transition-all shadow-lg hover:shadow-xl" style={{ backgroundColor: '#8B7355' }}>
                           {slide.cta}
-                          <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                           </svg>
-                        </Button>
+                        </button>
                       </Link>
                     </motion.div>
                   </div>
@@ -204,7 +204,7 @@ const Home = () => {
           animate={{ opacity: 1, y: 0 }}
           className="bg-cream border-b border-charcoal/10"
         >
-          <div className="container-custom py-12">
+          <div className="container-custom py-8">
             <motion.div 
               variants={staggerContainer}
               initial="hidden"
@@ -268,14 +268,131 @@ const Home = () => {
         </motion.section>
       )}
 
+      {/* Featured Books */}
+      {data.featuredBooks && data.featuredBooks.length > 0 && (
+        <section className="py-8 md:py-12 bg-white">
+          <div className="container-custom">
+            <div className="flex items-center justify-between mb-6">
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+              >
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">Featured Collection</h2>
+                <p className="text-sm text-gray-500">Handpicked selections curated just for you</p>
+              </motion.div>
+              <Link to="/buyer/browse" className="hidden md:block">
+                <button className="text-accent-brown hover:text-accent-brown/80 font-semibold text-sm flex items-center gap-1 transition-colors">
+                  VIEW ALL
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </Link>
+            </div>
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-5"
+            >
+              {data.featuredBooks.slice(0, 6).map(book => (
+                <motion.div key={book._id} variants={staggerItem}>
+                  <BookCard book={book} compact={true} />
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+      )}
+
+      {/* New Arrivals */}
+      {data.newBooks && data.newBooks.length > 0 && (
+        <section className="py-8 md:py-12 bg-gray-50">
+          <div className="container-custom">
+            <div className="flex items-center justify-between mb-6">
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+              >
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">New Arrivals</h2>
+                <p className="text-sm text-gray-500">Discover the latest additions to our collection</p>
+              </motion.div>
+              <Link to="/buyer/browse?sort=newest" className="hidden md:block">
+                <button className="text-accent-brown hover:text-accent-brown/80 font-semibold text-sm flex items-center gap-1 transition-colors">
+                  VIEW ALL
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </Link>
+            </div>
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-5"
+            >
+              {data.newBooks.slice(0, 6).map(book => (
+                <motion.div key={book._id} variants={staggerItem}>
+                  <BookCard book={book} compact={true} />
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+      )}
+
+      {/* Trending Books */}
+      {data.trendingBooks && data.trendingBooks.length > 0 && (
+        <section className="py-8 md:py-12 bg-white">
+          <div className="container-custom">
+            <div className="flex items-center justify-between mb-6">
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+              >
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">Trending Now</h2>
+                <p className="text-sm text-gray-500">Most popular books this week</p>
+              </motion.div>
+              <Link to="/buyer/browse?sort=rating" className="hidden md:block">
+                <button className="text-accent-brown hover:text-accent-brown/80 font-semibold text-sm flex items-center gap-1 transition-colors">
+                  VIEW ALL
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </Link>
+            </div>
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-5"
+            >
+              {data.trendingBooks.slice(0, 6).map(book => (
+                <motion.div key={book._id} variants={staggerItem}>
+                  <BookCard book={book} compact={true} />
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+      )}
+
       {/* Features Section - Premium */}
-      <section className="py-16 md:py-24 bg-white">
+      <section className="py-8 md:py-12 bg-white">
         <div className="container-custom">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-16"
+            className="text-center mb-10"
           >
             <h2 className="heading-2 mb-4">Why Choose Bookish</h2>
             <p className="body-lg text-text-secondary max-w-2xl mx-auto">
@@ -288,7 +405,7 @@ const Home = () => {
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-8"
+            className="grid grid-cols-1 md:grid-cols-3 gap-6"
           >
             <motion.div variants={staggerItem}>
               <Card elevated hoverable padding="lg" className="text-center h-full">
@@ -335,179 +452,64 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Featured Books */}
-      {data.featuredBooks && data.featuredBooks.length > 0 && (
-        <section className="py-16 md:py-24 bg-cream">
-          <div className="container-custom">
-            <div className="flex items-center justify-between mb-12">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-              >
-                <h2 className="heading-2 mb-2">Featured Collection</h2>
-                <p className="body-lg text-text-secondary">Handpicked selections curated just for you</p>
-              </motion.div>
-              <Link to="/books">
-                <Button variant="outline" size="md">
-                  View All
-                  <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                </Button>
-              </Link>
-            </div>
-            <motion.div
-              variants={staggerContainer}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-            >
-              {data.featuredBooks.slice(0, 4).map(book => (
-                <motion.div key={book._id} variants={staggerItem}>
-                  <BookCard book={book} />
-                </motion.div>
-              ))}
-            </motion.div>
+      {/* CTA Section - Only show for non-authenticated users */}
+      {!isAuthenticated && (
+        <motion.section
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          className="relative py-16 md:py-20 bg-gradient-to-br from-charcoal via-charcoal to-accent-brown overflow-hidden"
+        >
+          {/* Decorative Elements */}
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-0 left-0 w-96 h-96 bg-accent-brown rounded-full blur-3xl"></div>
+            <div className="absolute bottom-0 right-0 w-96 h-96 bg-accent-green rounded-full blur-3xl"></div>
           </div>
-        </section>
-      )}
 
-      {/* New Arrivals */}
-      {data.newBooks && data.newBooks.length > 0 && (
-        <section className="py-16 md:py-24 bg-white">
-          <div className="container-custom">
-            <div className="flex items-center justify-between mb-12">
+          <div className="container-custom relative z-10">
+            <div className="max-w-3xl mx-auto text-center">
               <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
+                transition={{ delay: 0.2 }}
               >
-                <h2 className="heading-2 mb-2">New Arrivals</h2>
-                <p className="body-lg text-text-secondary">Discover the latest additions to our collection</p>
-              </motion.div>
-              <Link to="/books?sort=newest">
-                <Button variant="outline" size="md">
-                  View All
-                  <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                </Button>
-              </Link>
-            </div>
-            <motion.div
-              variants={staggerContainer}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-            >
-              {data.newBooks.slice(0, 4).map(book => (
-                <motion.div key={book._id} variants={staggerItem}>
-                  <BookCard book={book} />
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </section>
-      )}
-
-      {/* Trending Books */}
-      {data.trendingBooks && data.trendingBooks.length > 0 && (
-        <section className="py-16 md:py-24 bg-cream">
-          <div className="container-custom">
-            <div className="flex items-center justify-between mb-12">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-              >
-                <h2 className="heading-2 mb-2">Trending Now</h2>
-                <p className="body-lg text-text-secondary">Most popular books this week</p>
-              </motion.div>
-              <Link to="/books?sort=rating">
-                <Button variant="outline" size="md">
-                  View All
-                  <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                </Button>
-              </Link>
-            </div>
-            <motion.div
-              variants={staggerContainer}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-            >
-              {data.trendingBooks.slice(0, 4).map(book => (
-                <motion.div key={book._id} variants={staggerItem}>
-                  <BookCard book={book} />
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </section>
-      )}
-
-      {/* CTA Section */}
-      <motion.section
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={{ once: true }}
-        className="relative py-24 bg-gradient-to-br from-charcoal via-charcoal to-accent-brown overflow-hidden"
-      >
-        {/* Decorative Elements */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 left-0 w-96 h-96 bg-accent-brown rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 right-0 w-96 h-96 bg-accent-green rounded-full blur-3xl"></div>
-        </div>
-
-        <div className="container-custom relative z-10">
-          <div className="max-w-3xl mx-auto text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-            >
-              <Badge variant="success" size="lg" className="mb-6">
+              <Badge variant="success" size="lg" className="mb-4">
                 Join Our Community
               </Badge>
-              <h2 className="heading-1 text-cream mb-6">
+              <h2 className="heading-1 text-cream mb-4">
                 Ready to Start Your Reading Journey?
               </h2>
-              <p className="body-xl text-cream/80 mb-10 max-w-2xl mx-auto">
-                Join thousands of book lovers. Browse our curated collection or start sharing your own literary treasures today.
-              </p>
-            </motion.div>
+              <p className="body-xl text-cream/80 mb-8 max-w-2xl mx-auto">
+                  Join thousands of book lovers. Browse our curated collection or start sharing your own literary treasures today.
+                </p>
+              </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.4 }}
-              className="flex flex-col sm:flex-row gap-4 justify-center"
-            >
-              <Link to="/auth/register">
-                <Button variant="primary" size="lg">
-                  Sign Up Now
-                  <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                </Button>
-              </Link>
-              <Link to="/about">
-                <Button variant="outline" size="lg" className="border-cream text-cream hover:bg-cream/10">
-                  Learn More
-                </Button>
-              </Link>
-            </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.4 }}
+                className="flex flex-col sm:flex-row gap-4 justify-center"
+              >
+                <Link to="/register">
+                  <button className="group inline-flex items-center justify-center gap-2 text-white px-8 py-3 rounded-lg font-medium text-base transition-all duration-300 shadow-lg hover:shadow-2xl min-w-[200px] whitespace-nowrap hover:scale-105 hover:brightness-110" style={{ backgroundColor: '#8B7355' }}>
+                    Sign Up Now!
+                    <svg className="w-4 h-4 flex-shrink-0 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                  </button>
+                </Link>
+                <Link to="/about">
+                  <button className="inline-flex items-center justify-center border-2 border-cream text-cream hover:bg-cream hover:text-charcoal px-8 py-3 rounded-lg font-medium text-base transition-all duration-300 shadow-lg hover:shadow-2xl min-w-[200px] whitespace-nowrap hover:scale-105">
+                    Learn More
+                  </button>
+                </Link>
+              </motion.div>
+            </div>
           </div>
-        </div>
-      </motion.section>
+        </motion.section>
+      )}
     </div>
   );
 };
