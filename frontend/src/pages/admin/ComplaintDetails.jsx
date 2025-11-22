@@ -268,7 +268,7 @@ const ComplaintDetails = () => {
                           <div>
                             <p className="text-xs text-charcoal/60">Related Order</p>
                             <p className="body-sm font-semibold text-charcoal">
-                              #{complaint.order._id?.slice(-8)} - ${complaint.order.totalAmount?.toFixed(2)}
+                              #{complaint.order._id?.slice(-8)} - ₹{complaint.order.totalAmount?.toFixed(2)}
                             </p>
                           </div>
                         </div>

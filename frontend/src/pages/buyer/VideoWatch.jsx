@@ -288,7 +288,7 @@ const VideoWatch = () => {
                   <p className="text-sm text-gray-600 mb-2">by {video.book.author}</p>
                   <div className="flex items-center justify-between">
                     <span className="text-lg font-bold text-gray-900">
-                      ${video.book.price?.toFixed(2) || 'N/A'}
+                      ₹{video.book.price?.toFixed(2) || 'N/A'}
                     </span>
                     <span className="text-sm text-blue-600 font-medium">
                       View Details →

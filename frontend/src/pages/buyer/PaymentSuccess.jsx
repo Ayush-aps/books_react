@@ -128,7 +128,7 @@ const PaymentSuccess = () => {
                   </div>
                   <div className="bg-brown/5 rounded-lg p-4 border-2 border-brown/20">
                     <p className="body-sm text-brown/70 mb-1">Total Amount</p>
-                    <p className="heading-2 text-brown">${order.totalAmount.toFixed(2)}</p>
+                    <p className="heading-2 text-brown">₹{order.totalAmount.toFixed(2)}</p>
                   </div>
                 </div>
 
@@ -181,10 +181,10 @@ const PaymentSuccess = () => {
                           <div className="flex items-center gap-2 mt-1">
                             <span className="body-sm text-charcoal/60">Qty: {item.quantity}</span>
                             <span className="text-charcoal/40">•</span>
-                            <span className="body-sm text-charcoal/60">${item.price.toFixed(2)} each</span>
+                            <span className="body-sm text-charcoal/60">₹{item.price.toFixed(2)} each</span>
                           </div>
                         </div>
-                        <p className="heading-4 text-brown">${(item.price * item.quantity).toFixed(2)}</p>
+                        <p className="heading-4 text-brown">₹{(item.price * item.quantity).toFixed(2)}</p>
                       </div>
                     ))}
                   </div>

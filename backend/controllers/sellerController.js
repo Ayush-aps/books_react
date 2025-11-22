@@ -28,9 +28,11 @@ exports.getDashboard = async (req, res) => {
       .sort({ orderDate: -1 });
 
     let totalSales = 0;
+    let totalRevenue = 0;
     let monthlySales = 0;
     const totalOrders = orders.length;
     let pendingOrders = 0;
+    let deliveredOrders = 0;
 
     const now = new Date();
     const currentMonth = now.getMonth();
@@ -49,6 +51,11 @@ exports.getDashboard = async (req, res) => {
           const itemTotal = item.price * item.quantity;
           totalSales += itemTotal;
 
+          // Calculate revenue only from delivered orders
+          if (order.orderStatus === "delivered") {
+            totalRevenue += itemTotal;
+          }
+
           const orderDate = new Date(order.orderDate);
           if (orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear) {
             monthlySales += itemTotal;
@@ -60,8 +67,17 @@ exports.getDashboard = async (req, res) => {
 
       if (order.orderStatus === "processing") {
         pendingOrders++;
+      } else if (order.orderStatus === "delivered") {
+        deliveredOrders++;
       }
     });
+
+    // Calculate book status breakdown
+    const booksByStatus = {
+      approved: books.filter(book => book.isApproved === true).length,
+      pending: books.filter(book => book.isApproved === false && !book.rejectionReason).length,
+      rejected: books.filter(book => book.isApproved === false && book.rejectionReason).length,
+    };
 
     const topBooks = books.sort((a, b) => b.reviewCount - a.reviewCount).slice(0, 5);
     const recentOrders = orders.slice(0, 5);
@@ -71,13 +87,16 @@ exports.getDashboard = async (req, res) => {
       message: "Dashboard data retrieved successfully",
       data: {
         totalSales,
+        totalRevenue,
         monthlySales,
         totalOrders,
         pendingOrders,
+        deliveredOrders,
         salesData,
         topBooks,
         recentOrders,
         totalBooks: books.length,
+        booksByStatus,
       },
     });
   } catch (err) {
@@ -161,8 +180,8 @@ const mapGoogleBookData = (volumeInfo, volumeId) => {
     pageCount: volumeInfo.pageCount || null,
     language: volumeInfo.language ? volumeInfo.language.toUpperCase() : "EN",
     genres: volumeInfo.categories || [],
-    coverImage: volumeInfo.imageLinks?.thumbnail?.replace('http:', 'https:') || 
-                volumeInfo.imageLinks?.smallThumbnail?.replace('http:', 'https:') || "",
+    coverImage: volumeInfo.imageLinks?.thumbnail?.replace('http:', 'https:') ||
+      volumeInfo.imageLinks?.smallThumbnail?.replace('http:', 'https:') || "",
     averageRating: volumeInfo.averageRating || null,
     ratingsCount: volumeInfo.ratingsCount || null,
   };
@@ -205,14 +224,14 @@ exports.searchBooks = async (req, res) => {
     }
 
     // Map all results to our format
-    const books = response.data.items.map(item => 
+    const books = response.data.items.map(item =>
       mapGoogleBookData(item.volumeInfo, item.id)
     );
 
     res.json({
       success: true,
       message: "Books retrieved successfully",
-      data: { 
+      data: {
         books,
         totalResults: response.data.totalItems || books.length
       },
@@ -303,11 +322,11 @@ exports.createBook = async (req, res) => {
     }
 
     let finalCoverImage =
-      coverImageUrl && coverImageUrl.trim() !== "" 
-        ? coverImageUrl.trim() 
+      coverImageUrl && coverImageUrl.trim() !== ""
+        ? coverImageUrl.trim()
         : coverImage && coverImage.trim() !== ""
-        ? coverImage.trim()
-        : "https://nnpdev.wustl.edu/img/BookCovers/genericBookCover.jpg";
+          ? coverImage.trim()
+          : "https://nnpdev.wustl.edu/img/BookCovers/genericBookCover.jpg";
 
     const newBook = new Book({
       title,
@@ -338,7 +357,7 @@ exports.createBook = async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    
+
     // Handle duplicate ISBN error
     if (err.code === 11000 && err.keyPattern && err.keyPattern.isbn) {
       return res.status(400).json({
@@ -346,7 +365,7 @@ exports.createBook = async (req, res) => {
         message: "A book with this ISBN already exists in the system",
       });
     }
-    
+
     res.status(500).json({
       success: false,
       message: "Error uploading book",
@@ -705,12 +724,12 @@ exports.updateOrderStatus = async (req, res) => {
 // @access  Private (Seller)
 exports.getAllComplaints = async (req, res) => {
   try {
-    const complaints = await Complaint.find({ 
-      user: req.user._id, 
-      userRole: "seller" 
+    const complaints = await Complaint.find({
+      user: req.user._id,
+      userRole: "seller"
     })
-    .sort({ createdAt: -1 })
-    .populate("assignedTo", "name email");
+      .sort({ createdAt: -1 })
+      .populate("assignedTo", "name email");
 
     res.json({
       success: true,

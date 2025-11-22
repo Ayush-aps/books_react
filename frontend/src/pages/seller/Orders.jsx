@@ -228,7 +228,7 @@ const Orders = () => {
                           <div>
                             <p className="body-sm text-charcoal/60 mb-1">Total</p>
                             <p className="heading-5 text-brown">
-                              ${order.totalAmount.toFixed(2)}
+                              ₹{order.totalAmount.toFixed(2)}
                             </p>
                           </div>
                           <div>
@@ -257,7 +257,7 @@ const Orders = () => {
                                     {item.bookId?.title || 'Unknown Book'}
                                   </p>
                                   <p className="body-sm text-charcoal/60">
-                                    Qty: {item.quantity} × ${item.price.toFixed(2)}
+                                    Qty: {item.quantity} × ₹{item.price.toFixed(2)}
                                   </p>
                                 </div>
                               </div>

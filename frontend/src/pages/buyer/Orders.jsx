@@ -189,7 +189,7 @@ const Orders = () => {
                                 Quantity: {item.quantity}
                               </p>
                               <p className="body font-semibold text-brown">
-                                ${item.price.toFixed(2)}
+                                ₹{item.price.toFixed(2)}
                               </p>
                             </div>
                           </div>
@@ -225,7 +225,7 @@ const Orders = () => {
                       <div className="flex items-center gap-2">
                         <span className="body text-charcoal/70">Total:</span>
                         <span className="heading-3 text-brown">
-                          ${order.totalAmount.toFixed(2)}
+                          ₹{order.totalAmount.toFixed(2)}
                         </span>
                       </div>
                     </div>

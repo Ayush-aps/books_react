@@ -210,7 +210,7 @@ const Orders = () => {
                           </div>
                           <div>
                             <p className="body-sm text-charcoal/60 mb-1">Total</p>
-                            <p className="heading-5 text-brown">${order.totalAmount.toFixed(2)}</p>
+                            <p className="heading-5 text-brown">₹{order.totalAmount.toFixed(2)}</p>
                           </div>
                           <div>
                             <p className="body-sm text-charcoal/60 mb-1">Date</p>

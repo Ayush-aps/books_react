@@ -5,24 +5,33 @@
 
 import { useState, useEffect, useRef } from 'react';
 
-const SearchBar = ({ 
-  placeholder = 'Search...', 
-  onSearch, 
+const SearchBar = ({
+  placeholder = 'Search...',
+  onSearch,
   debounceDelay = 500,
   className = ''
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const debounceTimerRef = useRef(null);
+  const isInitialMount = useRef(true);
 
   useEffect(() => {
+    // Skip the effect on initial mount to prevent unwanted navigation
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
     // Clear previous timer
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
 
-    // Set new timer
+    // Set new timer - only call onSearch if there's actual content
     debounceTimerRef.current = setTimeout(() => {
-      onSearch(searchTerm);
+      if (searchTerm.trim()) {
+        onSearch(searchTerm);
+      }
     }, debounceDelay);
 
     // Cleanup

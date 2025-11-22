@@ -150,7 +150,7 @@ const RegisterComplaint = () => {
               <option value="">Choose an order...</option>
               {orders.map((order) => (
                 <option key={order._id} value={order._id}>
-                  Order #{order._id.slice(-8)} - {new Date(order.createdAt).toLocaleDateString()} - ${order.totalAmount.toFixed(2)}
+                  Order #{order._id.slice(-8)} - {new Date(order.createdAt).toLocaleDateString()} - ₹{order.totalAmount.toFixed(2)}
                 </option>
               ))}
             </select>

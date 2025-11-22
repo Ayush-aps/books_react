@@ -389,7 +389,7 @@ const Reports = () => {
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-semibold text-text-primary">{book.soldCount} sold</p>
-                        <p className="text-xs text-success">${book.revenue?.toFixed(2) || '0.00'}</p>
+                        <p className="text-xs text-success">₹{book.revenue?.toFixed(2) || '0.00'}</p>
                       </div>
                     </div>
                   ))}
@@ -420,7 +420,7 @@ const Reports = () => {
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-semibold text-text-primary">{seller.totalSales || 0} sales</p>
-                        <p className="text-xs text-success">${seller.revenue?.toFixed(2) || '0.00'}</p>
+                        <p className="text-xs text-success">₹{seller.revenue?.toFixed(2) || '0.00'}</p>
                       </div>
                     </div>
                   ))}

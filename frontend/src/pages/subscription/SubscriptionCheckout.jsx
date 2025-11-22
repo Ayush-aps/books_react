@@ -55,7 +55,7 @@ const SubscriptionCheckout = () => {
     try {
       // Map plan type to plan ID for backend
       const planId = planType === 'monthly' ? 'premium' : 'premium_plus';
-      
+
       // Create Stripe checkout session on backend
       const response = await api.post('/subscription/create-checkout-session', {
         planId
@@ -180,7 +180,7 @@ const SubscriptionCheckout = () => {
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-md p-6 sticky top-8">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h3>
-              
+
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between text-gray-700">
                   <span>Subscription Plan</span>
@@ -202,11 +202,11 @@ const SubscriptionCheckout = () => {
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-lg font-semibold text-gray-900">Total</span>
                   <span className="text-2xl font-bold text-blue-600">
-                    ${selectedPlan.price}
+                    ₹{selectedPlan.price}
                   </span>
                 </div>
                 <p className="text-sm text-gray-500">
-                  Due today, then ${selectedPlan.price} every {selectedPlan.interval}
+                  Due today, then ₹{selectedPlan.price} every {selectedPlan.interval}
                 </p>
               </div>
 

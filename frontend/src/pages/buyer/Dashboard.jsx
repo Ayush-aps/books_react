@@ -198,7 +198,7 @@ function BuyerDashboard() {
                           variant={
                             (() => {
                               const orderStatus = order.orderStatus || order.status || 'ordered';
-                              switch(orderStatus) {
+                              switch (orderStatus) {
                                 case 'delivered': return 'success';
                                 case 'shipped': return 'info';
                                 case 'processing': return 'warning';
@@ -257,7 +257,7 @@ function BuyerDashboard() {
                       <div className="flex-1">
                         <p className="font-medium">{book.title}</p>
                         <p className="text-sm text-text-secondary">{book.author}</p>
-                        <p className="font-bold text-accent-brown mt-1">${book.price}</p>
+                        <p className="font-bold text-accent-brown mt-1">₹{book.price}</p>
                       </div>
                     </Link>
                   ))}
@@ -315,7 +315,7 @@ function BuyerDashboard() {
                       <Badge
                         variant={
                           complaint.status === 'resolved' ? 'success' :
-                          complaint.status === 'in-progress' ? 'info' : 'warning'
+                            complaint.status === 'in-progress' ? 'info' : 'warning'
                         }
                         size="sm"
                       >

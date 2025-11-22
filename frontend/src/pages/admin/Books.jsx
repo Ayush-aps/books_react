@@ -243,7 +243,7 @@ const Books = () => {
 
                     <div className="flex items-center justify-between mb-4 pb-4 border-b border-charcoal/10">
                       <div>
-                        <p className="heading-5 text-brown">${book.price ? book.price.toFixed(2) : '0.00'}</p>
+                        <p className="heading-5 text-brown">₹{book.price ? book.price.toFixed(2) : '0.00'}</p>
                         <p className="body-sm text-charcoal/60">Stock: {book.stock || 0}</p>
                       </div>
                       <div className="text-right">

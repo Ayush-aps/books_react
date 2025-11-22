@@ -242,7 +242,7 @@ const Inventory = () => {
                           {/* Price */}
                           <div className="text-center sm:text-left">
                             <p className="body-sm text-charcoal/60 mb-1">Price</p>
-                            <p className="heading-4 text-brown">${book.price.toFixed(2)}</p>
+                            <p className="heading-4 text-brown">₹{book.price.toFixed(2)}</p>
                           </div>
 
                           {/* Stock */}

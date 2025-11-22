@@ -177,10 +177,10 @@ const OrderDetails = () => {
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-gray-900">
-                      ${(item.price * item.quantity).toFixed(2)}
+                      ₹{(item.price * item.quantity).toFixed(2)}
                     </p>
                     <p className="text-sm text-gray-600 mt-1">
-                      ${item.price.toFixed(2)} each
+                      ₹{item.price.toFixed(2)} each
                     </p>
                   </div>
                 </div>
@@ -211,11 +211,11 @@ const OrderDetails = () => {
             <div className="space-y-2">
               <div className="flex justify-between text-gray-700">
                 <span>Subtotal</span>
-                <span>${(order.totalAmount / 1.08).toFixed(2)}</span>
+                <span>₹{(order.totalAmount / 1.08).toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-gray-700">
                 <span>Tax (8%)</span>
-                <span>${(order.totalAmount - (order.totalAmount / 1.08)).toFixed(2)}</span>
+                <span>₹{(order.totalAmount - (order.totalAmount / 1.08)).toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-gray-700">
                 <span>Shipping</span>
@@ -223,7 +223,7 @@ const OrderDetails = () => {
               </div>
               <div className="border-t border-gray-200 pt-2 flex justify-between text-lg font-bold text-gray-900">
                 <span>Total</span>
-                <span>${order.totalAmount.toFixed(2)}</span>
+                <span>₹{order.totalAmount.toFixed(2)}</span>
               </div>
               <div className="mt-4 pt-4 border-t border-gray-200">
                 <p className="text-sm text-gray-600">

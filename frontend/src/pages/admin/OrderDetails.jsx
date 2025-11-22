@@ -217,7 +217,7 @@ const OrderDetails = () => {
                           <div className="flex items-center gap-4">
                             <p className="body-sm text-charcoal/60">Qty: {item.quantity}</p>
                             <p className="body-sm text-charcoal/60">•</p>
-                            <p className="body-sm font-medium text-brown">${item.price.toFixed(2)} each</p>
+                            <p className="body-sm font-medium text-brown">₹{item.price.toFixed(2)} each</p>
                           </div>
                           {item.seller && (
                             <p className="body-sm text-charcoal/50 mt-2">
@@ -226,7 +226,7 @@ const OrderDetails = () => {
                           )}
                         </div>
                         <div className="text-right">
-                          <p className="heading-5 text-brown">${(item.price * item.quantity).toFixed(2)}</p>
+                          <p className="heading-5 text-brown">₹{(item.price * item.quantity).toFixed(2)}</p>
                         </div>
                       </div>
                     ))}
@@ -236,11 +236,11 @@ const OrderDetails = () => {
                   <div className="mt-6 pt-6 border-t-2 border-surface space-y-2">
                     <div className="flex justify-between body text-charcoal/70">
                       <span>Subtotal</span>
-                      <span>${order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}</span>
+                      <span>₹{order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between body text-charcoal/70">
                       <span>Tax</span>
-                      <span>${(order.totalAmount * 0.08).toFixed(2)}</span>
+                      <span>₹{(order.totalAmount * 0.08).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between body text-charcoal/70">
                       <span>Shipping</span>
@@ -248,7 +248,7 @@ const OrderDetails = () => {
                     </div>
                     <div className="flex justify-between heading-4 text-charcoal pt-2 border-t border-surface">
                       <span>Total</span>
-                      <span className="text-brown">${order.totalAmount.toFixed(2)}</span>
+                      <span className="text-brown">₹{order.totalAmount.toFixed(2)}</span>
                     </div>
                   </div>
                 </Card.Body>

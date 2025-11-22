@@ -192,11 +192,11 @@ const Cart = () => {
                             {/* Price */}
                             <div className="mt-4 flex items-baseline gap-2">
                               <span className="text-xl font-bold text-text-primary">
-                                ${discountedPrice?.toFixed(2) || '0.00'}
+                                ₹{discountedPrice?.toFixed(2) || '0.00'}
                               </span>
                               {hasDiscount && (
                                 <span className="text-sm text-text-tertiary line-through">
-                                  ${originalPrice?.toFixed(2) || '0.00'}
+                                  ₹{originalPrice?.toFixed(2) || '0.00'}
                                 </span>
                               )}
                             </div>
@@ -242,7 +242,7 @@ const Cart = () => {
                           {/* Item Total */}
                           <div className="text-right">
                             <p className="text-xl font-bold text-text-primary">
-                              ${(discountedPrice * item.quantity).toFixed(2)}
+                              ₹{(discountedPrice * item.quantity).toFixed(2)}
                             </p>
                           </div>
                         </div>
@@ -303,11 +303,11 @@ const Cart = () => {
                               {/* Price */}
                               <div className="mt-2 flex items-baseline gap-2">
                                 <span className="text-lg font-bold text-text-primary">
-                                  ${discountedPrice?.toFixed(2) || '0.00'}
+                                  ₹{discountedPrice?.toFixed(2) || '0.00'}
                                 </span>
                                 {hasDiscount && (
                                   <span className="text-xs text-text-tertiary line-through">
-                                    ${originalPrice?.toFixed(2) || '0.00'}
+                                    ₹{originalPrice?.toFixed(2) || '0.00'}
                                   </span>
                                 )}
                               </div>
@@ -353,15 +353,15 @@ const Cart = () => {
                 <div className="space-y-4 mb-6">
                   <div className="flex justify-between body text-text-secondary">
                     <span>Subtotal ({items.length} {items.length === 1 ? 'item' : 'items'})</span>
-                    <span className="font-medium text-text-primary">${subtotal.toFixed(2)}</span>
+                    <span className="font-medium text-text-primary">₹{subtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between body text-text-secondary">
                     <span>Tax (8%)</span>
-                    <span className="font-medium text-text-primary">${tax.toFixed(2)}</span>
+                    <span className="font-medium text-text-primary">₹{tax.toFixed(2)}</span>
                   </div>
                   <div className="border-t border-border-primary pt-4 flex justify-between">
                     <span className="heading-4">Total</span>
-                    <span className="heading-3 text-accent-brown">${total.toFixed(2)}</span>
+                    <span className="heading-3 text-accent-brown">₹{total.toFixed(2)}</span>
                   </div>
                 </div>
 
