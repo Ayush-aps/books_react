@@ -24,6 +24,8 @@ const { ensureAuthenticated, ensureSeller } = require("../middleware/auth");
   // Complaint Management
   getAllComplaints,
   createComplaint,
+  getComplaintDetails,
+  addComplaintComment,
 } = require("../controllers/sellerController");
 
 // ============================================
@@ -57,6 +59,8 @@ router.put("/orders/:id/status", ensureAuthenticated, ensureSeller, updateOrderS
 // ============================================
 router.get("/complaints", ensureAuthenticated, ensureSeller, getAllComplaints);
 router.post("/complaints", ensureAuthenticated, ensureSeller, createComplaint);
+router.get("/complaints/:id", ensureAuthenticated, ensureSeller, getComplaintDetails);
+router.post("/complaints/:id/comment", ensureAuthenticated, ensureSeller, addComplaintComment);
 
 module.exports = router;
 

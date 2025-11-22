@@ -33,15 +33,21 @@ exports.getDashboard = async (req, res) => {
     const allOrders = await Order.find({ buyer: userId });
     console.log("Total orders found:", allOrders.length);
 
-    const activeOrders = allOrders.filter((order) => ["pending", "processing", "shipped"].includes(order.status)).length;
-    const completedOrders = allOrders.filter((order) => order.status === "delivered").length;
+    const activeOrders = allOrders.filter((order) => {
+      const orderStatus = order.orderStatus || order.status;
+      return ["ordered", "pending", "processing", "shipped"].includes(orderStatus);
+    }).length;
+    const completedOrders = allOrders.filter((order) => {
+      const orderStatus = order.orderStatus || order.status;
+      return orderStatus === "delivered";
+    }).length;
     console.log("Active orders:", activeOrders, "Completed orders:", completedOrders);
 
     // Get recent orders
     const recentOrders = await Order.find({ buyer: userId })
       .sort({ createdAt: -1 })
       .limit(5)
-      .select("_id totalAmount status createdAt");
+      .select("_id orderId totalAmount status orderStatus createdAt");
     console.log("Recent orders:", recentOrders.length);
 
     // Get complaints
@@ -66,8 +72,10 @@ exports.getDashboard = async (req, res) => {
     // Transform recentOrders to include 'total' field for frontend compatibility
     const transformedRecentOrders = recentOrders.map(order => ({
       _id: order._id,
+      orderId: order.orderId,
       total: order.totalAmount,
       status: order.status,
+      orderStatus: order.orderStatus,
       createdAt: order.createdAt
     }));
 
@@ -789,7 +797,16 @@ exports.updateProfile = async (req, res) => {
   try {
     const { name, email, phone, currentPassword, newPassword } = req.body;
 
-    const user = await User.findById(req.user._id);
+    console.log('Update profile request:', { 
+      name, 
+      email, 
+      phone, 
+      hasCurrentPassword: !!currentPassword, 
+      hasNewPassword: !!newPassword,
+      hasFile: !!req.file 
+    });
+
+    const user = await User.findById(req.user._id).select('+password');
 
     if (!user) {
       return res.status(404).json({
@@ -798,25 +815,56 @@ exports.updateProfile = async (req, res) => {
       });
     }
 
-    if (name) user.name = name;
-    if (email) user.email = email;
-    if (phone) user.phone = phone;
+    // Update basic fields
+    if (name && name.trim() !== '') user.name = name;
+    if (email && email.trim() !== '') user.email = email;
+    if (phone !== undefined) user.phone = phone; // Allow empty string to clear phone
 
-    if (currentPassword && newPassword) {
+    // Handle avatar upload if file was provided
+    if (req.file) {
+      console.log('Avatar uploaded:', req.file.filename);
+      // Delete old avatar if it's not the default
+      if (user.avatar && user.avatar !== '/img/users/default-avatar.jpg') {
+        const fs = require('fs');
+        const path = require('path');
+        const oldAvatarPath = path.join(__dirname, '../public', user.avatar);
+        if (fs.existsSync(oldAvatarPath)) {
+          fs.unlinkSync(oldAvatarPath);
+        }
+      }
+      user.avatar = `/img/users/${req.file.filename}`;
+    }
+
+    // Only check password if both currentPassword and newPassword are provided and not empty
+    if (currentPassword && newPassword && 
+        currentPassword.trim() !== '' && newPassword.trim() !== '') {
+      
+      console.log('Attempting password change...');
+      
       const isMatch = await bcrypt.compare(currentPassword, user.password);
 
       if (!isMatch) {
+        console.log('Current password incorrect');
         return res.status(400).json({
           success: false,
           message: "Current password is incorrect",
         });
       }
 
-      const salt = await bcrypt.genSalt(10);
-      user.password = await bcrypt.hash(newPassword, salt);
+      if (newPassword.length < 6) {
+        return res.status(400).json({
+          success: false,
+          message: "New password must be at least 6 characters",
+        });
+      }
+
+      // Set the plain password - the pre-save hook will hash it automatically
+      user.password = newPassword;
+      console.log('Password will be changed');
     }
 
     await user.save();
+    console.log('User saved successfully');
 
     const updatedUser = user.toObject();
     delete updatedUser.password;
@@ -844,7 +892,14 @@ exports.updateProfile = async (req, res) => {
 // @access  Private (Buyer)
 exports.getAllComplaints = async (req, res) => {
   try {
-    const complaints = await Complaint.find({ user: req.user._id }).sort({ createdAt: -1 }).populate("book", "title coverImage");
+    const complaints = await Complaint.find({ 
+      user: req.user._id, 
+      userRole: 'buyer' 
+    })
+    .sort({ createdAt: -1 })
+    .populate("book", "title coverImage")
+    .populate("order", "totalAmount createdAt")
+    .populate("assignedTo", "name email");
 
     res.json({
       success: true,
@@ -876,19 +931,21 @@ exports.createComplaint = async (req, res) => {
 
     const complaint = new Complaint({
       user: req.user._id,
+      userRole: 'buyer',
       subject,
       description,
       category,
       book: bookId || null,
       order: orderId || null,
       status: "pending",
+      priority: 'medium'
     });
 
     await complaint.save();
 
     res.status(201).json({
       success: true,
-      message: "Complaint filed successfully",
+      message: "Complaint filed successfully. Our team will review it within 24-48 hours.",
       data: { complaint },
     });
   } catch (err) {
@@ -908,9 +965,13 @@ exports.getComplaintDetails = async (req, res) => {
     const complaint = await Complaint.findOne({
       _id: req.params.id,
       user: req.user._id,
+      userRole: 'buyer'
     })
-      .populate("book", "title coverImage")
-      .populate("order", "orderNumber totalAmount");
+      .populate("book", "title coverImage author")
+      .populate("order", "totalAmount createdAt")
+      .populate("assignedTo", "name email")
+      .populate("comments.user", "name role")
+      .populate("resolution.resolvedBy", "name");
 
     if (!complaint) {
       return res.status(404).json({
@@ -929,6 +990,65 @@ exports.getComplaintDetails = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error fetching complaint details",
+    });
+  }
+};
+
+// @desc    Add comment to complaint
+// @route   POST /api/buyer/complaints/:id/comment
+// @access  Private (Buyer)
+exports.addComplaintComment = async (req, res) => {
+  try {
+    const { message } = req.body;
+
+    if (!message || message.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        message: "Message is required",
+      });
+    }
+
+    const complaint = await Complaint.findOne({
+      _id: req.params.id,
+      user: req.user._id,
+      userRole: 'buyer'
+    });
+
+    if (!complaint) {
+      return res.status(404).json({
+        success: false,
+        message: "Complaint not found",
+      });
+    }
+
+    if (complaint.status === 'closed' || complaint.status === 'resolved') {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot add comments to closed or resolved complaints",
+      });
+    }
+
+    complaint.comments.push({
+      user: req.user._id,
+      userRole: 'buyer',
+      message: message.trim()
+    });
+
+    await complaint.save();
+
+    // Populate the new comment
+    await complaint.populate('comments.user', 'name role');
+
+    res.json({
+      success: true,
+      message: "Comment added successfully",
+      data: { complaint },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: "Error adding comment",
     });
   }
 };

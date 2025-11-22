@@ -45,12 +45,13 @@ const Orders = () => {
   const handleStatusUpdate = async (orderId, newStatus) => {
     try {
       setUpdatingOrderId(orderId);
-      await adminService.updateOrder(orderId, newStatus);
+      await adminService.updateOrder(orderId, { orderStatus: newStatus });
       setOrders(orders.map(order => 
-        order._id === orderId ? { ...order, status: newStatus } : order
+        order._id === orderId ? { ...order, orderStatus: newStatus, status: newStatus } : order
       ));
       setSuccessMessage(`Order status updated to ${newStatus}`);
       setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 3000);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update order status');
     } finally {
@@ -60,6 +61,7 @@ const Orders = () => {
 
   const getStatusVariant = (status) => {
     const variants = {
+      ordered: 'info',
       pending: 'warning',
       processing: 'info',
       shipped: 'default',
@@ -69,17 +71,19 @@ const Orders = () => {
     return variants[status] || 'default';
   };
 
+  const getOrderStatus = (order) => order.orderStatus || order.status || 'ordered';
+
   const filteredOrders = statusFilter === 'all' 
     ? orders 
-    : orders.filter(order => order.status === statusFilter);
+    : orders.filter(order => getOrderStatus(order) === statusFilter);
 
   const filterTabs = [
     { value: 'all', label: 'All Orders', count: orders.length },
-    { value: 'pending', label: 'Pending', count: orders.filter(o => o.status === 'pending').length },
-    { value: 'processing', label: 'Processing', count: orders.filter(o => o.status === 'processing').length },
-    { value: 'shipped', label: 'Shipped', count: orders.filter(o => o.status === 'shipped').length },
-    { value: 'delivered', label: 'Delivered', count: orders.filter(o => o.status === 'delivered').length },
-    { value: 'cancelled', label: 'Cancelled', count: orders.filter(o => o.status === 'cancelled').length }
+    { value: 'ordered', label: 'Ordered', count: orders.filter(o => getOrderStatus(o) === 'ordered').length },
+    { value: 'processing', label: 'Processing', count: orders.filter(o => getOrderStatus(o) === 'processing').length },
+    { value: 'shipped', label: 'Shipped', count: orders.filter(o => getOrderStatus(o) === 'shipped').length },
+    { value: 'delivered', label: 'Delivered', count: orders.filter(o => getOrderStatus(o) === 'delivered').length },
+    { value: 'cancelled', label: 'Cancelled', count: orders.filter(o => getOrderStatus(o) === 'cancelled').length }
   ];
 
   if (loading) {
@@ -188,17 +192,17 @@ const Orders = () => {
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-4">
                           <h3 className="heading-4 text-charcoal">
-                            Order #{order._id.slice(-8)}
+                            Order #{order.orderId || order._id.slice(-8)}
                           </h3>
-                          <Badge variant={getStatusVariant(order.status)}>
-                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                          <Badge variant={getStatusVariant(getOrderStatus(order))}>
+                            {getOrderStatus(order).charAt(0).toUpperCase() + getOrderStatus(order).slice(1)}
                           </Badge>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                           <div>
                             <p className="body-sm text-charcoal/60 mb-1">Buyer</p>
-                            <p className="body-sm font-medium text-charcoal">{order.userId?.name || 'N/A'}</p>
-                            <p className="body-sm text-charcoal/50 truncate">{order.userId?.email || ''}</p>
+                            <p className="body-sm font-medium text-charcoal">{order.buyer?.name || 'N/A'}</p>
+                            <p className="body-sm text-charcoal/50 truncate">{order.buyer?.email || ''}</p>
                           </div>
                           <div>
                             <p className="body-sm text-charcoal/60 mb-1">Items</p>
@@ -222,26 +226,23 @@ const Orders = () => {
                         <Input.Select
                           id={`status-${order._id}`}
                           label="Update Status"
-                          value={order.status}
+                          value={getOrderStatus(order)}
                           onChange={(e) => handleStatusUpdate(order._id, e.target.value)}
                           disabled={updatingOrderId === order._id}
                         >
-                          <option value="pending">Pending</option>
+                          <option value="ordered">Ordered</option>
                           <option value="processing">Processing</option>
                           <option value="shipped">Shipped</option>
                           <option value="delivered">Delivered</option>
                           <option value="cancelled">Cancelled</option>
                         </Input.Select>
 
-                        <Button
-                          as={Link}
+                        <Link
                           to={`/admin/orders/${order._id}`}
-                          variant="outline"
-                          size="md"
-                          fullWidth
+                          className="btn btn-outline btn-md w-full text-center inline-block"
                         >
                           View Details
-                        </Button>
+                        </Link>
                       </div>
                     </div>
                   </Card.Body>

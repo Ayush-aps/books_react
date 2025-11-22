@@ -51,6 +51,7 @@ const UploadVideo = () => {
       bookId: '',
       title: '',
       description: '',
+      tags: '',
       videoFile: null
     },
     validationSchema
@@ -63,10 +64,14 @@ const UploadVideo = () => {
   const fetchOwnedBooks = async () => {
     try {
       setLoadingBooks(true);
-      const response = await api.get('/buyer/library');
-      setOwnedBooks(response.data.data || []);
+      const response = await api.get('/library');
+      console.log('Library response:', response.data);
+      // Extract library items from response
+      const libraryItems = response.data.data?.library || [];
+      setOwnedBooks(libraryItems);
     } catch (err) {
       console.error('Failed to load owned books:', err);
+      setError('Failed to load your library. Please try again.');
     } finally {
       setLoadingBooks(false);
     }
@@ -101,8 +106,13 @@ const UploadVideo = () => {
       formDataToSend.append('bookId', formData.bookId);
       formDataToSend.append('title', formData.title);
       formDataToSend.append('description', formData.description);
+      if (formData.tags) {
+        formDataToSend.append('tags', formData.tags);
+      }
       formDataToSend.append('video', formData.videoFile);
 
+      console.log('Uploading video to Cloudinary...');
+      
       await api.post('/videos/upload', formDataToSend, {
         headers: {
           'Content-Type': 'multipart/form-data'
@@ -110,14 +120,17 @@ const UploadVideo = () => {
         onUploadProgress: (progressEvent) => {
           const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
           setUploadProgress(percentCompleted);
+          console.log(`Upload progress: ${percentCompleted}%`);
         }
       });
 
+      console.log('Video uploaded successfully!');
       navigate('/buyer/video-feed', { 
-        state: { success: 'Video uploaded successfully! It will appear after admin approval.' } 
+        state: { success: 'Video uploaded successfully and is now available for all buyers to watch!' } 
       });
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to upload video');
+      console.error('Upload error:', err);
+      setError(err.response?.data?.message || 'Failed to upload video. Please try again.');
       setUploadProgress(0);
     }
   };
@@ -255,6 +268,26 @@ const UploadVideo = () => {
               </p>
             </div>
 
+            {/* Tags */}
+            <div>
+              <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-2">
+                Tags <span className="text-gray-500">(Optional)</span>
+              </label>
+              <input
+                type="text"
+                id="tags"
+                name="tags"
+                value={values.tags}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="fiction, mystery, thriller (comma-separated)"
+              />
+              <p className="text-gray-500 text-xs mt-1">
+                Add tags to help others discover your review
+              </p>
+            </div>
+
             {/* Video File Upload */}
             <div>
               <label htmlFor="videoFile" className="block text-sm font-medium text-gray-700 mb-2">
@@ -322,14 +355,15 @@ const UploadVideo = () => {
             )}
 
             {/* Info Box */}
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <h3 className="font-semibold text-yellow-900 mb-2">Important Guidelines</h3>
-              <ul className="text-sm text-yellow-800 space-y-1">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h3 className="font-semibold text-blue-900 mb-2">Video Review Guidelines</h3>
+              <ul className="text-sm text-blue-800 space-y-1">
                 <li>• Keep videos under 5 minutes for best engagement</li>
                 <li>• Ensure good audio and video quality</li>
                 <li>• Be honest and constructive in your review</li>
-                <li>• Videos will be reviewed by admin before publishing</li>
-                <li>• Inappropriate content will be removed</li>
+                <li>• Videos are uploaded to Cloudinary and available immediately</li>
+                <li>• All buyers can watch, like, and comment on your review</li>
+                <li>• Upload may take 1-3 minutes depending on file size</li>
               </ul>
             </div>
 

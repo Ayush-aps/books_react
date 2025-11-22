@@ -23,7 +23,9 @@ const {
   // Complaint Management
   getAllComplaints,
   getComplaintDetails,
-  respondToComplaint,
+  updateComplaintStatus,
+  addComplaintComment,
+  resolveComplaint,
   // Order Management
   getAllOrders,
   updateOrder,
@@ -58,7 +60,9 @@ router.get("/content/:id", ensureAuthenticated, ensureAdmin, getBookDetails);
 // ============================================
 router.get("/complaints", ensureAuthenticated, ensureAdmin, getAllComplaints);
 router.get("/complaints/:id", ensureAuthenticated, ensureAdmin, getComplaintDetails);
-router.post("/complaints/:id/respond", ensureAuthenticated, ensureAdmin, respondToComplaint);
+router.patch("/complaints/:id/status", ensureAuthenticated, ensureAdmin, updateComplaintStatus);
+router.post("/complaints/:id/comment", ensureAuthenticated, ensureAdmin, addComplaintComment);
+router.post("/complaints/:id/resolve", ensureAuthenticated, ensureAdmin, resolveComplaint);
 
 // ============================================
 // ORDER MANAGEMENT ROUTES

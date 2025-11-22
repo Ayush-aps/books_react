@@ -18,6 +18,16 @@ import { fadeInUp, staggerContainer, staggerItem } from '../../utils/animations'
 const Checkout = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  // Debug Stripe configuration
+  useEffect(() => {
+    stripePromise.then(stripe => {
+      console.log('Stripe loaded:', !!stripe);
+      if (!stripe) {
+        console.error('Stripe failed to load. Check your publishable key.');
+      }
+    });
+  }, []);
   const { items } = useSelector((state) => state.cart);
   const { user } = useSelector((state) => state.auth);
 
@@ -33,6 +43,15 @@ const Checkout = () => {
   useEffect(() => {
     fetchAddresses();
   }, []);
+
+  useEffect(() => {
+    console.log('Checkout state changed:', {
+      showStripeForm,
+      hasClientSecret: !!clientSecret,
+      paymentMethod,
+      selectedAddress: !!selectedAddress
+    });
+  }, [showStripeForm, clientSecret, paymentMethod, selectedAddress]);
 
   const fetchAddresses = async () => {
     try {
@@ -76,40 +95,80 @@ const Checkout = () => {
 
       if (paymentMethod === 'card') {
         // Create payment intent for Stripe
+        console.log('Creating payment intent for amount:', total);
+        
+        // Get the full address object
+        const fullAddress = addresses.find(addr => addr._id === selectedAddress);
+        
         const response = await api.post('/orders/create-payment-intent', {
-          amount: Math.round(total * 100),
+          amount: total,
           items: items.map(item => ({
-            bookId: item._id,
-            quantity: item.quantity,
-            price: item.discountPercentage
-              ? item.price - (item.price * item.discountPercentage / 100)
-              : item.price
-          }))
-        });
-
-        setClientSecret(response.data.clientSecret);
-        setShowStripeForm(true);
-      } else {
-        // Handle COD
-        const orderData = {
-          items: items.map(item => ({
-            book: item._id,
+            bookId: item.book?._id || item._id,
             quantity: item.quantity,
             price: item.discountPercentage
               ? item.price - (item.price * item.discountPercentage / 100)
               : item.price
           })),
-          shippingAddress: selectedAddress,
-          paymentMethod: 'cod',
+          shippingAddress: fullAddress
+        });
+
+        console.log('Payment intent response:', response.data);
+        
+        // Extract client secret from nested data object
+        const clientSecretValue = response.data?.data?.clientSecret || response.data?.clientSecret;
+        console.log('Client secret:', clientSecretValue);
+        
+        if (clientSecretValue) {
+          setClientSecret(clientSecretValue);
+          setShowStripeForm(true);
+          console.log('Stripe form should now be visible');
+        } else {
+          throw new Error('No client secret received from server');
+        }
+      } else {
+        // Handle COD
+        // Get the full address object
+        const fullAddress = addresses.find(addr => addr._id === selectedAddress);
+        
+        // Transform address to match Order model schema
+        const transformedAddress = {
+          name: fullAddress.name,
+          address: fullAddress.street, // street -> address
+          city: fullAddress.city,
+          state: fullAddress.state,
+          pincode: fullAddress.zipCode, // zipCode -> pincode
+          phone: fullAddress.phone
+        };
+        
+        const orderData = {
+          items: items.map(item => ({
+            book: item.book?._id || item._id,
+            quantity: item.quantity,
+            price: item.discountPercentage
+              ? item.price - (item.price * item.discountPercentage / 100)
+              : item.price
+          })),
+          shippingAddress: transformedAddress,
+          paymentMethod: 'cash_on_delivery', // Use enum value from Order model
           totalAmount: total,
           subtotal,
           tax,
           shippingCost: shipping
         };
 
-        const response = await dispatch(createOrder(orderData)).unwrap();
-        dispatch(clearCart());
-        navigate(`/buyer/payment-success?orderId=${response._id}`);
+        console.log('Creating COD order with data:', orderData);
+
+        // Don't use .unwrap() - handle the promise directly
+        const response = await dispatch(createOrder(orderData));
+        
+        console.log('COD order creation response:', response);
+        
+        if (response && response._id) {
+          await dispatch(clearCart());
+          navigate(`/buyer/payment-success?orderId=${response._id}`);
+        } else {
+          throw new Error('Order creation failed - no order ID returned');
+        }
       }
     } catch (err) {
       setError(err.message || 'Failed to process order');
@@ -120,16 +179,31 @@ const Checkout = () => {
 
   const handlePaymentSuccess = async (paymentIntentId) => {
     try {
+      setSubmitting(true);
+      
+      // Get the full address object
+      const fullAddress = addresses.find(addr => addr._id === selectedAddress);
+      
+      // Transform address to match Order model schema
+      const transformedAddress = {
+        name: fullAddress.name,
+        address: fullAddress.street, // street -> address
+        city: fullAddress.city,
+        state: fullAddress.state,
+        pincode: fullAddress.zipCode, // zipCode -> pincode
+        phone: fullAddress.phone
+      };
+      
       const orderData = {
         items: items.map(item => ({
-          book: item._id,
+          book: item.book?._id || item._id,
           quantity: item.quantity,
           price: item.discountPercentage
             ? item.price - (item.price * item.discountPercentage / 100)
             : item.price
         })),
-        shippingAddress: selectedAddress,
-        paymentMethod: 'card',
+        shippingAddress: transformedAddress,
+        paymentMethod: 'credit_card', // Use enum value from Order model
         paymentIntentId,
         totalAmount: total,
         subtotal,
@@ -137,11 +211,23 @@ const Checkout = () => {
         shippingCost: shipping
       };
 
-      const response = await dispatch(createOrder(orderData)).unwrap();
-      dispatch(clearCart());
-      navigate(`/buyer/payment-success?orderId=${response._id}`);
+      console.log('Creating order with data:', orderData);
+
+      // Don't use .unwrap() - handle the promise directly
+      const response = await dispatch(createOrder(orderData));
+      
+      console.log('Order creation response:', response);
+      
+      if (response && response._id) {
+        await dispatch(clearCart());
+        navigate(`/buyer/payment-success?orderId=${response._id}`);
+      } else {
+        throw new Error('Order creation failed - no order ID returned');
+      }
     } catch (err) {
+      console.error('Order creation error:', err);
       setError(err.message || 'Failed to create order');
+      setSubmitting(false);
     }
   };
 
@@ -300,6 +386,7 @@ const Checkout = () => {
                           onChange={() => {
                             setPaymentMethod('card');
                             setShowStripeForm(false);
+                            setClientSecret('');
                           }}
                           className="sr-only"
                         />
@@ -346,6 +433,7 @@ const Checkout = () => {
                           onChange={() => {
                             setPaymentMethod('cod');
                             setShowStripeForm(false);
+                            setClientSecret('');
                           }}
                           className="sr-only"
                         />

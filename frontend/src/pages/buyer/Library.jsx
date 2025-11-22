@@ -1,11 +1,12 @@
 /**
- * Library Page - Premium Design
+ * Library Page - Premium Design with Netflix-like Subscription Access Control
  * User's purchased books with reading progress and premium styling
+ * REQUIRES ACTIVE SUBSCRIPTION - blocks access for non-subscribers
  */
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { fadeInUp, staggerContainer, staggerItem } from '../../utils/animations';
 import { fetchLibrary } from '../../redux/actions/libraryActions';
@@ -14,15 +15,82 @@ import Button from '../../components/Button';
 import Badge from '../../components/Badge';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
+import SubscriptionModal from '../../components/SubscriptionModal';
 
 const Library = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { books = [], loading, error } = useSelector(state => state.library);
   const { currentSubscription } = useSelector(state => state.subscription);
+  const [hasSubscription, setHasSubscription] = useState(null); // null = checking, true = subscribed, false = not subscribed
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [subscriptionError, setSubscriptionError] = useState(null);
+  const [fetchAttempted, setFetchAttempted] = useState(false);
 
   useEffect(() => {
-    dispatch(fetchLibrary());
+    // Reset state on mount to ensure fresh fetch
+    setHasSubscription(null);
+    setShowSubscriptionModal(false);
+    setSubscriptionError(null);
+    setFetchAttempted(false);
+  }, []);
+
+  useEffect(() => {
+    if (fetchAttempted) return; // Prevent multiple fetches
+    
+    const checkAndFetchLibrary = async () => {
+      setFetchAttempted(true);
+      try {
+        const result = await dispatch(fetchLibrary());
+        
+        // PRIORITY 1: Check if explicitly requires subscription (no subscription)
+        if (result?.requiresSubscription === true && result?.success === false) {
+          setHasSubscription(false);
+          setSubscriptionError(result.message);
+          setShowSubscriptionModal(true);
+        } 
+        // PRIORITY 2: Check if success is true (has subscription)
+        else if (result?.success === true) {
+          setHasSubscription(true);
+          setShowSubscriptionModal(false);
+        } 
+        // PRIORITY 3: Has data object (has subscription)
+        else if (result?.data?.hasSubscription === true) {
+          setHasSubscription(true);
+          setShowSubscriptionModal(false);
+        }
+        // Fallback
+        else {
+          setHasSubscription(true);
+          setShowSubscriptionModal(false);
+        }
+      } catch (err) {
+        console.error('Error fetching library:', err);
+        // If there's an error, default to showing library with error message
+        setHasSubscription(true);
+      }
+    };
+
+    checkAndFetchLibrary();
   }, [dispatch]);
+
+  // Additional check based on error state - ONLY for subscription errors (but don't override success state)
+  useEffect(() => {
+    if (!loading && error && hasSubscription === null) {
+      const errorStr = String(error).toLowerCase();
+      const isSubscriptionError = errorStr.includes('subscribe to unlock') || 
+                                   errorStr.includes('unlimited access');
+      
+      if (isSubscriptionError) {
+        setHasSubscription(false);
+        setSubscriptionError(error);
+        setShowSubscriptionModal(true);
+      } else {
+        // Not a subscription error - might be server error, show library anyway
+        setHasSubscription(true);
+      }
+    }
+  }, [loading, error, hasSubscription]);
 
   const getProgressColor = (progress) => {
     if (progress === 0) return 'bg-gray-300';
@@ -38,7 +106,7 @@ const Library = () => {
     return 'success';
   };
 
-  if (loading) {
+  if (loading || hasSubscription === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-cream">
         <LoadingSpinner size="lg" message="Loading library..." />
@@ -46,23 +114,144 @@ const Library = () => {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-cream py-8 md:py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <motion.div 
-          className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4"
-          initial="hidden"
-          animate="visible"
-          variants={fadeInUp}
-        >
-          <div>
-            <h1 className="heading-1 mb-2">My Library</h1>
-            <p className="body-lg text-text-secondary">
-              {books.length} {books.length === 1 ? 'book' : 'books'} in your library
-            </p>
-          </div>
-          {currentSubscription && (
+  // Show clean subscription upgrade page ONLY for non-subscribed users (hasSubscription === false)
+  if (hasSubscription === false && showSubscriptionModal) {
+    return (
+      <div className="min-h-screen bg-cream py-8 md:py-12">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-center"
+          >
+            {/* Hero Section */}
+            <div className="mb-12">
+              <div className="w-32 h-32 bg-gradient-to-br from-brown to-accent-brown rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-xl">
+                <svg 
+                  className="w-16 h-16 text-white" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                  />
+                </svg>
+              </div>
+              
+              <h1 className="heading-1 mb-4">Your Library Awaits</h1>
+              <p className="body-xl text-text-secondary max-w-2xl mx-auto mb-2">
+                Subscribe to unlock unlimited access to thousands of books and start building your personal digital library today.
+              </p>
+              <p className="body-lg text-brown font-medium">
+                No subscription yet? Get started now!
+              </p>
+            </div>
+
+            {/* Features Grid */}
+            <div className="grid md:grid-cols-3 gap-6 mb-12">
+              <Card elevated className="text-center">
+                <Card.Body className="py-8">
+                  <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                  </div>
+                  <h3 className="heading-5 mb-2">Unlimited Books</h3>
+                  <p className="body-sm text-text-secondary">
+                    Access thousands of books across all genres
+                  </p>
+                </Card.Body>
+              </Card>
+
+              <Card elevated className="text-center">
+                <Card.Body className="py-8">
+                  <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <h3 className="heading-5 mb-2">Video Reviews</h3>
+                  <p className="body-sm text-text-secondary">
+                    Watch and share book video reviews with the community
+                  </p>
+                </Card.Body>
+              </Card>
+
+              <Card elevated className="text-center">
+                <Card.Body className="py-8">
+                  <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  </div>
+                  <h3 className="heading-5 mb-2">Track Progress</h3>
+                  <p className="body-sm text-text-secondary">
+                    Sync your reading progress across all devices
+                  </p>
+                </Card.Body>
+              </Card>
+            </div>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Link to="/pricing">
+                <Button variant="primary" size="lg" className="min-w-[240px]">
+                  <span className="flex items-center gap-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    View Subscription Plans
+                  </span>
+                </Button>
+              </Link>
+              <Link to="/buyer/dashboard">
+                <Button variant="outline" size="lg" className="min-w-[200px]">
+                  Back to Dashboard
+                </Button>
+              </Link>
+            </div>
+
+            {/* Pricing Preview */}
+            <Card className="mt-12 bg-gradient-to-r from-brown/5 to-accent-brown/5 border-brown/20">
+              <Card.Body className="py-6">
+                <p className="body-lg text-text-secondary mb-2">
+                  <span className="font-semibold text-brown text-2xl">₹199/month</span> for Premium Plan
+                </p>
+                <p className="body-sm text-text-tertiary">
+                  No commitment • Cancel anytime • 7-day free trial
+                </p>
+              </Card.Body>
+            </Card>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show normal library ONLY for subscribed users (hasSubscription === true)
+  if (hasSubscription === true) {
+    return (
+      <div className="min-h-screen bg-cream py-8 md:py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <motion.div 
+            className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4"
+            initial="hidden"
+            animate="visible"
+            variants={fadeInUp}
+          >
+            <div>
+              <h1 className="heading-1 mb-2">My Library</h1>
+              <p className="body-lg text-text-secondary">
+                {books.length} {books.length === 1 ? 'book' : 'books'} in your library
+              </p>
+            </div>
+            {currentSubscription && (
             <Card className="bg-gradient-to-r from-brown to-accent-brown text-white border-0">
               <Card.Body className="py-3 px-5">
                 <p className="body-sm opacity-90">Active Subscription</p>
@@ -268,7 +457,11 @@ const Library = () => {
         )}
       </div>
     </div>
-  );
+    );
+  }
+
+  // Fallback - should never reach here
+  return null;
 };
 
 export default Library;

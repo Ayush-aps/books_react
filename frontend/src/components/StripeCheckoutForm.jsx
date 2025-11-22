@@ -27,19 +27,21 @@ const StripeCheckoutForm = ({ onSuccess, amount }) => {
 
     try {
       // Confirm the payment
-      const { error: submitError } = await stripe.confirmPayment({
+      const { error: submitError, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          return_url: `${window.location.origin}/subscription/success`,
+          return_url: `${window.location.origin}/buyer/payment-success`,
         },
         redirect: 'if_required'
       });
 
       if (submitError) {
         setError(submitError.message);
+      } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+        // Payment successful - pass payment intent ID to callback
+        onSuccess(paymentIntent.id);
       } else {
-        // Payment successful
-        onSuccess();
+        setError('Payment was not completed. Please try again.');
       }
     } catch (err) {
       setError(err.message || 'Payment failed');

@@ -1,36 +1,59 @@
 /**
  * Admin Complaints Page
- * View and respond to user complaints
+ * View and manage user complaints with filters and pagination
  */
 
 import { useState, useEffect } from 'react';
-import { adminService } from '../../services/adminService';
+import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import api from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
-import Modal from '../../components/Modal';
-import SuccessToast from '../../components/SuccessToast';
+import Card from '../../components/Card';
+import Badge from '../../components/Badge';
+import Button from '../../components/Button';
+import { fadeInUp, staggerContainer } from '../../utils/animations';
 
 const Complaints = () => {
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [statusFilter, setStatusFilter] = useState('pending');
-  const [selectedComplaint, setSelectedComplaint] = useState(null);
-  const [showResponseModal, setShowResponseModal] = useState(false);
-  const [response, setResponse] = useState('');
-  const [processing, setProcessing] = useState(false);
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
+  
+  // Filters
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [priorityFilter, setPriorityFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [roleFilter, setRoleFilter] = useState('all');
+  
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [limit] = useState(20);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalComplaints, setTotalComplaints] = useState(0);
 
   useEffect(() => {
     fetchComplaints();
-  }, []);
+  }, [page, statusFilter, priorityFilter, categoryFilter, roleFilter]);
 
   const fetchComplaints = async () => {
     try {
       setLoading(true);
-      const response = await adminService.getComplaints();
-      setComplaints(response.data?.complaints || []);
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString()
+      });
+      
+      if (statusFilter !== 'all') params.append('status', statusFilter);
+      if (priorityFilter !== 'all') params.append('priority', priorityFilter);
+      if (categoryFilter !== 'all') params.append('category', categoryFilter);
+      if (roleFilter !== 'all') params.append('userRole', roleFilter);
+
+      const response = await api.get(`/admin/complaints?${params.toString()}`);
+      const data = response.data.data;
+      
+      setComplaints(data.complaints || []);
+      setTotalPages(data.pagination?.totalPages || 1);
+      setTotalComplaints(data.pagination?.total || 0);
       setError(null);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load complaints');
@@ -39,59 +62,42 @@ const Complaints = () => {
     }
   };
 
-  const handleViewDetails = async (complaintId) => {
-    try {
-      const response = await adminService.getComplaintDetails(complaintId);
-      setSelectedComplaint(response.data?.complaint || response.data);
-      setShowResponseModal(true);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load complaint details');
-    }
+  const resetFilters = () => {
+    setStatusFilter('all');
+    setPriorityFilter('all');
+    setCategoryFilter('all');
+    setRoleFilter('all');
+    setPage(1);
   };
 
-  const handleRespondToComplaint = async () => {
-    if (!selectedComplaint || !response.trim()) {
-      setError('Please provide a response');
-      return;
-    }
-
-    try {
-      setProcessing(true);
-      await adminService.respondToComplaint(selectedComplaint._id, response);
-      
-      // Update complaint in list
-      setComplaints(complaints.map(c => 
-        c._id === selectedComplaint._id 
-          ? { ...c, status: 'resolved', adminResponse: response } 
-          : c
-      ));
-      
-      setSuccessMessage('Response sent successfully');
-      setShowSuccessToast(true);
-      setShowResponseModal(false);
-      setResponse('');
-      setSelectedComplaint(null);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to respond to complaint');
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  const filteredComplaints = statusFilter === 'all' 
-    ? complaints 
-    : complaints.filter(complaint => complaint.status === statusFilter);
-
-  const getStatusBadgeColor = (status) => {
-    const colors = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      resolved: 'bg-green-100 text-green-800',
-      closed: 'bg-gray-100 text-gray-800'
+  const getStatusBadge = (status) => {
+    const variants = {
+      pending: 'warning',
+      'in-progress': 'info',
+      resolved: 'success',
+      rejected: 'error',
+      closed: 'secondary'
     };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+    return <Badge variant={variants[status] || 'secondary'}>{status}</Badge>;
   };
 
-  if (loading) {
+  const getPriorityColor = (priority) => {
+    const colors = {
+      urgent: 'text-red-600 bg-red-50',
+      high: 'text-orange-600 bg-orange-50',
+      medium: 'text-yellow-600 bg-yellow-50',
+      low: 'text-gray-600 bg-gray-50'
+    };
+    return colors[priority] || 'text-gray-600 bg-gray-50';
+  };
+
+  const getUniqueCategories = () => {
+    const buyerCategories = ['Product Quality', 'Delivery Issue', 'Refund Request', 'Damaged Item', 'Wrong Item', 'Other'];
+    const sellerCategories = ['Payment Issue', 'Platform Fee Dispute', 'Buyer Issue', 'Account Issue', 'Technical Problem', 'Policy Clarification', 'Book Upload Issue', 'Other'];
+    return [...new Set([...buyerCategories, ...sellerCategories])];
+  };
+
+  if (loading && page === 1) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" message="Loading complaints..." />
@@ -100,224 +106,249 @@ const Complaints = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-cream py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Complaint Management</h1>
-          <p className="text-gray-600 mt-2">View and respond to user complaints</p>
-        </div>
+        <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="mb-8">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h1 className="heading-2 text-charcoal mb-2">Complaint Management</h1>
+              <p className="body text-charcoal/60">
+                Manage and resolve user complaints ({totalComplaints} total)
+              </p>
+            </div>
+            <Button variant="outline" onClick={resetFilters}>
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Reset Filters
+            </Button>
+          </div>
+        </motion.div>
 
         {error && (
-          <div className="mb-6">
-            <ErrorMessage message={error} />
-          </div>
+          <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="mb-6">
+            <ErrorMessage message={error} onClose={() => setError(null)} />
+          </motion.div>
         )}
 
-        {/* Filter Tabs */}
-        <div className="mb-6 border-b border-gray-200">
-          <nav className="flex space-x-8">
-            {[
-              { value: 'pending', label: 'Pending', count: complaints.filter(c => c.status === 'pending').length },
-              { value: 'resolved', label: 'Resolved', count: complaints.filter(c => c.status === 'resolved').length },
-              { value: 'closed', label: 'Closed', count: complaints.filter(c => c.status === 'closed').length },
-              { value: 'all', label: 'All', count: complaints.length }
-            ].map(tab => (
-              <button
-                key={tab.value}
-                onClick={() => setStatusFilter(tab.value)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                  statusFilter === tab.value
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                {tab.label}
-                <span className={`ml-2 py-0.5 px-2.5 rounded-full text-xs ${
-                  statusFilter === tab.value ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
-                }`}>
-                  {tab.count}
-                </span>
-              </button>
-            ))}
-          </nav>
-        </div>
+        {/* Filters Section */}
+        <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="mb-6">
+          <Card>
+            <Card.Body>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Status Filter */}
+                <div>
+                  <label className="form-label text-sm">Status</label>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+                    className="form-control text-sm"
+                  >
+                    <option value="all">All Statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="resolved">Resolved</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="closed">Closed</option>
+                  </select>
+                </div>
+
+                {/* Priority Filter */}
+                <div>
+                  <label className="form-label text-sm">Priority</label>
+                  <select
+                    value={priorityFilter}
+                    onChange={(e) => { setPriorityFilter(e.target.value); setPage(1); }}
+                    className="form-control text-sm"
+                  >
+                    <option value="all">All Priorities</option>
+                    <option value="urgent">Urgent</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </select>
+                </div>
+
+                {/* Role Filter */}
+                <div>
+                  <label className="form-label text-sm">User Role</label>
+                  <select
+                    value={roleFilter}
+                    onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}
+                    className="form-control text-sm"
+                  >
+                    <option value="all">All Roles</option>
+                    <option value="buyer">Buyers</option>
+                    <option value="seller">Sellers</option>
+                  </select>
+                </div>
+
+                {/* Category Filter */}
+                <div>
+                  <label className="form-label text-sm">Category</label>
+                  <select
+                    value={categoryFilter}
+                    onChange={(e) => { setCategoryFilter(e.target.value); setPage(1); }}
+                    className="form-control text-sm"
+                  >
+                    <option value="all">All Categories</option>
+                    {getUniqueCategories().map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </Card.Body>
+          </Card>
+        </motion.div>
 
         {/* Complaints List */}
-        {filteredComplaints.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-            <div className="max-w-md mx-auto">
-              <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                {statusFilter === 'all' ? 'No complaints' : `No ${statusFilter} complaints`}
-              </h3>
-            </div>
-          </div>
+        {complaints.length === 0 ? (
+          <motion.div variants={fadeInUp} initial="hidden" animate="visible">
+            <Card>
+              <Card.Body>
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-brown/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-brown" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <h3 className="heading-4 text-charcoal mb-2">No complaints found</h3>
+                  <p className="body text-charcoal/60">
+                    {statusFilter !== 'all' || priorityFilter !== 'all' || categoryFilter !== 'all' || roleFilter !== 'all'
+                      ? 'Try adjusting your filters'
+                      : 'No complaints have been submitted yet'}
+                  </p>
+                </div>
+              </Card.Body>
+            </Card>
+          </motion.div>
         ) : (
-          <div className="space-y-4">
-            {filteredComplaints.map(complaint => (
-              <div key={complaint._id} className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow">
-                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-                  {/* Complaint Info */}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-semibold text-gray-900">{complaint.subject || 'No Subject'}</h3>
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadgeColor(complaint.status)}`}>
-                        {complaint.status.charAt(0).toUpperCase() + complaint.status.slice(1)}
-                      </span>
-                    </div>
-                    
-                    <div className="text-sm text-gray-600 space-y-1 mb-3">
-                      <p>
-                        <span className="font-medium">From:</span> {complaint.userId?.name || 'Unknown'} ({complaint.userId?.email || 'N/A'})
-                      </p>
-                      <p>
-                        <span className="font-medium">Date:</span> {new Date(complaint.createdAt).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </p>
-                    </div>
+          <>
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              animate="visible"
+              className="space-y-4"
+            >
+              {complaints.map(complaint => (
+                <motion.div key={complaint._id} variants={fadeInUp}>
+                  <Link to={`/admin/complaints/${complaint._id}`}>
+                    <Card hoverable className="transition-all hover:shadow-lg">
+                      <Card.Body>
+                        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-3">
+                              <h3 className="heading-5 text-charcoal">{complaint.subject}</h3>
+                              {getStatusBadge(complaint.status)}
+                              <span className={`px-2 py-1 rounded text-xs font-semibold uppercase ${getPriorityColor(complaint.priority)}`}>
+                                {complaint.priority}
+                              </span>
+                            </div>
 
-                    <p className="text-gray-700 line-clamp-2">{complaint.message || complaint.description}</p>
+                            <div className="flex flex-wrap items-center gap-4 text-sm text-charcoal/60 mb-3">
+                              <span className="flex items-center gap-1">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                {complaint.user?.name || 'Unknown'} 
+                                <Badge variant="secondary" className="ml-1">{complaint.userRole}</Badge>
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                </svg>
+                                {complaint.category}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                                </svg>
+                                {complaint.comments?.length || 0} comments
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                {new Date(complaint.createdAt).toLocaleDateString()}
+                              </span>
+                              {complaint.assignedTo && (
+                                <span className="text-blue-600">
+                                  • Assigned to {complaint.assignedTo.name}
+                                </span>
+                              )}
+                            </div>
 
-                    {complaint.adminResponse && (
-                      <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                        <p className="text-sm font-medium text-blue-900 mb-1">Admin Response:</p>
-                        <p className="text-sm text-blue-800">{complaint.adminResponse}</p>
+                            <p className="body-sm text-charcoal/80 line-clamp-2 mb-3">
+                              {complaint.description}
+                            </p>
+
+                            {complaint.order && (
+                              <div className="inline-flex items-center gap-2 px-3 py-1 bg-cream rounded-lg text-xs">
+                                <svg className="w-4 h-4 text-brown" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                </svg>
+                                Order #{complaint.order._id?.slice(-8)}
+                              </div>
+                            )}
+                          </div>
+
+                          <Button variant="outline" size="sm">
+                            Manage
+                            <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </Button>
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  </Link>
+                </motion.div>
+              ))}
+            </motion.div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="mt-8">
+                <Card>
+                  <Card.Body>
+                    <div className="flex items-center justify-between">
+                      <p className="body-sm text-charcoal/60">
+                        Page {page} of {totalPages}
+                      </p>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPage(p => Math.max(1, p - 1))}
+                          disabled={page === 1 || loading}
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                          </svg>
+                          Previous
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                          disabled={page === totalPages || loading}
+                        >
+                          Next
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </Button>
                       </div>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex flex-col gap-2 lg:w-48">
-                    <button
-                      onClick={() => handleViewDetails(complaint._id)}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
-                    >
-                      View & Respond
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                    </div>
+                  </Card.Body>
+                </Card>
+              </motion.div>
+            )}
+          </>
         )}
 
-        {/* Response Modal */}
-        {showResponseModal && selectedComplaint && (
-          <Modal
-            isOpen={showResponseModal}
-            onClose={() => {
-              setShowResponseModal(false);
-              setResponse('');
-              setSelectedComplaint(null);
-            }}
-            title="Complaint Details"
-            size="lg"
-          >
-            <div className="p-6">
-              {/* Complaint Details */}
-              <div className="mb-6 pb-6 border-b border-gray-200">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {selectedComplaint.subject || 'No Subject'}
-                  </h3>
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadgeColor(selectedComplaint.status)}`}>
-                    {selectedComplaint.status.charAt(0).toUpperCase() + selectedComplaint.status.slice(1)}
-                  </span>
-                </div>
-
-                <div className="space-y-2 text-sm mb-4">
-                  <p>
-                    <span className="font-medium text-gray-700">From:</span>{' '}
-                    <span className="text-gray-900">{selectedComplaint.userId?.name || 'Unknown'}</span>{' '}
-                    ({selectedComplaint.userId?.email || 'N/A'})
-                  </p>
-                  <p>
-                    <span className="font-medium text-gray-700">Date:</span>{' '}
-                    <span className="text-gray-900">
-                      {new Date(selectedComplaint.createdAt).toLocaleString()}
-                    </span>
-                  </p>
-                </div>
-
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-sm font-medium text-gray-700 mb-2">Message:</p>
-                  <p className="text-gray-900 whitespace-pre-wrap">
-                    {selectedComplaint.message || selectedComplaint.description}
-                  </p>
-                </div>
-
-                {selectedComplaint.adminResponse && (
-                  <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                    <p className="text-sm font-medium text-blue-900 mb-2">Previous Response:</p>
-                    <p className="text-blue-800">{selectedComplaint.adminResponse}</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Response Form */}
-              {selectedComplaint.status !== 'closed' && (
-                <div>
-                  <label htmlFor="response" className="block text-sm font-medium text-gray-700 mb-2">
-                    Your Response {selectedComplaint.status === 'pending' && <span className="text-red-500">*</span>}
-                  </label>
-                  <textarea
-                    id="response"
-                    value={response}
-                    onChange={(e) => setResponse(e.target.value)}
-                    rows="5"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                    placeholder="Type your response here..."
-                  />
-                  
-                  <div className="flex gap-3 mt-6">
-                    <button
-                      onClick={() => {
-                        setShowResponseModal(false);
-                        setResponse('');
-                        setSelectedComplaint(null);
-                      }}
-                      disabled={processing}
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleRespondToComplaint}
-                      disabled={processing || !response.trim()}
-                      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-                    >
-                      {processing ? 'Sending...' : 'Send Response'}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {selectedComplaint.status === 'closed' && (
-                <div className="text-center py-4">
-                  <p className="text-gray-500">This complaint has been closed and cannot be responded to.</p>
-                </div>
-              )}
-            </div>
-          </Modal>
-        )}
-
-        {/* Success Toast */}
-        {showSuccessToast && (
-          <SuccessToast
-            message={successMessage}
-            onClose={() => setShowSuccessToast(false)}
-          />
-        )}
       </div>
     </div>
   );

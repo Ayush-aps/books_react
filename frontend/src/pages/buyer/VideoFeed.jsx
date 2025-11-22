@@ -106,7 +106,7 @@ const VideoFeed = () => {
             </p>
             {!bookId && (
               <Link
-                to="/buyer/videos/upload"
+                to="/buyer/upload-video"
                 className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
               >
                 Upload Video
@@ -124,11 +124,25 @@ const VideoFeed = () => {
                 >
                   {/* Video Thumbnail */}
                   <div className="relative aspect-video bg-gray-900">
-                    <video
-                      src={video.videoUrl}
-                      className="w-full h-full object-cover"
-                      preload="metadata"
-                    />
+                    {video.thumbnailUrl && video.thumbnailUrl !== '/img/default-thumbnail.jpg' ? (
+                      <img
+                        src={video.thumbnailUrl}
+                        alt={video.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          console.error('Thumbnail load error:', e);
+                        }}
+                      />
+                    ) : (
+                      <video
+                        src={video.videoUrl}
+                        className="w-full h-full object-cover"
+                        preload="metadata"
+                        crossOrigin="anonymous"
+                        onError={(e) => console.error('Video preview error:', e)}
+                      />
+                    )}
                     {/* Play Overlay */}
                     <div className="absolute inset-0 bg-black bg-opacity-30 group-hover:bg-opacity-40 transition-all flex items-center justify-center">
                       <div className="bg-white bg-opacity-90 rounded-full p-3 group-hover:scale-110 transition-transform">
@@ -152,19 +166,19 @@ const VideoFeed = () => {
                     </h3>
 
                     {/* Book Info */}
-                    {video.bookId && (
+                    {video.book && (
                       <Link
-                        to={`/buyer/books/${video.bookId._id}`}
+                        to={`/buyer/book/${video.book._id}`}
                         onClick={(e) => e.stopPropagation()}
                         className="text-sm text-blue-600 hover:text-blue-800 line-clamp-1 mb-2"
                       >
-                        {video.bookId.title}
+                        {video.book.title}
                       </Link>
                     )}
 
                     {/* Creator */}
                     <p className="text-sm text-gray-600 mb-2">
-                      by {video.userId?.name || 'Anonymous'}
+                      by {video.user?.name || 'Anonymous'}
                     </p>
 
                     {/* Stats */}
@@ -180,7 +194,7 @@ const VideoFeed = () => {
                         <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                           <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
                         </svg>
-                        <span>{video.likes || 0}</span>
+                        <span>{video.likeCount || 0}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -228,7 +242,7 @@ const VideoFeed = () => {
               Help others discover great books by sharing your video reviews
             </p>
             <Link
-              to="/buyer/videos/upload"
+              to="/buyer/upload-video"
               className="inline-block bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
             >
               Upload Video

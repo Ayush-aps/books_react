@@ -147,6 +147,16 @@ const Complaints = () => {
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${getStatusColor(complaint.status)}`}>
                           {complaint.status.replace('-', ' ')}
                         </span>
+                        {complaint.priority && (
+                          <span className={`px-2 py-1 rounded text-xs font-semibold uppercase ${
+                            complaint.priority === 'urgent' ? 'bg-red-100 text-red-700' :
+                            complaint.priority === 'high' ? 'bg-orange-100 text-orange-700' :
+                            complaint.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                            {complaint.priority}
+                          </span>
+                        )}
                       </div>
                       <p className="text-sm text-gray-600 mb-2">
                         Category: <span className="font-medium">{complaint.category}</span>
@@ -158,8 +168,22 @@ const Complaints = () => {
                   <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                     <div className="flex items-center gap-4 text-sm text-gray-500">
                       <span>Filed on {formatDate(complaint.createdAt)}</span>
+                      {complaint.comments && complaint.comments.length > 0 && (
+                        <span className="flex items-center gap-1">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                          </svg>
+                          {complaint.comments.length} comments
+                        </span>
+                      )}
                       {complaint.book && (
                         <span>• Book: {complaint.book.title}</span>
+                      )}
+                      {complaint.order && (
+                        <span>• Order #{complaint.order._id?.slice(-8)}</span>
+                      )}
+                      {complaint.assignedTo && (
+                        <span className="text-blue-600">• Assigned to {complaint.assignedTo.name}</span>
                       )}
                     </div>
                     <Link

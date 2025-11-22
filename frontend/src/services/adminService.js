@@ -104,7 +104,7 @@ const adminService = {
 
   // Update order
   updateOrder: async (orderId, orderData) => {
-    const response = await api.put(`/admin/order/${orderId}`, orderData);
+    const response = await api.put(`/admin/orders/${orderId}`, orderData);
     return response.data;
   },
 

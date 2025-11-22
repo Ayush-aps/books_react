@@ -31,6 +31,17 @@ const RegisterComplaint = () => {
     'Other'
   ];
 
+  const priorityLevels = {
+    'Damaged Item': 'high',
+    'Wrong Item': 'high',
+    'Missing Item': 'high',
+    'Delivery Issue': 'medium',
+    'Refund Issue': 'medium',
+    'Product Quality': 'medium',
+    'Seller Communication': 'low',
+    'Other': 'low'
+  };
+
   // Validation schema
   const validationSchema = {
     orderId: (value) => validateRequired(value, 'Order'),

@@ -1,57 +1,111 @@
 /**
  * Register Complaint Page (Seller)
- * Sellers can file complaints
+ * Form to submit new platform-related complaints
  */
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { sellerService } from '../../services/sellerService';
-import LoadingSpinner from '../../components/LoadingSpinner';
+import { motion } from 'framer-motion';
+import api from '../../services/api';
+import Card from '../../components/Card';
+import Button from '../../components/Button';
 import ErrorMessage from '../../components/ErrorMessage';
+import SuccessToast from '../../components/SuccessToast';
+import { fadeInUp } from '../../utils/animations';
 
 const RegisterComplaint = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     subject: '',
-    description: '',
     category: '',
+    description: ''
   });
+  const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [showToast, setShowToast] = useState(false);
   const [error, setError] = useState(null);
 
   const categories = [
     'Payment Issue',
-    'Platform Bug',
-    'Order Management',
+    'Platform Fee Dispute',
     'Buyer Issue',
     'Account Issue',
-    'Technical Support',
+    'Technical Problem',
+    'Policy Violation Report',
     'Other'
   ];
 
+  // Auto-assign priority based on category
+  const priorityLevels = {
+    'Payment Issue': 'urgent',
+    'Account Issue': 'high',
+    'Technical Problem': 'high',
+    'Platform Fee Dispute': 'medium',
+    'Buyer Issue': 'medium',
+    'Policy Violation Report': 'medium',
+    'Other': 'medium'
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [name]: value
     }));
+    // Clear error for this field
+    if (errors[name]) {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: null
+      }));
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.subject.trim()) {
+      newErrors.subject = 'Subject is required';
+    } else if (formData.subject.length < 10) {
+      newErrors.subject = 'Subject must be at least 10 characters';
+    }
+
+    if (!formData.category) {
+      newErrors.category = 'Please select a category';
+    }
+
+    if (!formData.description.trim()) {
+      newErrors.description = 'Description is required';
+    } else if (formData.description.length < 20) {
+      newErrors.description = 'Please provide more details (minimum 20 characters)';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
 
-    if (!formData.subject || !formData.description || !formData.category) {
-      setError('Please fill in all required fields');
+    if (!validateForm()) {
       return;
     }
 
     try {
       setSubmitting(true);
-      await sellerService.submitComplaint(formData);
-      navigate('/seller/dashboard', { 
-        state: { success: 'Complaint submitted successfully. We will review it soon.' } 
-      });
+      setError(null);
+
+      const complaintData = {
+        ...formData,
+        priority: priorityLevels[formData.category] || 'medium'
+      };
+
+      await api.post('/seller/complaints', complaintData);
+
+      setShowToast(true);
+      setTimeout(() => {
+        navigate('/seller/complaints');
+      }, 2000);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to submit complaint');
     } finally {
@@ -60,111 +114,211 @@ const RegisterComplaint = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-cream py-12">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Register Complaint</h1>
-          <p className="text-gray-600 mt-2">
-            Need help? Let us know about any issues you're experiencing.
-          </p>
-        </div>
-
-        {error && (
-          <div className="mb-6">
-            <ErrorMessage message={error} />
-          </div>
-        )}
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6 space-y-6">
-          {/* Category */}
-          <div>
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
-              Category <span className="text-red-500">*</span>
-            </label>
-            <select
-              id="category"
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">Select a category</option>
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Subject */}
-          <div>
-            <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
-              Subject <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="subject"
-              name="subject"
-              value={formData.subject}
-              onChange={handleChange}
-              required
-              maxLength={200}
-              placeholder="Brief description of the issue"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          {/* Description */}
-          <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-              Description <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              required
-              rows="6"
-              minLength={20}
-              maxLength={1000}
-              placeholder="Provide detailed information about your complaint..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            <p className="text-sm text-gray-500 mt-1">
-              {formData.description.length}/1000 characters (minimum 20)
+        <motion.div variants={fadeInUp} initial="hidden" animate="visible">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="heading-2 text-charcoal mb-2">Register Complaint</h1>
+            <p className="body text-charcoal/60">
+              Submit a platform-related issue or concern
             </p>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={() => navigate('/seller/dashboard')}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-            >
-              {submitting ? (
-                <span className="flex items-center gap-2">
-                  <LoadingSpinner size="sm" />
-                  Submitting...
-                </span>
-              ) : (
-                'Submit Complaint'
-              )}
-            </button>
-          </div>
-        </form>
+          {/* Info Banner */}
+          <Card className="mb-6 bg-blue-50 border-blue-200">
+            <Card.Body>
+              <div className="flex gap-3">
+                <div className="flex-shrink-0">
+                  <svg
+                    className="w-6 h-6 text-blue-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="heading-6 text-blue-900 mb-2">Before You Submit</h3>
+                  <ul className="body-sm text-blue-800 space-y-1 list-disc list-inside">
+                    <li>Provide clear and detailed information about your issue</li>
+                    <li>Select the most appropriate category for faster resolution</li>
+                    <li>You'll be able to track your complaint status and add comments</li>
+                    <li>Our admin team will respond within 24-48 hours</li>
+                  </ul>
+                </div>
+              </div>
+            </Card.Body>
+          </Card>
+
+          {/* Error Display */}
+          {error && (
+            <div className="mb-6">
+              <ErrorMessage message={error} onClose={() => setError(null)} />
+            </div>
+          )}
+
+          {/* Form */}
+          <Card>
+            <Card.Body>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Subject */}
+                <div>
+                  <label htmlFor="subject" className="form-label">
+                    Subject <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="subject"
+                    name="subject"
+                    value={formData.subject}
+                    onChange={handleChange}
+                    className={`form-control ${errors.subject ? 'border-red-500' : ''}`}
+                    placeholder="Brief summary of your issue"
+                    disabled={submitting}
+                  />
+                  {errors.subject && (
+                    <p className="form-error">{errors.subject}</p>
+                  )}
+                </div>
+
+                {/* Category */}
+                <div>
+                  <label htmlFor="category" className="form-label">
+                    Category <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    id="category"
+                    name="category"
+                    value={formData.category}
+                    onChange={handleChange}
+                    className={`form-control ${errors.category ? 'border-red-500' : ''}`}
+                    disabled={submitting}
+                  >
+                    <option value="">Select a category</option>
+                    {categories.map((category) => (
+                      <option key={category} value={category}>
+                        {category}
+                        {priorityLevels[category] && (
+                          ` (${priorityLevels[category]} priority)`
+                        )}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.category && (
+                    <p className="form-error">{errors.category}</p>
+                  )}
+                  {formData.category && (
+                    <p className="form-help text-blue-600 mt-1">
+                      This will be marked as <strong>{priorityLevels[formData.category]}</strong> priority
+                    </p>
+                  )}
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label htmlFor="description" className="form-label">
+                    Description <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    id="description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleChange}
+                    rows="8"
+                    className={`form-control resize-none ${
+                      errors.description ? 'border-red-500' : ''
+                    }`}
+                    placeholder="Provide detailed information about your issue:
+- What happened?
+- When did it occur?
+- What were you trying to do?
+- Any relevant transaction IDs or book details?"
+                    disabled={submitting}
+                  />
+                  {errors.description && (
+                    <p className="form-error">{errors.description}</p>
+                  )}
+                  <p className="form-help mt-1">
+                    {formData.description.length} / minimum 20 characters
+                  </p>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => navigate('/seller/complaints')}
+                    disabled={submitting}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    disabled={submitting}
+                    isLoading={submitting}
+                    className="flex-1"
+                  >
+                    {submitting ? 'Submitting...' : 'Submit Complaint'}
+                  </Button>
+                </div>
+              </form>
+            </Card.Body>
+          </Card>
+
+          {/* Help Section */}
+          <Card className="mt-6">
+            <Card.Header>
+              <h3 className="heading-6 text-charcoal">Need Immediate Help?</h3>
+            </Card.Header>
+            <Card.Body>
+              <div className="space-y-3 body-sm text-charcoal/80">
+                <p>
+                  For urgent payment issues or account problems, you can also:
+                </p>
+                <ul className="list-disc list-inside space-y-2 ml-2">
+                  <li>
+                    Email us directly at{' '}
+                    <a href="mailto:support@bookstore.com" className="text-brown hover:underline">
+                      support@bookstore.com
+                    </a>
+                  </li>
+                  <li>
+                    Check our{' '}
+                    <a href="/seller/faq" className="text-brown hover:underline">
+                      FAQ section
+                    </a>{' '}
+                    for common issues
+                  </li>
+                  <li>
+                    Review the{' '}
+                    <a href="/seller/policies" className="text-brown hover:underline">
+                      Seller Policies
+                    </a>{' '}
+                    for platform guidelines
+                  </li>
+                </ul>
+              </div>
+            </Card.Body>
+          </Card>
+        </motion.div>
+
+        {/* Success Toast */}
+        {showToast && (
+          <SuccessToast
+            message="Complaint submitted successfully! Redirecting..."
+            onClose={() => setShowToast(false)}
+          />
+        )}
       </div>
     </div>
   );

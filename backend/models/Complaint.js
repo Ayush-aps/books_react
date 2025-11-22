@@ -11,34 +11,98 @@ const ComplaintSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  category: {
+    type: String,
+    enum: [
+      // Buyer categories
+      'Product Quality', 'Delivery Issue', 'Wrong Item', 'Damaged Item', 
+      'Missing Item', 'Seller Communication', 'Refund Issue',
+      // Seller categories  
+      'Payment Issue', 'Platform Fee Dispute', 'Buyer Issue', 
+      'Technical Problem', 'Account Issue', 'Policy Violation Report',
+      // Common
+      'Other'
+    ],
+    required: true
+  },
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: false
-  },
-  guestInfo: {
-    name: String,
-    email: String
+    required: true
   },
   userRole: {
     type: String,
-    enum: ['buyer', 'seller', 'guest', 'admin'],
+    enum: ['buyer', 'seller'],
     required: true
   },
+  // Reference fields for context
+  order: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Order',
+    default: null
+  },
+  book: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Book',
+    default: null
+  },
+  // Status workflow
   status: {
     type: String,
-    enum: ['pending', 'in-progress', 'resolved', 'rejected'],
+    enum: ['pending', 'in-progress', 'resolved', 'rejected', 'closed'],
     default: 'pending'
   },
+  priority: {
+    type: String,
+    enum: ['low', 'medium', 'high', 'urgent'],
+    default: 'medium'
+  },
+  // Admin interaction
   adminResponse: {
     type: String,
     trim: true,
     default: ''
   },
-  source: {
-    type: String,
-    enum: ['contact_form', 'complaint_form'],
-    default: 'complaint_form'
+  assignedTo: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  // Communication thread
+  comments: [{
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    userRole: {
+      type: String,
+      enum: ['buyer', 'seller', 'admin'],
+      required: true
+    },
+    message: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  // Resolution details
+  resolution: {
+    action: {
+      type: String,
+      enum: ['refund_issued', 'replacement_sent', 'compensation_provided', 'policy_clarified', 'no_action', 'other'],
+      default: null
+    },
+    details: String,
+    resolvedAt: Date,
+    resolvedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }
   },
   createdAt: {
     type: Date,
@@ -49,5 +113,16 @@ const ComplaintSchema = new mongoose.Schema({
     default: Date.now
   }
 });
+
+// Update the updatedAt timestamp before saving
+ComplaintSchema.pre('save', function(next) {
+  this.updatedAt = Date.now();
+  next();
+});
+
+// Indexes for better query performance
+ComplaintSchema.index({ user: 1, userRole: 1 });
+ComplaintSchema.index({ status: 1 });
+ComplaintSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('Complaint', ComplaintSchema);

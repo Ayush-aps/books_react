@@ -66,7 +66,7 @@ const sellerService = {
 
   // Update order status
   updateOrderStatus: async (orderId, status) => {
-    const response = await api.put(`/seller/order/${orderId}/status`, { status });
+    const response = await api.put(`/seller/orders/${orderId}/status`, { status });
     return response.data;
   },
 

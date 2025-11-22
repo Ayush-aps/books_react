@@ -516,12 +516,13 @@ exports.getBookDetails = async (req, res) => {
 // @access  Private (Admin)
 exports.getAllComplaints = async (req, res) => {
   try {
-    const { status, role, source, search } = req.query;
+    const { status, role, category, priority, search, page = 1, limit = 20 } = req.query;
     let filter = {};
 
     if (status && status !== "all") filter.status = status;
     if (role && role !== "all") filter.userRole = role;
-    if (source && source !== "all") filter.source = source;
+    if (category && category !== "all") filter.category = category;
+    if (priority && priority !== "all") filter.priority = priority;
 
     if (search) {
       filter.$or = [
@@ -530,12 +531,30 @@ exports.getAllComplaints = async (req, res) => {
       ];
     }
 
-    const complaints = await Complaint.find(filter).populate("user", "name email").sort({ createdAt: -1 });
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const totalComplaints = await Complaint.countDocuments(filter);
+
+    const complaints = await Complaint.find(filter)
+      .populate("user", "name email role")
+      .populate("assignedTo", "name email")
+      .populate("order", "totalAmount createdAt")
+      .populate("book", "title author")
+      .sort({ priority: -1, createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
 
     res.json({
       success: true,
       message: "Complaints retrieved successfully",
-      data: { complaints },
+      data: { 
+        complaints,
+        pagination: {
+          total: totalComplaints,
+          page: parseInt(page),
+          pages: Math.ceil(totalComplaints / parseInt(limit)),
+          limit: parseInt(limit)
+        }
+      },
     });
   } catch (err) {
     console.error(err);
@@ -552,7 +571,13 @@ exports.getAllComplaints = async (req, res) => {
 // @access  Private (Admin)
 exports.getComplaintDetails = async (req, res) => {
   try {
-    const complaint = await Complaint.findById(req.params.id).populate("user", "name email");
+    const complaint = await Complaint.findById(req.params.id)
+      .populate("user", "name email role phone")
+      .populate("assignedTo", "name email")
+      .populate("order", "totalAmount createdAt")
+      .populate("book", "title author coverImage")
+      .populate("comments.user", "name role")
+      .populate("resolution.resolvedBy", "name");
 
     if (!complaint) {
       return res.status(404).json({
@@ -576,17 +601,54 @@ exports.getComplaintDetails = async (req, res) => {
   }
 };
 
-// @desc    Admin response to a complaint
-// @route   POST /api/admin/complaints/:id/respond
+// @desc    Update complaint status and priority
+// @route   PATCH /api/admin/complaints/:id/status
 // @access  Private (Admin)
-exports.respondToComplaint = async (req, res) => {
+exports.updateComplaintStatus = async (req, res) => {
   try {
-    const { status, adminResponse } = req.body;
+    const { status, priority, assignedTo } = req.body;
 
-    if (!status || !adminResponse) {
+    const complaint = await Complaint.findById(req.params.id);
+    if (!complaint) {
+      return res.status(404).json({
+        success: false,
+        message: "Complaint not found",
+      });
+    }
+
+    if (status) complaint.status = status;
+    if (priority) complaint.priority = priority;
+    if (assignedTo) complaint.assignedTo = assignedTo;
+
+    await complaint.save();
+    await complaint.populate('assignedTo', 'name email');
+
+    res.json({
+      success: true,
+      message: "Complaint updated successfully",
+      data: { complaint },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: "Error updating complaint",
+      error: err.message,
+    });
+  }
+};
+
+// @desc    Admin add comment to complaint
+// @route   POST /api/admin/complaints/:id/comment
+// @access  Private (Admin)
+exports.addComplaintComment = async (req, res) => {
+  try {
+    const { message } = req.body;
+
+    if (!message || message.trim() === '') {
       return res.status(400).json({
         success: false,
-        message: "Status and response are required",
+        message: "Message is required",
       });
     }
 
@@ -598,22 +660,79 @@ exports.respondToComplaint = async (req, res) => {
       });
     }
 
-    complaint.status = status;
-    complaint.adminResponse = adminResponse;
-    complaint.updatedAt = Date.now();
+    complaint.comments.push({
+      user: req.user._id,
+      userRole: 'admin',
+      message: message.trim()
+    });
+
+    // Auto-update status to in-progress if pending
+    if (complaint.status === 'pending') {
+      complaint.status = 'in-progress';
+    }
 
     await complaint.save();
+    await complaint.populate('comments.user', 'name role');
 
     res.json({
       success: true,
-      message: "Response submitted successfully",
+      message: "Comment added successfully",
       data: { complaint },
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({
       success: false,
-      message: "Error submitting response",
+      message: "Error adding comment",
+      error: err.message,
+    });
+  }
+};
+
+// @desc    Resolve complaint
+// @route   POST /api/admin/complaints/:id/resolve
+// @access  Private (Admin)
+exports.resolveComplaint = async (req, res) => {
+  try {
+    const { action, details, adminResponse } = req.body;
+
+    if (!action || !details) {
+      return res.status(400).json({
+        success: false,
+        message: "Resolution action and details are required",
+      });
+    }
+
+    const complaint = await Complaint.findById(req.params.id);
+    if (!complaint) {
+      return res.status(404).json({
+        success: false,
+        message: "Complaint not found",
+      });
+    }
+
+    complaint.status = 'resolved';
+    complaint.adminResponse = adminResponse || details;
+    complaint.resolution = {
+      action,
+      details,
+      resolvedAt: Date.now(),
+      resolvedBy: req.user._id
+    };
+
+    await complaint.save();
+    await complaint.populate('resolution.resolvedBy', 'name');
+
+    res.json({
+      success: true,
+      message: "Complaint resolved successfully",
+      data: { complaint },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: "Error resolving complaint",
       error: err.message,
     });
   }

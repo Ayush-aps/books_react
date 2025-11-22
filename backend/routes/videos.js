@@ -8,6 +8,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const { ensureAuthenticated } = require("../middleware/auth");
+const { uploadVideo, deleteVideo } = require("../config/cloudinary");
 const Book = require("../models/Book");
 const BookVideo = require("../models/BookVideo");
 const VideoComment = require("../models/VideoComment");
@@ -159,11 +160,25 @@ router.get("/books", ensureAuthenticated, async (req, res) => {
 });
 
 /**
+ * @route   GET /api/videos/upload
+ * @desc    Return error for GET on upload endpoint (frontend handles upload page)
+ * @access  Private
+ */
+router.get("/upload", ensureAuthenticated, (req, res) => {
+  res.status(405).json({
+    success: false,
+    message: "This endpoint only accepts POST requests for video uploads",
+  });
+});
+
+/**
  * @route   POST /api/videos/upload
- * @desc    Process video upload
+ * @desc    Process video upload to Cloudinary
  * @access  Private (Buyer)
  */
 router.post("/upload", ensureAuthenticated, upload.single("video"), async (req, res) => {
+  let uploadedFilePath = null;
+  
   try {
     if (req.user.role !== "buyer") {
       return res.status(403).json({
@@ -182,25 +197,51 @@ router.post("/upload", ensureAuthenticated, upload.single("video"), async (req, 
       });
     }
 
-    // Create thumbnail (here we'd normally generate one from the video)
-    // For now, use a default thumbnail
-    const thumbnailUrl = "/img/default-thumbnail.jpg";
+    // Verify book exists
+    const book = await Book.findById(bookId);
+    if (!book) {
+      // Clean up uploaded file
+      if (req.file) fs.unlinkSync(req.file.path);
+      return res.status(404).json({
+        success: false,
+        message: "Book not found",
+      });
+    }
 
-    // Create new video document
+    uploadedFilePath = req.file.path;
+
+    // Upload video to Cloudinary
+    console.log("Uploading video to Cloudinary...");
+    const cloudinaryResult = await uploadVideo(req.file.path, {
+      public_id: `book-reviews/${req.user._id}-${Date.now()}`,
+      transformation: [
+        { quality: "auto", fetch_format: "auto" }
+      ]
+    });
+
+    console.log("Cloudinary upload successful:", cloudinaryResult.url);
+
+    // Create new video document with Cloudinary URL
     const newVideo = new BookVideo({
       title,
       description: description || "",
-      videoUrl: `/uploads/videos/${req.file.filename}`,
-      thumbnailUrl,
+      videoUrl: cloudinaryResult.url,
+      thumbnailUrl: cloudinaryResult.thumbnail,
+      cloudinaryPublicId: cloudinaryResult.publicId,
       book: bookId,
       user: req.user._id,
       views: 0,
       likes: [],
-      duration: 90, // Default 90 seconds; in a real app, you'd extract this from the video
+      duration: Math.round(cloudinaryResult.duration) || 0,
       tags: tags ? tags.split(",").map((tag) => tag.trim()).filter(Boolean) : [],
     });
 
     await newVideo.save();
+
+    // Clean up local file after successful Cloudinary upload
+    if (fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
 
     res.status(201).json({
       success: true,
@@ -209,6 +250,12 @@ router.post("/upload", ensureAuthenticated, upload.single("video"), async (req, 
     });
   } catch (err) {
     console.error("Error uploading video:", err);
+    
+    // Clean up local file on error
+    if (uploadedFilePath && fs.existsSync(uploadedFilePath)) {
+      fs.unlinkSync(uploadedFilePath);
+    }
+    
     res.status(500).json({
       success: false,
       message: "Error uploading video",
@@ -406,17 +453,28 @@ router.delete("/:id", ensureAuthenticated, async (req, res) => {
       });
     }
 
-    // Delete video file from filesystem
-    const videoPath = path.join(__dirname, "..", "public", video.videoUrl);
-    if (fs.existsSync(videoPath)) {
-      fs.unlinkSync(videoPath);
+    // Delete video from Cloudinary if it has a public ID
+    if (video.cloudinaryPublicId) {
+      try {
+        await deleteVideo(video.cloudinaryPublicId);
+        console.log("Video deleted from Cloudinary:", video.cloudinaryPublicId);
+      } catch (cloudinaryError) {
+        console.error("Failed to delete from Cloudinary:", cloudinaryError);
+        // Continue with database deletion even if Cloudinary fails
+      }
+    } else {
+      // Delete local video file if it's stored locally
+      const videoPath = path.join(__dirname, "..", "public", video.videoUrl);
+      if (fs.existsSync(videoPath)) {
+        fs.unlinkSync(videoPath);
+      }
     }
 
     // Delete comments associated with this video
     await VideoComment.deleteMany({ video: req.params.id });
 
     // Delete video document
-    await video.remove();
+    await BookVideo.findByIdAndDelete(req.params.id);
 
     res.json({
       success: true,

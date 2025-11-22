@@ -129,6 +129,20 @@ const Dashboard = () => {
       link: '/seller/orders',
       icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2',
       color: 'bg-info'
+    },
+    {
+      label: 'View Complaints',
+      description: 'Track your submitted complaints',
+      link: '/seller/complaints',
+      icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+      color: 'bg-info'
+    },
+    {
+      label: 'Register Complaint',
+      description: 'Report issues or concerns',
+      link: '/seller/register-complaint',
+      icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z',
+      color: 'bg-warning'
     }
   ];
 

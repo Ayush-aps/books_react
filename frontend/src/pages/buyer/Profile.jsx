@@ -5,29 +5,64 @@
 
 import { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { fetchSubscriptionStatus } from '../../redux/actions/subscriptionActions';
+import { checkAuth } from '../../redux/actions/authActions';
 import api from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
 import Badge from '../../components/Badge';
+import Modal from '../../components/Modal';
 import { motion } from 'framer-motion';
 import { fadeInUp, staggerContainer, staggerItem } from '../../utils/animations';
+import SuccessToast from '../../components/SuccessToast';
 
 const Profile = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { user } = useSelector(state => state.auth);
   const { currentSubscription } = useSelector(state => state.subscription);
 
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState('success');
+  
+  // Edit Profile Modal States
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
 
   useEffect(() => {
     fetchData();
   }, [dispatch]);
+
+  useEffect(() => {
+    // Initialize form data when user data is available
+    if (user) {
+      setFormData({
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+    }
+  }, [user]);
 
   const fetchData = async () => {
     try {
@@ -45,6 +80,126 @@ const Profile = () => {
       setError(err.response?.data?.message || 'Failed to load profile data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleEditProfile = () => {
+    setShowEditModal(true);
+  };
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setAvatarFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowEditModal(false);
+    setAvatarPreview(null);
+    setAvatarFile(null);
+    // Reset password fields
+    setFormData({
+      ...formData,
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    });
+  };
+
+  const handleSubmitProfile = async (e) => {
+    e.preventDefault();
+    
+    // Validate passwords if changing
+    if (formData.newPassword || formData.confirmPassword) {
+      if (!formData.currentPassword) {
+        setToastMessage('Please enter your current password');
+        setToastType('error');
+        setShowToast(true);
+        return;
+      }
+      
+      if (formData.newPassword !== formData.confirmPassword) {
+        setToastMessage('New passwords do not match');
+        setToastType('error');
+        setShowToast(true);
+        return;
+      }
+      
+      if (formData.newPassword.length < 6) {
+        setToastMessage('New password must be at least 6 characters');
+        setToastType('error');
+        setShowToast(true);
+        return;
+      }
+    }
+
+    try {
+      setEditLoading(true);
+      
+      // Use FormData to support file upload
+      const formDataToSend = new FormData();
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('email', formData.email);
+      if (formData.phone) {
+        formDataToSend.append('phone', formData.phone);
+      }
+
+      // Add avatar if selected
+      if (avatarFile) {
+        formDataToSend.append('avatar', avatarFile);
+      }
+
+      // Only include password fields if user is changing password AND they're not empty
+      if (formData.currentPassword && formData.currentPassword.trim() !== '' && 
+          formData.newPassword && formData.newPassword.trim() !== '') {
+        formDataToSend.append('currentPassword', formData.currentPassword);
+        formDataToSend.append('newPassword', formData.newPassword);
+      }
+
+      const response = await api.put('/buyer/profile', formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      if (response.data.success) {
+        setToastMessage('Profile updated successfully!');
+        setToastType('success');
+        setShowToast(true);
+        setShowEditModal(false);
+        
+        // Refresh user data
+        dispatch(checkAuth());
+        
+        // Reset fields
+        setAvatarPreview(null);
+        setAvatarFile(null);
+        setFormData({
+          ...formData,
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        });
+      }
+    } catch (err) {
+      setToastMessage(err.response?.data?.message || 'Failed to update profile');
+      setToastType('error');
+      setShowToast(true);
+    } finally {
+      setEditLoading(false);
     }
   };
 
@@ -92,18 +247,30 @@ const Profile = () => {
                 <Card.Header>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-brown/10 flex items-center justify-center">
-                        <svg className="w-5 h-5 text-brown" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                      </div>
-                      <h2 className="heading-3 text-charcoal">Personal Information</h2>
+                      {/* User Avatar */}
+                      {user?.avatar ? (
+                        <img 
+                          src={`http://localhost:3000${user.avatar}`}
+                          alt={user.name}
+                          className="w-12 h-12 rounded-full object-cover border-2 border-brown/20"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = '/img/users/default-avatar.jpg';
+                          }}
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-brown/10 flex items-center justify-center">
+                          <svg className="w-6 h-6 text-brown" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                        </div>
+                      )}
+                      <h2 className="heading-4 text-charcoal">Personal Information</h2>
                     </div>
                     <Button
-                      as={Link}
-                      to="/buyer/profile/edit"
                       variant="outline"
                       size="sm"
+                      onClick={handleEditProfile}
                     >
                       Edit Profile
                     </Button>
@@ -154,14 +321,14 @@ const Profile = () => {
                       </div>
                       <h2 className="heading-3 text-charcoal">Saved Addresses</h2>
                     </div>
-                    <Button
-                      as={Link}
-                      to="/buyer/addresses"
-                      variant="outline"
-                      size="sm"
-                    >
-                      Manage Addresses
-                    </Button>
+                    <Link to="/buyer/addresses">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                      >
+                        Manage Addresses
+                      </Button>
+                    </Link>
                   </div>
                 </Card.Header>
                 <Card.Body>
@@ -174,14 +341,14 @@ const Profile = () => {
                         </svg>
                       </div>
                       <p className="body text-charcoal/70 mb-4">No saved addresses</p>
-                      <Button
-                        as={Link}
-                        to="/buyer/addresses/new"
-                        variant="primary"
-                        size="sm"
-                      >
-                        Add Address
-                      </Button>
+                      <Link to="/buyer/addresses">
+                        <Button
+                          variant="primary"
+                          size="sm"
+                        >
+                          Add Address
+                        </Button>
+                      </Link>
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -198,15 +365,15 @@ const Profile = () => {
                         </div>
                       ))}
                       {addresses.length > 3 && (
-                        <Button
-                          as={Link}
-                          to="/buyer/addresses"
-                          variant="ghost"
-                          size="sm"
-                          fullWidth
-                        >
-                          View all {addresses.length} addresses
-                        </Button>
+                        <Link to="/buyer/addresses" className="block">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            fullWidth
+                          >
+                            View all {addresses.length} addresses
+                          </Button>
+                        </Link>
                       )}
                     </div>
                   )}
@@ -231,42 +398,53 @@ const Profile = () => {
                   </div>
                 </Card.Header>
                 <Card.Body>
-                  {currentSubscription ? (
+                  {currentSubscription && currentSubscription.isActive && new Date(currentSubscription.endDate) > new Date() ? (
                     <div>
                       <div className="bg-gradient-to-r from-brown to-brown/80 text-white rounded-lg p-5 mb-4">
                         <p className="body-sm opacity-90 mb-1">Active Plan</p>
-                        <p className="heading-3">{currentSubscription.planName}</p>
+                        <p className="heading-3">
+                          {currentSubscription.plan === 'premium' ? 'Premium' : 
+                           currentSubscription.plan === 'premium_plus' ? 'Premium Plus' : 
+                           currentSubscription.plan}
+                        </p>
                       </div>
 
                       <div className="space-y-3">
                         <div className="flex justify-between items-center">
                           <span className="body-sm text-charcoal/60">Status</span>
-                          <Badge variant="success">{currentSubscription.status}</Badge>
+                          <Badge variant="success">Active</Badge>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="body-sm text-charcoal/60">Started</span>
+                          <span className="body-sm text-charcoal/60">Start Date</span>
                           <span className="body-sm font-medium text-charcoal">
-                            {new Date(currentSubscription.startDate).toLocaleDateString()}
+                            {new Date(currentSubscription.startDate).toLocaleDateString('en-US', { 
+                              year: 'numeric', 
+                              month: 'short', 
+                              day: 'numeric' 
+                            })}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="body-sm text-charcoal/60">Renews</span>
+                          <span className="body-sm text-charcoal/60">End Date</span>
                           <span className="body-sm font-medium text-charcoal">
-                            {new Date(currentSubscription.endDate).toLocaleDateString()}
+                            {new Date(currentSubscription.endDate).toLocaleDateString('en-US', { 
+                              year: 'numeric', 
+                              month: 'short', 
+                              day: 'numeric' 
+                            })}
                           </span>
                         </div>
                       </div>
 
-                      <Button
-                        as={Link}
-                        to="/subscription"
-                        variant="outline"
-                        size="sm"
-                        fullWidth
-                        className="mt-4"
-                      >
-                        Manage Subscription
-                      </Button>
+                      <Link to="/pricing" className="block mt-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          fullWidth
+                        >
+                          Manage Subscription
+                        </Button>
+                      </Link>
                     </div>
                   ) : (
                     <div className="text-center py-8">
@@ -275,15 +453,21 @@ const Profile = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                         </svg>
                       </div>
-                      <p className="body text-charcoal/70 mb-4">No active subscription</p>
-                      <Button
-                        as={Link}
-                        to="/pricing"
-                        variant="primary"
-                        size="sm"
-                      >
-                        View Plans
-                      </Button>
+                      <div className="space-y-3 mb-4">
+                        <div className="flex justify-between items-center px-4">
+                          <span className="body-sm text-charcoal/60">Status</span>
+                          <Badge variant="secondary">No Subscription</Badge>
+                        </div>
+                      </div>
+                      <p className="body-sm text-charcoal/60 mb-4">Subscribe to access our library of books</p>
+                      <Link to="/pricing">
+                        <Button
+                          variant="primary"
+                          size="sm"
+                        >
+                          View Plans
+                        </Button>
+                      </Link>
                     </div>
                   )}
                 </Card.Body>
@@ -305,68 +489,53 @@ const Profile = () => {
                 </Card.Header>
                 <Card.Body>
                   <div className="space-y-2">
-                    <Button
-                      as={Link}
-                      to="/buyer/orders"
-                      variant="ghost"
-                      size="md"
-                      fullWidth
-                      className="justify-between"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-brown/10 rounded-lg flex items-center justify-center">
-                          <svg className="w-4 h-4 text-brown" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                          </svg>
+                    <Link to="/buyer/orders" className="block">
+                      <button className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-background-secondary transition-colors text-left">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-brown/10 rounded-lg flex items-center justify-center">
+                            <svg className="w-4 h-4 text-brown" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                            </svg>
+                          </div>
+                          <span className="body-sm font-medium">My Orders</span>
                         </div>
-                        <span className="body-sm font-medium">My Orders</span>
-                      </div>
-                      <svg className="w-4 h-4 text-charcoal/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </Button>
+                        <svg className="w-4 h-4 text-charcoal/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </Link>
 
-                    <Button
-                      as={Link}
-                      to="/buyer/library"
-                      variant="ghost"
-                      size="md"
-                      fullWidth
-                      className="justify-between"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-green/10 rounded-lg flex items-center justify-center">
-                          <svg className="w-4 h-4 text-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                          </svg>
+                    <Link to="/buyer/library" className="block">
+                      <button className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-background-secondary transition-colors text-left">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-green/10 rounded-lg flex items-center justify-center">
+                            <svg className="w-4 h-4 text-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                            </svg>
+                          </div>
+                          <span className="body-sm font-medium">My Library</span>
                         </div>
-                        <span className="body-sm font-medium">My Library</span>
-                      </div>
-                      <svg className="w-4 h-4 text-charcoal/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </Button>
+                        <svg className="w-4 h-4 text-charcoal/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </Link>
 
-                    <Button
-                      as={Link}
-                      to="/buyer/cart"
-                      variant="ghost"
-                      size="md"
-                      fullWidth
-                      className="justify-between"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-taupe/20 rounded-lg flex items-center justify-center">
-                          <svg className="w-4 h-4 text-charcoal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                          </svg>
+                    <Link to="/buyer/cart" className="block">
+                      <button className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-background-secondary transition-colors text-left">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-taupe/20 rounded-lg flex items-center justify-center">
+                            <svg className="w-4 h-4 text-charcoal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                          </div>
+                          <span className="body-sm font-medium">Shopping Cart</span>
                         </div>
-                        <span className="body-sm font-medium">Shopping Cart</span>
-                      </div>
-                      <svg className="w-4 h-4 text-charcoal/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </Button>
+                        <svg className="w-4 h-4 text-charcoal/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </Link>
                   </div>
                 </Card.Body>
               </Card>
@@ -374,6 +543,182 @@ const Profile = () => {
           </div>
         </motion.div>
       </div>
+
+      {/* Edit Profile Modal */}
+      <Modal
+        isOpen={showEditModal}
+        onClose={handleCloseModal}
+        title="Edit Profile"
+        size="lg"
+      >
+        <form onSubmit={handleSubmitProfile} className="space-y-6">
+          {/* Personal Information */}
+          <div className="space-y-4">
+            <h3 className="heading-5 text-charcoal">Personal Information</h3>
+            
+            {/* Avatar Upload */}
+            <div>
+              <label className="form-label">Profile Photo</label>
+              <div className="flex items-center gap-4">
+                {/* Current or Preview Avatar */}
+                {avatarPreview ? (
+                  <img 
+                    src={avatarPreview} 
+                    alt="Preview" 
+                    className="w-20 h-20 rounded-full object-cover border-2 border-brown/20"
+                  />
+                ) : user?.avatar ? (
+                  <img 
+                    src={`http://localhost:3000${user.avatar}`}
+                    alt={user.name}
+                    className="w-20 h-20 rounded-full object-cover border-2 border-brown/20"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = '/img/users/default-avatar.jpg';
+                    }}
+                  />
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-brown/10 flex items-center justify-center">
+                    <svg className="w-10 h-10 text-brown" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                )}
+                
+                {/* Upload Button */}
+                <div className="flex-1">
+                  <input
+                    type="file"
+                    id="avatar"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="avatar"
+                    className="inline-flex items-center gap-2 px-4 py-2 border border-border-light rounded-lg cursor-pointer hover:bg-cream transition-colors"
+                  >
+                    <svg className="w-5 h-5 text-brown" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span className="body-sm">Choose Photo</span>
+                  </label>
+                  <p className="body-xs text-text-secondary mt-1">JPG, PNG or GIF (max 5MB)</p>
+                </div>
+              </div>
+            </div>
+            
+            <div>
+              <label className="form-label">Full Name</label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                className="form-control"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="form-label">Email</label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                className="form-control"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="form-label">Phone</label>
+              <input
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleInputChange}
+                className="form-control"
+                placeholder="Optional"
+              />
+            </div>
+          </div>
+
+          {/* Change Password Section */}
+          <div className="space-y-4 pt-4 border-t border-border-light">
+            <h3 className="heading-5 text-charcoal">Change Password (Optional)</h3>
+            <p className="body-sm text-text-secondary">Leave blank if you don't want to change your password</p>
+            
+            <div>
+              <label className="form-label">Current Password</label>
+              <input
+                type="password"
+                name="currentPassword"
+                value={formData.currentPassword}
+                onChange={handleInputChange}
+                className="form-control"
+                placeholder="Enter current password"
+              />
+            </div>
+
+            <div>
+              <label className="form-label">New Password</label>
+              <input
+                type="password"
+                name="newPassword"
+                value={formData.newPassword}
+                onChange={handleInputChange}
+                className="form-control"
+                placeholder="Enter new password (min 6 characters)"
+              />
+            </div>
+
+            <div>
+              <label className="form-label">Confirm New Password</label>
+              <input
+                type="password"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                className="form-control"
+                placeholder="Confirm new password"
+              />
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-4 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCloseModal}
+              disabled={editLoading}
+              fullWidth
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              isLoading={editLoading}
+              disabled={editLoading}
+              fullWidth
+            >
+              Save Changes
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Toast Notification */}
+      {showToast && (
+        <SuccessToast
+          message={toastMessage}
+          type={toastType}
+          onClose={() => setShowToast(false)}
+        />
+      )}
     </div>
   );
 };

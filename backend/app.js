@@ -34,11 +34,17 @@ const ordersRoutes = require("./routes/orders");
 // Import database connection
 const connectDB = require("./config/db");
 
+// Import subscription cron jobs
+const { startSubscriptionJobs } = require("./config/subscriptionCron");
+
 // Initialize Express app
 const app = express();
 
 // Connect to MongoDB 
 connectDB();
+
+// Start subscription cron jobs (Netflix-like workflow)
+startSubscriptionJobs();
 
 // CORS configuration
 const corsOptions = {
@@ -48,7 +54,8 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-// Middleware
+// Middleware - Serve static files
+app.use(express.static(path.join(__dirname, "public")));
 app.use('/uploads', express.static(path.join(__dirname, "uploads")));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());

@@ -33,10 +33,12 @@ const VideoWatch = () => {
     try {
       setLoading(true);
       const response = await api.get(`/videos/${id}`);
-      setVideo(response.data.data);
+      const videoData = response.data.data.video;
+      setVideo(videoData);
       setComments(response.data.data.comments || []);
       setError(null);
     } catch (err) {
+      console.error('Error fetching video:', err);
       setError(err.response?.data?.message || 'Failed to load video');
     } finally {
       setLoading(false);
@@ -51,8 +53,13 @@ const VideoWatch = () => {
 
     try {
       const response = await api.post(`/videos/${id}/like`);
-      setVideo(response.data.data);
-      setSuccessMessage('Video liked!');
+      // Update video with new like status and count
+      setVideo(prev => ({
+        ...prev,
+        isLiked: response.data.data.liked,
+        likeCount: response.data.data.likeCount
+      }));
+      setSuccessMessage(response.data.data.liked ? 'Video liked!' : 'Like removed');
       setShowSuccessToast(true);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to like video');
@@ -72,9 +79,9 @@ const VideoWatch = () => {
     try {
       setSubmitting(true);
       const response = await api.post(`/videos/${id}/comment`, {
-        text: commentText
+        content: commentText
       });
-      setComments([response.data.data, ...comments]);
+      setComments([response.data.data.comment, ...comments]);
       setCommentText('');
       setSuccessMessage('Comment added!');
       setShowSuccessToast(true);
@@ -118,7 +125,17 @@ const VideoWatch = () => {
                 src={video.videoUrl}
                 controls
                 className="w-full aspect-video"
-                autoPlay
+                controlsList="nodownload"
+                crossOrigin="anonymous"
+                onError={(e) => {
+                  console.error('Video load error:', e);
+                  console.error('Video URL:', video.videoUrl);
+                  setError('Failed to load video. Please try again or contact support.');
+                }}
+                onLoadedData={() => {
+                  console.log('Video loaded successfully');
+                  setError(null);
+                }}
               >
                 Your browser does not support the video tag.
               </video>
@@ -145,12 +162,16 @@ const VideoWatch = () => {
               <div className="flex items-center gap-4 pb-4 border-b border-gray-200">
                 <button
                   onClick={handleLike}
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                    video.isLiked 
+                      ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-900'
+                  }`}
                 >
                   <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
                   </svg>
-                  <span className="font-medium">{video.likes || 0} Likes</span>
+                  <span className="font-medium">{video.likeCount || 0} {video.isLiked ? 'Liked' : 'Likes'}</span>
                 </button>
               </div>
 
@@ -158,14 +179,14 @@ const VideoWatch = () => {
               <div className="pt-4">
                 <div className="flex items-center gap-3">
                   <div className="bg-blue-600 text-white rounded-full h-10 w-10 flex items-center justify-center font-semibold">
-                    {video.userId?.name?.charAt(0) || 'U'}
+                    {video.user?.name?.charAt(0) || 'U'}
                   </div>
                   <div>
                     <p className="font-semibold text-gray-900">
-                      {video.userId?.name || 'Anonymous'}
+                      {video.user?.name || 'Anonymous'}
                     </p>
                     <p className="text-sm text-gray-600">
-                      {video.userId?.role === 'seller' ? 'Seller' : 'Buyer'}
+                      {video.user?.role === 'seller' ? 'Seller' : 'Buyer'}
                     </p>
                   </div>
                 </div>
@@ -228,18 +249,18 @@ const VideoWatch = () => {
                     <div key={comment._id} className="border-b border-gray-200 pb-4 last:border-b-0">
                       <div className="flex items-start gap-3">
                         <div className="bg-gray-300 text-gray-700 rounded-full h-8 w-8 flex items-center justify-center font-semibold text-sm flex-shrink-0">
-                          {comment.userId?.name?.charAt(0) || 'U'}
+                          {comment.user?.name?.charAt(0) || 'U'}
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="font-semibold text-gray-900 text-sm">
-                              {comment.userId?.name || 'Anonymous'}
+                              {comment.user?.name || 'Anonymous'}
                             </span>
                             <span className="text-xs text-gray-500">
                               {new Date(comment.createdAt).toLocaleDateString()}
                             </span>
                           </div>
-                          <p className="text-gray-700 text-sm">{comment.text}</p>
+                          <p className="text-gray-700 text-sm">{comment.content}</p>
                         </div>
                       </div>
                     </div>
@@ -252,22 +273,22 @@ const VideoWatch = () => {
           {/* Sidebar */}
           <div className="lg:col-span-1">
             {/* Related Book */}
-            {video.bookId && (
+            {video.book && (
               <div className="bg-white rounded-lg shadow-md p-6 mb-6">
                 <h2 className="text-lg font-bold text-gray-900 mb-4">Featured Book</h2>
-                <Link to={`/buyer/books/${video.bookId._id}`} className="block group">
+                <Link to={`/buyer/book/${video.book._id}`} className="block group">
                   <img
-                    src={video.bookId.coverImage || '/placeholder-book.png'}
-                    alt={video.bookId.title}
+                    src={video.book.coverImage || '/placeholder-book.png'}
+                    alt={video.book.title}
                     className="w-full h-64 object-cover rounded-lg mb-3 group-hover:opacity-90 transition-opacity"
                   />
                   <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 mb-1">
-                    {video.bookId.title}
+                    {video.book.title}
                   </h3>
-                  <p className="text-sm text-gray-600 mb-2">by {video.bookId.author}</p>
+                  <p className="text-sm text-gray-600 mb-2">by {video.book.author}</p>
                   <div className="flex items-center justify-between">
                     <span className="text-lg font-bold text-gray-900">
-                      ${video.bookId.price.toFixed(2)}
+                      ${video.book.price?.toFixed(2) || 'N/A'}
                     </span>
                     <span className="text-sm text-blue-600 font-medium">
                       View Details →
@@ -282,13 +303,13 @@ const VideoWatch = () => {
               <h2 className="text-lg font-bold text-gray-900 mb-4">More Actions</h2>
               <div className="space-y-2">
                 <Link
-                  to="/buyer/videos"
+                  to="/buyer/video-feed"
                   className="block text-blue-600 hover:text-blue-800 font-medium text-sm"
                 >
                   ← Back to Videos
                 </Link>
                 <Link
-                  to="/buyer/videos/upload"
+                  to="/buyer/upload-video"
                   className="block text-blue-600 hover:text-blue-800 font-medium text-sm"
                 >
                   Upload Your Video →

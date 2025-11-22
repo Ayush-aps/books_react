@@ -38,20 +38,54 @@ export const FETCH_PROGRESS_DATA_REQUEST = 'FETCH_PROGRESS_DATA_REQUEST';
 export const FETCH_PROGRESS_DATA_SUCCESS = 'FETCH_PROGRESS_DATA_SUCCESS';
 export const FETCH_PROGRESS_DATA_FAILURE = 'FETCH_PROGRESS_DATA_FAILURE';
 
-// Fetch user's library
+// Fetch user's library (Netflix-like subscription check)
 export const fetchLibrary = () => async (dispatch) => {
   dispatch({ type: FETCH_LIBRARY_REQUEST });
   try {
     const response = await api.get('/library');
+    
+    // Check if response indicates no subscription (200 but with requiresSubscription flag)
+    if (response.data.requiresSubscription === true) {
+      dispatch({
+        type: FETCH_LIBRARY_FAILURE,
+        payload: response.data.message || 'Subscription required'
+      });
+      return response.data;
+    }
+    
+    // User has subscription - proceed normally with their library (even if empty)
+    if (response.data.success === true) {
+      const libraryBooks = response.data.data?.library || [];
+      dispatch({
+        type: FETCH_LIBRARY_SUCCESS,
+        payload: libraryBooks
+      });
+      return response.data;
+    }
+    
+    // Fallback - should not reach here
     dispatch({
       type: FETCH_LIBRARY_SUCCESS,
-      payload: response.data.data.library || []
+      payload: []
     });
+    return response.data;
+    
   } catch (error) {
+    const errorMessage = error.response?.data?.message || 'Failed to fetch library';
+    const requiresSubscription = error.response?.data?.requiresSubscription || false;
+    
     dispatch({
       type: FETCH_LIBRARY_FAILURE,
-      payload: error.response?.data?.message || 'Failed to fetch library'
+      payload: errorMessage
     });
+
+    // Return error data so component can check subscription status
+    return {
+      success: false,
+      requiresSubscription,
+      message: errorMessage,
+      error: true
+    };
   }
 };
 
@@ -60,18 +94,51 @@ export const addBookToLibrary = (bookId) => async (dispatch) => {
   dispatch({ type: ADD_BOOK_TO_LIBRARY_REQUEST });
   try {
     const response = await api.post(`/library/add/${bookId}`);
+    
+    // Check if response indicates subscription is required (200 but with flag)
+    if (response.data.requiresSubscription === true) {
+      dispatch({
+        type: ADD_BOOK_TO_LIBRARY_FAILURE,
+        payload: response.data.message
+      });
+      return {
+        success: false,
+        requiresSubscription: true,
+        message: response.data.message
+      };
+    }
+    
+    // Check if operation was successful
+    if (response.data.success === true) {
+      dispatch({
+        type: ADD_BOOK_TO_LIBRARY_SUCCESS,
+        payload: response.data.data
+      });
+      return { success: true, message: response.data.message };
+    }
+    
+    // Handle other failures (like book already in library)
     dispatch({
-      type: ADD_BOOK_TO_LIBRARY_SUCCESS,
-      payload: response.data.data
+      type: ADD_BOOK_TO_LIBRARY_FAILURE,
+      payload: response.data.message
     });
-    return { success: true, message: response.data.message };
+    return { 
+      success: false, 
+      message: response.data.message 
+    };
+    
   } catch (error) {
     const message = error.response?.data?.message || 'Failed to add book to library';
+    
     dispatch({
       type: ADD_BOOK_TO_LIBRARY_FAILURE,
       payload: message
     });
-    return { success: false, message };
+    
+    return { 
+      success: false, 
+      message
+    };
   }
 };
 

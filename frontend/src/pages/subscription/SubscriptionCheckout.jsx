@@ -5,12 +5,9 @@
 
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Elements } from '@stripe/react-stripe-js';
-import stripePromise from '../../config/stripe';
 import api from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
-import StripeCheckoutForm from '../../components/StripeCheckoutForm';
 
 const SubscriptionCheckout = () => {
   const navigate = useNavigate();
@@ -19,31 +16,31 @@ const SubscriptionCheckout = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [clientSecret, setClientSecret] = useState('');
 
   const subscriptionPlans = {
     monthly: {
-      name: 'Monthly Subscription',
-      price: 9.99,
+      name: 'Premium Monthly',
+      price: 199,
       interval: 'month',
+      planId: 'premium',
       features: [
-        'Access to all books in the library',
-        'Download books for offline reading',
-        'Exclusive member-only content',
-        'Priority customer support',
+        'Access to e-books and audiobooks',
+        'Advanced recommendation system',
+        'Priority delivery',
+        'Exclusive discounts',
         'Cancel anytime'
       ]
     },
     yearly: {
-      name: 'Yearly Subscription',
-      price: 99.99,
-      interval: 'year',
-      savings: 20,
+      name: 'Premium Plus Yearly',
+      price: 499,
+      interval: 'month',
+      planId: 'premium_plus',
       features: [
-        'All monthly plan features',
-        '2 months free (20% savings)',
+        'Unlimited e-book access',
+        'Monthly free physical book',
+        'Free express delivery',
         'Early access to new releases',
-        'Free gift book every quarter',
         'Cancel anytime'
       ]
     }
@@ -56,34 +53,25 @@ const SubscriptionCheckout = () => {
     setLoading(true);
 
     try {
-      // Create subscription intent on backend
-      const response = await api.post('/subscription/create-intent', {
-        planType,
-        amount: selectedPlan.price
+      // Map plan type to plan ID for backend
+      const planId = planType === 'monthly' ? 'premium' : 'premium_plus';
+      
+      // Create Stripe checkout session on backend
+      const response = await api.post('/subscription/create-checkout-session', {
+        planId
       });
 
-      setClientSecret(response.data.data.clientSecret);
+      // Redirect to Stripe hosted checkout page
+      if (response.data.data.url) {
+        window.location.href = response.data.data.url;
+      } else {
+        throw new Error('No checkout URL received');
+      }
     } catch (err) {
+      console.error('Subscription error:', err);
       setError(err.response?.data?.message || 'Failed to initialize payment');
-    } finally {
       setLoading(false);
     }
-  };
-
-  const handlePaymentSuccess = () => {
-    navigate('/subscription/success');
-  };
-
-  const appearance = {
-    theme: 'stripe',
-    variables: {
-      colorPrimary: '#2563eb',
-    }
-  };
-
-  const options = {
-    clientSecret,
-    appearance,
   };
 
   return (
@@ -149,30 +137,21 @@ const SubscriptionCheckout = () => {
                 </ul>
               </div>
 
-              {/* Stripe Payment Form */}
-              {!clientSecret ? (
-                <button
-                  onClick={handleSubscribe}
-                  disabled={loading}
-                  className="w-full bg-blue-600 text-white py-4 rounded-lg font-semibold text-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                >
-                  {loading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <LoadingSpinner size="sm" />
-                      Processing...
-                    </span>
-                  ) : (
-                    'Continue to Payment'
-                  )}
-                </button>
-              ) : (
-                <Elements stripe={stripePromise} options={options}>
-                  <StripeCheckoutForm
-                    onSuccess={handlePaymentSuccess}
-                    amount={selectedPlan.price}
-                  />
-                </Elements>
-              )}
+              {/* Stripe Payment Button */}
+              <button
+                onClick={handleSubscribe}
+                disabled={loading}
+                className="w-full bg-blue-600 text-white py-4 rounded-lg font-semibold text-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              >
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <LoadingSpinner size="sm" />
+                    Redirecting to Stripe...
+                  </span>
+                ) : (
+                  'Continue to Payment'
+                )}
+              </button>
 
               <div className="mt-6 flex items-center justify-center gap-2 text-sm text-gray-500">
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">

@@ -35,7 +35,12 @@ const UserSchema = new mongoose.Schema({
   },
   phone: {
     type: String,
-    match: [/^\d{10}$/, "Please enter a valid 10-digit phone number"],
+    validate: {
+      validator: function(v) {
+        return !v || /^\d{10}$/.test(v);
+      },
+      message: "Please enter a valid 10-digit phone number"
+    }
   },
   address: {
     street: String,
@@ -62,11 +67,12 @@ const UserSchema = new mongoose.Schema({
 // Encrypt password using bcrypt
 UserSchema.pre("save", async function (next) {
   if (!this.isModified("password")) {
-    next();
+    return next();
   }
 
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
+  next();
 });
 
 // Match user entered password to hashed password in database

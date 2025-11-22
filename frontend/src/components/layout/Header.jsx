@@ -6,6 +6,7 @@ import { logout } from '../../redux/actions/authActions';
 import { drawerSlide } from '../../utils/animations';
 import Button from '../Button';
 import Badge from '../Badge';
+import SuccessToast from '../SuccessToast';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -17,6 +18,8 @@ const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [showRestrictedToast, setShowRestrictedToast] = useState(false);
+  const [restrictedMessage, setRestrictedMessage] = useState('');
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -32,6 +35,17 @@ const Header = () => {
   const handleLogout = async () => {
     await dispatch(logout());
     navigate('/login');
+  };
+
+  const handlePricingClick = (e) => {
+    // Check if user is seller or admin
+    if (user && (user.role === 'seller' || user.role === 'admin')) {
+      e.preventDefault();
+      setRestrictedMessage(`Access restricted. ${user.role === 'seller' ? 'Sellers' : 'Admins'} are not allowed to view pricing page.`);
+      setShowRestrictedToast(true);
+      return;
+    }
+    // For buyers or non-authenticated users, allow normal navigation
   };
 
   const isActiveLink = (path) => location.pathname === path;
@@ -62,7 +76,7 @@ const Header = () => {
             <div className="hidden lg:flex items-center gap-8">
               <NavLink to="/" isActive={isActiveLink('/')}>Home</NavLink>
               <NavLink to="/about" isActive={isActiveLink('/about')}>About</NavLink>
-              <NavLink to="/pricing" isActive={isActiveLink('/pricing')}>Pricing</NavLink>
+              <NavLink to="/pricing" isActive={isActiveLink('/pricing')} onClick={handlePricingClick}>Pricing</NavLink>
               <NavLink to="/contact" isActive={isActiveLink('/contact')}>Contact</NavLink>
             </div>
 
@@ -149,7 +163,7 @@ const Header = () => {
       <AnimatePresence>
         {isMobileMenuOpen && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsMobileMenuOpen(false)} className="fixed inset-0 bg-black/50 z-overlay lg:hidden" />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsMobileMenuOpen(false)} className="fixed inset-0 bg-black/50 z-modal-backdrop lg:hidden" />
             <motion.div variants={drawerSlide} initial="hidden" animate="visible" exit="exit" className="fixed top-0 right-0 bottom-0 w-80 bg-white shadow-2xl z-modal lg:hidden overflow-y-auto">
               <div className="flex items-center justify-between p-6 border-b border-border-light">
                 <span className="font-serif font-bold text-xl">Bookish</span>
@@ -175,7 +189,7 @@ const Header = () => {
               <div className="p-6 space-y-1">
                 <MobileNavLink to="/">Home</MobileNavLink>
                 <MobileNavLink to="/about">About</MobileNavLink>
-                <MobileNavLink to="/pricing">Pricing</MobileNavLink>
+                <MobileNavLink to="/pricing" onClick={handlePricingClick}>Pricing</MobileNavLink>
                 {isAuthenticated && user.role === 'buyer' && (
                   <>
                     <div className="my-4 border-t border-border-light"></div>
@@ -205,12 +219,21 @@ const Header = () => {
         )}
       </AnimatePresence>
       <div className="h-20"></div>
+
+      {/* Restricted Access Toast */}
+      {showRestrictedToast && (
+        <SuccessToast
+          message={restrictedMessage}
+          type="warning"
+          onClose={() => setShowRestrictedToast(false)}
+        />
+      )}
     </>
   );
 };
 
-const NavLink = ({ to, isActive, children }) => (
-  <Link to={to} className={`text-sm font-medium transition-colors relative py-1 ${isActive ? 'text-accent-brown' : 'text-text-primary hover:text-accent-brown'}`}>
+const NavLink = ({ to, isActive, children, onClick }) => (
+  <Link to={to} onClick={onClick} className={`text-sm font-medium transition-colors relative py-1 ${isActive ? 'text-accent-brown' : 'text-text-primary hover:text-accent-brown'}`}>
     {children}
     {isActive && <motion.div layoutId="activeLink" className="absolute -bottom-1 left-0 right-0 h-0.5 bg-accent-brown" transition={{ type: "spring", stiffness: 380, damping: 30 }} />}
   </Link>
@@ -222,11 +245,11 @@ const DropdownLink = ({ to, children }) => (
   </Link>
 );
 
-const MobileNavLink = ({ to, children }) => {
+const MobileNavLink = ({ to, children, onClick }) => {
   const location = useLocation();
   const isActive = location.pathname === to;
   return (
-    <Link to={to} className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive ? 'bg-accent-brown/10 text-accent-brown' : 'text-text-primary hover:bg-background-secondary'}`}>
+    <Link to={to} onClick={onClick} className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive ? 'bg-accent-brown/10 text-accent-brown' : 'text-text-primary hover:bg-background-secondary'}`}>
       {children}
     </Link>
   );

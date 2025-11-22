@@ -512,7 +512,7 @@ exports.updateOrderStatus = async (req, res) => {
   try {
     const { status } = req.body;
 
-    if (!status || !["processing", "shipped", "delivered", "cancelled"].includes(status)) {
+    if (!status || !["ordered", "processing", "shipped", "delivered", "cancelled"].includes(status)) {
       return res.status(400).json({
         success: false,
         message: "Invalid status provided",
@@ -558,7 +558,12 @@ exports.updateOrderStatus = async (req, res) => {
 // @access  Private (Seller)
 exports.getAllComplaints = async (req, res) => {
   try {
-    const complaints = await Complaint.find({ user: req.user._id, userRole: "seller" }).sort({ createdAt: -1 });
+    const complaints = await Complaint.find({ 
+      user: req.user._id, 
+      userRole: "seller" 
+    })
+    .sort({ createdAt: -1 })
+    .populate("assignedTo", "name email");
 
     res.json({
       success: true,
@@ -580,27 +585,30 @@ exports.getAllComplaints = async (req, res) => {
 // @access  Private (Seller)
 exports.createComplaint = async (req, res) => {
   try {
-    const { subject, description } = req.body;
+    const { subject, description, category } = req.body;
 
-    if (!subject || !description) {
+    if (!subject || !description || !category) {
       return res.status(400).json({
         success: false,
-        message: "Subject and description are required",
+        message: "Subject, description, and category are required",
       });
     }
 
     const newComplaint = new Complaint({
       subject,
       description,
+      category,
       user: req.user._id,
       userRole: "seller",
+      status: "pending",
+      priority: "medium"
     });
 
     await newComplaint.save();
 
     res.status(201).json({
       success: true,
-      message: "Complaint submitted successfully",
+      message: "Complaint submitted successfully. Our team will review it within 24-48 hours.",
       data: { complaint: newComplaint },
     });
   } catch (err) {
@@ -609,6 +617,98 @@ exports.createComplaint = async (req, res) => {
       success: false,
       message: "Error submitting complaint",
       error: err.message,
+    });
+  }
+};
+
+// @desc    Get complaint details
+// @route   GET /api/seller/complaints/:id
+// @access  Private (Seller)
+exports.getComplaintDetails = async (req, res) => {
+  try {
+    const complaint = await Complaint.findOne({
+      _id: req.params.id,
+      user: req.user._id,
+      userRole: "seller"
+    })
+      .populate("assignedTo", "name email")
+      .populate("comments.user", "name role")
+      .populate("resolution.resolvedBy", "name");
+
+    if (!complaint) {
+      return res.status(404).json({
+        success: false,
+        message: "Complaint not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Complaint details retrieved successfully",
+      data: { complaint },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching complaint details",
+    });
+  }
+};
+
+// @desc    Add comment to complaint
+// @route   POST /api/seller/complaints/:id/comment
+// @access  Private (Seller)
+exports.addComplaintComment = async (req, res) => {
+  try {
+    const { message } = req.body;
+
+    if (!message || message.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        message: "Message is required",
+      });
+    }
+
+    const complaint = await Complaint.findOne({
+      _id: req.params.id,
+      user: req.user._id,
+      userRole: "seller"
+    });
+
+    if (!complaint) {
+      return res.status(404).json({
+        success: false,
+        message: "Complaint not found",
+      });
+    }
+
+    if (complaint.status === 'closed' || complaint.status === 'resolved') {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot add comments to closed or resolved complaints",
+      });
+    }
+
+    complaint.comments.push({
+      user: req.user._id,
+      userRole: 'seller',
+      message: message.trim()
+    });
+
+    await complaint.save();
+    await complaint.populate('comments.user', 'name role');
+
+    res.json({
+      success: true,
+      message: "Comment added successfully",
+      data: { complaint },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: "Error adding comment",
     });
   }
 };

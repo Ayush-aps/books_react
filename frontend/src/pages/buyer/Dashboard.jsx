@@ -196,13 +196,24 @@ function BuyerDashboard() {
                         <p className="font-bold">${order.total}</p>
                         <Badge
                           variant={
-                            order.status === 'delivered' ? 'success' :
-                            order.status === 'shipped' ? 'info' :
-                            order.status === 'processing' ? 'warning' : 'brown'
+                            (() => {
+                              const orderStatus = order.orderStatus || order.status || 'ordered';
+                              switch(orderStatus) {
+                                case 'delivered': return 'success';
+                                case 'shipped': return 'info';
+                                case 'processing': return 'warning';
+                                case 'cancelled': return 'error';
+                                case 'ordered':
+                                default: return 'brown';
+                              }
+                            })()
                           }
                           size="sm"
                         >
-                          {order.status}
+                          {(() => {
+                            const orderStatus = order.orderStatus || order.status || 'ordered';
+                            return orderStatus.charAt(0).toUpperCase() + orderStatus.slice(1);
+                          })()}
                         </Badge>
                       </div>
                     </div>

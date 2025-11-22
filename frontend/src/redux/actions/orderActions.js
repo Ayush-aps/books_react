@@ -85,28 +85,29 @@ export const createOrder = (orderData) => async (dispatch) => {
   try {
     dispatch({ type: CREATE_ORDER_REQUEST });
 
-    const response = await api.post('/buyer/orders', orderData);
+    const response = await api.post('/orders', orderData);
 
     if (response.data.success) {
+      const orderData = response.data.data || response.data;
       dispatch({
         type: CREATE_ORDER_SUCCESS,
-        payload: response.data.data.order,
+        payload: orderData,
       });
-      return { success: true, order: response.data.data.order };
+      return orderData; // Return the order directly for .unwrap()
     } else {
       dispatch({
         type: CREATE_ORDER_FAILURE,
         payload: response.data.message || 'Failed to create order',
       });
-      return { success: false, message: response.data.message };
+      throw new Error(response.data.message || 'Failed to create order');
     }
   } catch (error) {
-    const errorMessage = error.response?.data?.message || 'Error creating order';
+    const errorMessage = error.response?.data?.message || error.message || 'Error creating order';
     dispatch({
       type: CREATE_ORDER_FAILURE,
       payload: errorMessage,
     });
-    return { success: false, message: errorMessage };
+    throw new Error(errorMessage);
   }
 };
 

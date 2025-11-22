@@ -14,6 +14,7 @@ import Button from '../components/Button';
 import Badge from '../components/Badge';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
+import SuccessToast from '../components/SuccessToast';
 
 const Pricing = () => {
   const navigate = useNavigate();
@@ -22,10 +23,17 @@ const Pricing = () => {
   const [sellerRates, setSellerRates] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showRestrictedMessage, setShowRestrictedMessage] = useState(false);
 
   useEffect(() => {
+    // Check if user is seller or admin
+    if (user && (user.role === 'seller' || user.role === 'admin')) {
+      setShowRestrictedMessage(true);
+      setLoading(false);
+      return;
+    }
     fetchPricingData();
-  }, []);
+  }, [user]);
 
   const fetchPricingData = async () => {
     try {
@@ -97,6 +105,47 @@ const Pricing = () => {
       answer: 'Yes, you can upgrade or downgrade your plan at any time. Changes will be reflected in your next billing cycle.'
     }
   ];
+
+  // Show restricted access message for sellers and admins
+  if (showRestrictedMessage) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-cream p-4">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="max-w-md w-full"
+        >
+          <Card elevated className="text-center">
+            <Card.Body className="p-8">
+              <div className="w-16 h-16 bg-error/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <h2 className="heading-3 mb-3 text-error">Access Restricted</h2>
+              <p className="body-lg text-text-secondary mb-6">
+                This page is only available for buyers. {user?.role === 'seller' ? 'Sellers' : 'Admins'} are not allowed to access subscription pricing.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button 
+                  variant="primary" 
+                  onClick={() => navigate(user?.role === 'seller' ? '/seller/dashboard' : '/admin/dashboard')}
+                >
+                  Go to Dashboard
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate('/')}
+                >
+                  Go to Home
+                </Button>
+              </div>
+            </Card.Body>
+          </Card>
+        </motion.div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

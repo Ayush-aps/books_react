@@ -159,8 +159,32 @@ exports.getMe = (req, res) => {
 // @desc    Check if user is authenticated
 // @route   GET /api/auth/check
 // @access  Public
-exports.checkAuth = (req, res) => {
+exports.checkAuth = async (req, res) => {
   if (req.isAuthenticated()) {
+    try {
+      // Fetch fresh user data from database to get updated avatar and other fields
+      const User = require('../models/User');
+      const freshUser = await User.findById(req.user._id).select('-password');
+      
+      if (freshUser) {
+        return res.status(200).json({
+          success: true,
+          authenticated: true,
+          user: {
+            _id: freshUser._id,
+            name: freshUser.name,
+            email: freshUser.email,
+            role: freshUser.role,
+            avatar: freshUser.avatar,
+            phone: freshUser.phone,
+          },
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching fresh user data:', error);
+    }
+    
+    // Fallback to session user if database fetch fails
     return res.status(200).json({
       success: true,
       authenticated: true,

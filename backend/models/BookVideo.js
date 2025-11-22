@@ -18,6 +18,10 @@ const BookVideoSchema = new mongoose.Schema({
     type: String,
     default: '/img/default-thumbnail.jpg'
   },
+  cloudinaryPublicId: {
+    type: String,
+    default: null
+  },
   book: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Book',

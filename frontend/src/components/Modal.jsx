@@ -53,10 +53,10 @@ const Modal = ({
 
   return (
     <div
-      className="fixed inset-0 z-[1040] flex items-center justify-center bg-black bg-opacity-50 p-4"
+      className="fixed inset-0 z-modal-backdrop flex items-center justify-center bg-black bg-opacity-50 p-4"
       onClick={handleOverlayClick}
     >
-      <div className={`bg-white rounded-lg shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] overflow-y-auto`}>
+      <div className={`bg-white rounded-lg shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] overflow-y-auto z-modal relative`}>
         {/* Header */}
         {(title || showCloseButton) && (
           <div className="flex items-center justify-between p-6 border-b border-gray-200">

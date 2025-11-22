@@ -11,33 +11,51 @@ import ErrorMessage from '../../components/ErrorMessage';
 
 const SubscriptionSuccess = () => {
   const [searchParams] = useSearchParams();
-  const redirectStatus = searchParams.get('redirect_status');
-  const paymentIntent = searchParams.get('payment_intent');
+  const sessionId = searchParams.get('session_id');
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [subscription, setSubscription] = useState(null);
+  const [verificationAttempted, setVerificationAttempted] = useState(false);
 
   useEffect(() => {
-    const fetchSubscription = async () => {
+    if (verificationAttempted) return; // Prevent duplicate calls
+    
+    const verifyAndActivateSubscription = async () => {
+      setVerificationAttempted(true);
+      
       try {
-        // Fetch subscription details from backend
-        const response = await api.get('/subscription/current');
-        setSubscription(response.data.data);
+        if (!sessionId) {
+          throw new Error('No session ID provided');
+        }
+
+        console.log('Verifying subscription session:', sessionId);
+        
+        // Verify session and activate subscription (only once)
+        const response = await api.get(`/subscription/verify-session?session_id=${sessionId}`);
+        
+        if (response.data.success) {
+          console.log('✅ Subscription verified successfully');
+          setSubscription({
+            planName: response.data.data.planName,
+            status: 'Active',
+            amount: response.data.data.subscription.paymentDetails.amount,
+            interval: 'month',
+            nextBillingDate: response.data.data.subscription.renewalDate
+          });
+        } else {
+          throw new Error('Failed to verify subscription');
+        }
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to load subscription details');
+        console.error('Subscription verification error:', err);
+        setError(err.response?.data?.message || 'Failed to activate subscription. Please contact support.');
       } finally {
         setLoading(false);
       }
     };
 
-    if (redirectStatus === 'succeeded') {
-      fetchSubscription();
-    } else {
-      setError('Payment was not successful. Please try again.');
-      setLoading(false);
-    }
-  }, [redirectStatus]);
+    verifyAndActivateSubscription();
+  }, [sessionId, verificationAttempted]);
 
   if (loading) {
     return (

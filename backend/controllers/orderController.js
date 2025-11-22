@@ -5,8 +5,9 @@ const Order = require('../models/Order');
 // @access  Private (Buyer)
 exports.createOrder = async (req, res, next) => {
   try {
-    const { items, shippingAddress, paymentMethod, totalAmount } = req.body;
+    const { items, shippingAddress, paymentMethod, totalAmount, paymentIntentId, subtotal, tax, shippingCost } = req.body;
     const Book = require('../models/Book');
+    const Cart = require('../models/Cart');
     const mongoose = require('mongoose');
 
     // Validate items exist
@@ -24,16 +25,19 @@ exports.createOrder = async (req, res, next) => {
     const invalidBookIds = [];
 
     for (const item of items) {
+      // Support both bookId and book field
+      const bookId = item.bookId || item.book;
+      
       // Validate bookId is a valid MongoDB ObjectId
-      if (!item.bookId || !mongoose.Types.ObjectId.isValid(item.bookId)) {
-        invalidBookIds.push(item.bookId || 'undefined');
+      if (!bookId || !mongoose.Types.ObjectId.isValid(bookId)) {
+        invalidBookIds.push(bookId || 'undefined');
         continue;
       }
       
-      const book = await Book.findById(item.bookId).populate('seller', '_id');
+      const book = await Book.findById(bookId).populate('seller', '_id name email');
       
       if (!book) {
-        notFoundBooks.push(item.bookId);
+        notFoundBooks.push(bookId);
         continue;
       }
       
@@ -53,7 +57,7 @@ exports.createOrder = async (req, res, next) => {
         coverImage: book.coverImage,
         quantity: item.quantity,
         price: item.price,
-        seller: book.seller
+        seller: book.seller._id
       });
     }
 
@@ -93,30 +97,61 @@ exports.createOrder = async (req, res, next) => {
     const calculatedTotal = totalAmount || orderItems.reduce((total, item) => total + (item.price * item.quantity), 0);
 
     // Set payment status based on payment method
-    const paymentStatus = paymentMethod === 'cash_on_delivery' ? 'pending' : 'completed';
+    const paymentStatus = paymentMethod === 'cash_on_delivery' || paymentMethod === 'cod' ? 'pending' : 'completed';
     
-    const order = await Order.create({
+    // Prepare order data
+    const orderData = {
       buyer: req.user.id,
       items: orderItems,
       totalAmount: calculatedTotal,
       shippingAddress,
-      paymentMethod: paymentMethod || 'cash_on_delivery',
-      paymentStatus: paymentStatus
-    });
+      paymentMethod: paymentMethod === 'cod' ? 'cash_on_delivery' : paymentMethod,
+      paymentStatus: paymentStatus,
+      orderStatus: 'processing',
+      status: 'processing'
+    };
+
+    // Add payment details if Stripe payment
+    if (paymentIntentId) {
+      orderData.paymentDetails = {
+        paymentId: paymentIntentId,
+        amount: calculatedTotal,
+        status: 'completed'
+      };
+    }
+
+    const order = await Order.create(orderData);
 
     // Update book stock
     await Promise.all(
       orderItems.map(async (item) => {
         await Book.findByIdAndUpdate(
           item.book,
-          { $inc: { stock: -item.quantity } }
+          { 
+            $inc: { 
+              stock: -item.quantity
+            } 
+          }
         );
       })
     );
 
+    // Clear buyer's cart after successful order
+    await Cart.findOneAndUpdate(
+      { user: req.user.id },
+      { $set: { items: [], savedForLater: [] } }
+    );
+
+    // Populate the order for response
+    const populatedOrder = await Order.findById(order._id)
+      .populate('buyer', 'name email')
+      .populate('items.book', 'title author coverImage')
+      .populate('items.seller', 'name email');
+
     res.status(201).json({
       success: true,
-      data: order
+      message: 'Order placed successfully',
+      data: populatedOrder
     });
   } catch (error) {
     console.error('Order creation error:', error);

@@ -199,49 +199,82 @@ exports.verifySession = async (req, res) => {
     const planId = session.metadata.planId;
 
     // Get subscription from Stripe
-    const subscription = await stripe.subscriptions.retrieve(session.subscription);
+    const stripeSubscription = await stripe.subscriptions.retrieve(session.subscription);
 
-    // Calculate subscription end date (1 month from now)
-    const endDate = new Date();
-    endDate.setMonth(endDate.getMonth() + 1);
+    console.log(`📝 Processing subscription verification for user ${req.user._id}, Stripe ID: ${stripeSubscription.id}`);
 
-    // Save subscription to database
-    let userSubscription = await Subscription.findOne({ user: req.user._id });
+    // Check if this exact Stripe subscription was already processed
+    const alreadyProcessed = await Subscription.findOne({ 
+      stripeSubscriptionId: stripeSubscription.id 
+    });
 
-    if (userSubscription) {
-      // Update existing subscription
-      userSubscription.plan = planId;
-      userSubscription.startDate = new Date();
-      userSubscription.endDate = endDate;
-      userSubscription.renewalDate = endDate;
-      userSubscription.isActive = true;
-      userSubscription.stripeSubscriptionId = subscription.id;
-      userSubscription.stripeCustomerId = session.customer;
-      userSubscription.paymentDetails = {
-        paymentId: session.payment_intent,
-        amount: subscription.items.data[0].price.unit_amount / 100,
-        status: "completed",
-      };
-    } else {
-      // Create new subscription
-      userSubscription = new Subscription({
-        user: req.user._id,
-        plan: planId,
-        startDate: new Date(),
-        endDate: endDate,
-        renewalDate: endDate,
-        isActive: true,
-        stripeSubscriptionId: subscription.id,
-        stripeCustomerId: session.customer,
-        paymentDetails: {
-          paymentId: session.payment_intent,
-          amount: subscription.items.data[0].price.unit_amount / 100,
-          status: "completed",
+    if (alreadyProcessed) {
+      console.log('⚠️ This Stripe subscription already exists in DB, skipping...');
+      return res.json({
+        success: true,
+        message: "Subscription already activated",
+        data: {
+          subscription: alreadyProcessed,
+          planName: planId === "premium" ? "Premium" : "Premium Plus",
         },
       });
     }
 
+    // Check if user has an ACTIVE subscription (isActive=true and endDate in future)
+    const activeSubscription = await Subscription.findOne({
+      user: req.user._id,
+      isActive: true,
+      endDate: { $gt: new Date() }
+    });
+
+    let startDate, endDate, isActive;
+
+    if (activeSubscription) {
+      // User has active subscription - QUEUE the new one
+      startDate = new Date(activeSubscription.endDate);
+      endDate = new Date(startDate);
+      endDate.setMonth(endDate.getMonth() + 1);
+      isActive = false; // Will be activated by cron job when startDate arrives
+      
+      console.log(`🔄 Queueing subscription for user ${req.user._id}. Current ends: ${activeSubscription.endDate.toDateString()}, New starts: ${startDate.toDateString()}`);
+    } else {
+      // No active subscription - activate immediately
+      startDate = new Date();
+      endDate = new Date();
+      endDate.setMonth(endDate.getMonth() + 1);
+      isActive = true;
+      
+      console.log(`✨ Activating subscription immediately for user ${req.user._id}: ${planId}, Ends: ${endDate.toDateString()}`);
+    }
+
+    // Create new subscription
+    const userSubscription = new Subscription({
+      user: req.user._id,
+      plan: planId,
+      startDate: startDate,
+      endDate: endDate,
+      renewalDate: endDate,
+      isActive: isActive,
+      stripeSubscriptionId: stripeSubscription.id,
+      stripeCustomerId: session.customer,
+      paymentDetails: {
+        paymentId: session.payment_intent,
+        amount: stripeSubscription.items.data[0].price.unit_amount / 100,
+        status: "completed",
+      }
+    });
+
     await userSubscription.save();
+
+    console.log('✅ Subscription saved:', {
+      _id: userSubscription._id,
+      user: userSubscription.user,
+      plan: userSubscription.plan,
+      isActive: userSubscription.isActive,
+      startDate: userSubscription.startDate,
+      endDate: userSubscription.endDate,
+      queued: !isActive
+    });
 
     res.json({
       success: true,

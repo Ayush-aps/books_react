@@ -29,6 +29,7 @@ const OrderDetails = () => {
 
   const getStatusColor = (status) => {
     const colors = {
+      ordered: 'bg-blue-100 text-blue-800',
       pending: 'bg-yellow-100 text-yellow-800',
       processing: 'bg-blue-100 text-blue-800',
       shipped: 'bg-purple-100 text-purple-800',
@@ -39,7 +40,7 @@ const OrderDetails = () => {
   };
 
   const getStatusSteps = (currentStatus) => {
-    const steps = ['pending', 'processing', 'shipped', 'delivered'];
+    const steps = ['ordered', 'processing', 'shipped', 'delivered'];
     const currentIndex = steps.indexOf(currentStatus);
     
     if (currentStatus === 'cancelled') {
@@ -74,7 +75,8 @@ const OrderDetails = () => {
   }
 
   const order = currentOrder;
-  const statusSteps = getStatusSteps(order.status);
+  const orderStatus = order.orderStatus || order.status || 'ordered';
+  const statusSteps = getStatusSteps(orderStatus);
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -103,14 +105,14 @@ const OrderDetails = () => {
                   })}
                 </p>
               </div>
-              <span className={`px-4 py-2 rounded-full text-sm font-semibold ${getStatusColor(order.status)}`}>
-                {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+              <span className={`px-4 py-2 rounded-full text-sm font-semibold ${getStatusColor(orderStatus)}`}>
+                {orderStatus.charAt(0).toUpperCase() + orderStatus.slice(1)}
               </span>
             </div>
           </div>
 
           {/* Order Status Timeline */}
-          {order.status !== 'cancelled' && (
+          {orderStatus !== 'cancelled' && (
             <div className="px-6 py-8 border-b border-gray-200">
               <h2 className="text-lg font-semibold text-gray-900 mb-6">Order Status</h2>
               <div className="flex items-center justify-between">

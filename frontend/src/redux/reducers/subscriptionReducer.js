@@ -24,6 +24,7 @@ import {
 const initialState = {
   plans: [],
   currentSubscription: null,
+  hasSubscription: false,
   checkoutSession: null,
   loading: false,
   error: null
@@ -62,7 +63,8 @@ const subscriptionReducer = (state = initialState, action) => {
       return {
         ...state,
         loading: false,
-        currentSubscription: action.payload
+        currentSubscription: action.payload.subscription,
+        hasSubscription: action.payload.hasSubscription
       };
     case FETCH_SUBSCRIPTION_STATUS_FAILURE:
       return {

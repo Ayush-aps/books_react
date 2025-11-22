@@ -21,6 +21,7 @@ const Orders = () => {
 
   const getStatusVariant = (status) => {
     const variants = {
+      ordered: 'info',
       pending: 'warning',
       processing: 'info',
       shipped: 'info',
@@ -30,9 +31,11 @@ const Orders = () => {
     return variants[status] || 'default';
   };
 
+  const getOrderStatus = (order) => order.orderStatus || order.status || 'ordered';
+
   const filteredOrders = filter === 'all' 
     ? orders 
-    : orders.filter(order => order.status === filter);
+    : orders.filter(order => getOrderStatus(order) === filter);
 
   if (loading) {
     return (
@@ -74,7 +77,7 @@ const Orders = () => {
           initial="hidden"
           animate="visible"
         >
-          {['all', 'pending', 'processing', 'shipped', 'delivered', 'cancelled'].map((status) => {
+          {['all', 'ordered', 'processing', 'shipped', 'delivered', 'cancelled'].map((status) => {
             const isActive = filter === status;
             return (
               <button
@@ -143,11 +146,11 @@ const Orders = () => {
                     <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-2">
-                          <p className="body-sm text-charcoal/60">
-                            Order ID: <span className="font-mono font-semibold text-charcoal">#{order._id.slice(-8).toUpperCase()}</span>
+                          <p className="body text-charcoal mb-2">
+                            Order ID: <span className="font-mono font-semibold text-charcoal">#{order.orderId || order._id.slice(-8).toUpperCase()}</span>
                           </p>
-                          <Badge variant={getStatusVariant(order.status)} size="md">
-                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                          <Badge variant={getStatusVariant(getOrderStatus(order))} size="md">
+                            {getOrderStatus(order).charAt(0).toUpperCase() + getOrderStatus(order).slice(1)}
                           </Badge>
                         </div>
                         <p className="body-sm text-charcoal/60">

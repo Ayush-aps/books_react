@@ -1,5 +1,6 @@
 /**
  * Library API routes for managing user's book library
+ * Netflix-like subscription model: Library access only for active subscribers
  */
 
 const express = require("express");
@@ -10,38 +11,103 @@ const Book = require("../models/Book");
 const Subscription = require("../models/Subscription");
 
 /**
- * @route   GET /api/library
- * @desc    Get user's library
- * @access  Private
+ * Middleware to check active subscription (Netflix-like)
+ * Blocks access if subscription expired or doesn't exist
  */
-router.get("/", ensureAuthenticated, async (req, res) => {
+const requireActiveSubscription = async (req, res, next) => {
   try {
-    // Check subscription status
     const subscription = await Subscription.findOne({
       user: req.user._id,
       isActive: true,
       endDate: { $gt: new Date() },
     });
 
-    const hasSubscription = !!subscription;
+    if (!subscription || subscription.plan === 'free') {
+      return res.status(403).json({
+        success: false,
+        message: "Library access is only available for subscribed users. Please subscribe to access your library.",
+        requiresSubscription: true,
+        redirectTo: "/pricing"
+      });
+    }
 
-    // Get user's library with proper population
+    // Attach subscription to request for use in route handlers
+    req.subscription = subscription;
+    next();
+  } catch (err) {
+    console.error("Subscription check error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Error verifying subscription status",
+      error: err.message,
+    });
+  }
+};
+
+/**
+ * @route   GET /api/library
+ * @desc    Get user's library (Check subscription first, no DB query for non-subscribers)
+ * @access  Private
+ */
+router.get("/", ensureAuthenticated, async (req, res) => {
+  try {
+    console.log('=== Library Request for user:', req.user._id);
+    
+    // Check subscription status FIRST (before any DB queries)
+    const subscription = await Subscription.findOne({
+      user: req.user._id,
+      isActive: true,
+      endDate: { $gt: new Date() },
+    });
+
+    console.log('Subscription found:', subscription ? {
+      plan: subscription.plan,
+      isActive: subscription.isActive,
+      endDate: subscription.endDate,
+      startDate: subscription.startDate
+    } : 'NONE');
+
+    // If no subscription, return clean response without querying library
+    if (!subscription || subscription.plan === 'free') {
+      console.log('❌ No valid subscription - returning requiresSubscription');
+      return res.status(200).json({
+        success: false,
+        hasSubscription: false,
+        requiresSubscription: true,
+        message: "Subscribe to unlock unlimited access to thousands of books and start building your personal digital library.",
+        redirectTo: "/pricing"
+      });
+    }
+
+    console.log('✅ Valid subscription found - fetching library');
+
+    // User has subscription - fetch library data
     let library = await Library.findOne({ user: req.user._id }).populate({
       path: "items.book",
-      select: "title author coverImage format description",
+      select: "title author coverImage format description price",
     });
 
     if (!library) {
       library = { items: [] };
     }
 
+    // Calculate remaining subscription days
+    const daysRemaining = Math.ceil((subscription.endDate - new Date()) / (1000 * 60 * 60 * 24));
+
     res.json({
       success: true,
       message: "Library retrieved successfully",
       data: {
         library: library.items || [],
-        hasSubscription,
-        subscription,
+        hasSubscription: true,
+        subscription: {
+          plan: subscription.plan,
+          startDate: subscription.startDate,
+          endDate: subscription.endDate,
+          daysRemaining,
+          isActive: subscription.isActive,
+          autoRenew: subscription.autoRenew
+        },
       },
     });
   } catch (err) {
@@ -56,13 +122,29 @@ router.get("/", ensureAuthenticated, async (req, res) => {
 
 /**
  * @route   POST /api/library/add/:bookId
- * @desc    Add a book to user's library
+ * @desc    Add a book to user's library (Check subscription, return 200 with flag)
  * @access  Private
  */
 router.post("/add/:bookId", ensureAuthenticated, async (req, res) => {
   try {
     const bookId = req.params.bookId;
     const userId = req.user._id;
+
+    // Check subscription status FIRST
+    const subscription = await Subscription.findOne({
+      user: userId,
+      isActive: true,
+      endDate: { $gt: new Date() },
+    });
+
+    // If no subscription, return 200 with requiresSubscription flag
+    if (!subscription || subscription.plan === 'free') {
+      return res.status(200).json({
+        success: false,
+        requiresSubscription: true,
+        message: "Please subscribe to add books to your library",
+      });
+    }
 
     // Find the book
     const book = await Book.findById(bookId);
@@ -88,7 +170,7 @@ router.post("/add/:bookId", ensureAuthenticated, async (req, res) => {
     const existingItem = library.items.find((item) => item.book && item.book.toString() === bookId);
 
     if (existingItem) {
-      return res.status(400).json({
+      return res.status(200).json({
         success: false,
         message: "This book is already in your library",
       });
@@ -104,9 +186,9 @@ router.post("/add/:bookId", ensureAuthenticated, async (req, res) => {
 
     await library.save();
 
-    res.status(201).json({
+    res.status(200).json({
       success: true,
-      message: "Book added to your library",
+      message: "Successfully added book to your library",
       data: { library },
     });
   } catch (err) {
@@ -121,10 +203,10 @@ router.post("/add/:bookId", ensureAuthenticated, async (req, res) => {
 
 /**
  * @route   GET /api/library/book/:bookId
- * @desc    Get book details from library for reading
- * @access  Private
+ * @desc    Get book details from library for reading (Requires active subscription)
+ * @access  Private + Active Subscription
  */
-router.get("/book/:bookId", ensureAuthenticated, async (req, res) => {
+router.get("/book/:bookId", ensureAuthenticated, requireActiveSubscription, async (req, res) => {
   try {
     const bookId = req.params.bookId;
     const userId = req.user._id;
@@ -187,10 +269,10 @@ router.get("/book/:bookId", ensureAuthenticated, async (req, res) => {
 
 /**
  * @route   PUT /api/library/update-progress
- * @desc    Update reading progress for a book
- * @access  Private
+ * @desc    Update reading progress for a book (Requires active subscription)
+ * @access  Private + Active Subscription
  */
-router.put("/update-progress", ensureAuthenticated, async (req, res) => {
+router.put("/update-progress", ensureAuthenticated, requireActiveSubscription, async (req, res) => {
   try {
     const { bookId, progress, currentPage } = req.body;
     const userId = req.user._id;
@@ -248,10 +330,10 @@ router.put("/update-progress", ensureAuthenticated, async (req, res) => {
 
 /**
  * @route   DELETE /api/library/remove/:bookId
- * @desc    Remove a book from user's library
- * @access  Private
+ * @desc    Remove a book from user's library (Requires active subscription)
+ * @access  Private + Active Subscription
  */
-router.delete("/remove/:bookId", ensureAuthenticated, async (req, res) => {
+router.delete("/remove/:bookId", ensureAuthenticated, requireActiveSubscription, async (req, res) => {
   try {
     const bookId = req.params.bookId;
 
@@ -295,10 +377,10 @@ router.delete("/remove/:bookId", ensureAuthenticated, async (req, res) => {
 
 /**
  * @route   GET /api/library/progress-data
- * @desc    Get progress data for user's library items
- * @access  Private
+ * @desc    Get progress data for user's library items (Requires active subscription)
+ * @access  Private + Active Subscription
  */
-router.get("/progress-data", ensureAuthenticated, async (req, res) => {
+router.get("/progress-data", ensureAuthenticated, requireActiveSubscription, async (req, res) => {
   try {
     const userId = req.user._id;
 
@@ -326,10 +408,10 @@ router.get("/progress-data", ensureAuthenticated, async (req, res) => {
 
 /**
  * @route   POST /api/library/bookmark
- * @desc    Save or remove a bookmark
- * @access  Private
+ * @desc    Save or remove a bookmark (Requires active subscription)
+ * @access  Private + Active Subscription
  */
-router.post("/bookmark", ensureAuthenticated, async (req, res) => {
+router.post("/bookmark", ensureAuthenticated, requireActiveSubscription, async (req, res) => {
   try {
     const { bookId, currentPage, isBookmarked } = req.body;
     const userId = req.user._id;
@@ -378,10 +460,10 @@ router.post("/bookmark", ensureAuthenticated, async (req, res) => {
 
 /**
  * @route   GET /api/library/bookmark/:bookId
- * @desc    Check if a book is bookmarked
- * @access  Private
+ * @desc    Check if a book is bookmarked (Requires active subscription)
+ * @access  Private + Active Subscription
  */
-router.get("/bookmark/:bookId", ensureAuthenticated, async (req, res) => {
+router.get("/bookmark/:bookId", ensureAuthenticated, requireActiveSubscription, async (req, res) => {
   try {
     const bookId = req.params.bookId;
     const userId = req.user._id;
