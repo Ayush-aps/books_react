@@ -6,6 +6,7 @@
 const Book = require("../models/Book");
 const Order = require("../models/Order");
 const Complaint = require("../models/Complaint");
+const axios = require("axios");
 
 // ============================================
 // DASHBOARD
@@ -138,6 +139,138 @@ exports.getInventory = async (req, res) => {
 // BOOK MANAGEMENT
 // ============================================
 
+// Helper function to map Google Books data to our format
+const mapGoogleBookData = (volumeInfo, volumeId) => {
+  // Extract ISBN from industryIdentifiers
+  let isbn = "";
+  if (volumeInfo.industryIdentifiers) {
+    const isbn13 = volumeInfo.industryIdentifiers.find(id => id.type === "ISBN_13");
+    const isbn10 = volumeInfo.industryIdentifiers.find(id => id.type === "ISBN_10");
+    isbn = isbn13?.identifier || isbn10?.identifier || "";
+  }
+
+  return {
+    id: volumeId,
+    title: volumeInfo.title || "",
+    subtitle: volumeInfo.subtitle || "",
+    author: volumeInfo.authors ? volumeInfo.authors.join(", ") : "",
+    description: volumeInfo.description || "",
+    isbn: isbn,
+    publisher: volumeInfo.publisher || "",
+    publishedDate: volumeInfo.publishedDate || "",
+    pageCount: volumeInfo.pageCount || null,
+    language: volumeInfo.language ? volumeInfo.language.toUpperCase() : "EN",
+    genres: volumeInfo.categories || [],
+    coverImage: volumeInfo.imageLinks?.thumbnail?.replace('http:', 'https:') || 
+                volumeInfo.imageLinks?.smallThumbnail?.replace('http:', 'https:') || "",
+    averageRating: volumeInfo.averageRating || null,
+    ratingsCount: volumeInfo.ratingsCount || null,
+  };
+};
+
+// @desc    Search books by title and/or author using Google Books API
+// @route   GET /api/seller/books/search
+// @access  Private (Seller)
+exports.searchBooks = async (req, res) => {
+  try {
+    const { query, maxResults = 10 } = req.query;
+
+    if (!query || query.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        message: "Search query is required",
+      });
+    }
+
+    // Call Google Books API
+    const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
+    const response = await axios.get(
+      `https://www.googleapis.com/books/v1/volumes`,
+      {
+        params: {
+          q: query,
+          maxResults: Math.min(parseInt(maxResults), 40),
+          key: apiKey,
+          printType: 'books',
+          orderBy: 'relevance'
+        }
+      }
+    );
+
+    if (!response.data.items || response.data.items.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No books found matching your search",
+      });
+    }
+
+    // Map all results to our format
+    const books = response.data.items.map(item => 
+      mapGoogleBookData(item.volumeInfo, item.id)
+    );
+
+    res.json({
+      success: true,
+      message: "Books retrieved successfully",
+      data: { 
+        books,
+        totalResults: response.data.totalItems || books.length
+      },
+    });
+  } catch (err) {
+    console.error("Google Books API Error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Error searching for books",
+      error: err.message,
+    });
+  }
+};
+
+// @desc    Lookup book by ISBN using Google Books API
+// @route   GET /api/seller/books/lookup/:isbn
+// @access  Private (Seller)
+exports.lookupBookByISBN = async (req, res) => {
+  try {
+    const { isbn } = req.params;
+
+    if (!isbn) {
+      return res.status(400).json({
+        success: false,
+        message: "ISBN is required",
+      });
+    }
+
+    // Call Google Books API
+    const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
+    const response = await axios.get(
+      `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}&key=${apiKey}`
+    );
+
+    if (!response.data.items || response.data.items.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No book found with this ISBN",
+      });
+    }
+
+    const mappedBook = mapGoogleBookData(response.data.items[0].volumeInfo, response.data.items[0].id);
+
+    res.json({
+      success: true,
+      message: "Book information retrieved successfully",
+      data: { book: mappedBook },
+    });
+  } catch (err) {
+    console.error("Google Books API Error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching book information",
+      error: err.message,
+    });
+  }
+};
+
 // @desc    Upload a new book
 // @route   POST /api/seller/books
 // @access  Private (Seller)
@@ -159,9 +292,10 @@ exports.createBook = async (req, res) => {
       stock,
       format,
       coverImageUrl,
+      coverImage,
     } = req.body;
 
-    if (!title || !author || !description || !isbn || !price || !publisher || !genres || !stock || !format) {
+    if (!title || !author || !isbn || !price || !stock || !format) {
       return res.status(400).json({
         success: false,
         message: "Please fill in all required fields",
@@ -169,20 +303,24 @@ exports.createBook = async (req, res) => {
     }
 
     let finalCoverImage =
-      coverImageUrl && coverImageUrl.trim() !== "" ? coverImageUrl.trim() : "https://nnpdev.wustl.edu/img/BookCovers/genericBookCover.jpg";
+      coverImageUrl && coverImageUrl.trim() !== "" 
+        ? coverImageUrl.trim() 
+        : coverImage && coverImage.trim() !== ""
+        ? coverImage.trim()
+        : "https://nnpdev.wustl.edu/img/BookCovers/genericBookCover.jpg";
 
     const newBook = new Book({
       title,
       author,
-      description,
+      description: description || "No description available",
       isbn,
       price,
       discountPrice: discountPrice || price,
-      publisher,
+      publisher: publisher || "Unknown Publisher",
       publishedDate,
       pageCount,
-      language,
-      genres: Array.isArray(genres) ? genres : [genres],
+      language: language || "English",
+      genres: Array.isArray(genres) ? genres : genres ? [genres] : ["Other"],
       condition,
       seller: req.user._id,
       stock,
@@ -200,6 +338,15 @@ exports.createBook = async (req, res) => {
     });
   } catch (err) {
     console.error(err);
+    
+    // Handle duplicate ISBN error
+    if (err.code === 11000 && err.keyPattern && err.keyPattern.isbn) {
+      return res.status(400).json({
+        success: false,
+        message: "A book with this ISBN already exists in the system",
+      });
+    }
+    
     res.status(500).json({
       success: false,
       message: "Error uploading book",

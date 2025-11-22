@@ -194,6 +194,7 @@ const useFormValidation = (initialValues, validationSchema) => {
     resetForm,
     setFieldValue,
     setFieldError,
+    setValues,
     validateForm,
     isValid: isValid()
   };
