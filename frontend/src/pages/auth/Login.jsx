@@ -133,6 +133,17 @@ const Login = () => {
                 />
               </div>
 
+              {/* <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                fullWidth
+                disabled={loading || isSubmitting || !isValid}
+                isLoading={loading || isSubmitting}
+              >
+                {loading || isSubmitting ? 'Signing in...' : 'Sign In'}
+              </Button> */}
+
               <Button
                 type="submit"
                 variant="primary"
@@ -157,7 +168,7 @@ const Login = () => {
         </Card>
       </motion.div>
 
-      {/* Success Toast */}
+      {/* Toast message for log in success*/}
       {showSuccessToast && (
         <SuccessToast
           message={successMessage}
