@@ -395,19 +395,35 @@ exports.getReports = async (req, res) => {
 // @access  Private (Admin)
 exports.getContent = async (req, res) => {
   try {
-    const pendingBooks = await Book.find({ isApproved: false })
+    // Pending books: not approved and no rejection reason (never reviewed or re-submitted)
+    const pendingBooks = await Book.find({ 
+      isApproved: false, 
+      $or: [
+        { rejectionReason: null },
+        { rejectionReason: { $exists: false } }
+      ]
+    })
       .populate("seller", "name email")
       .sort({ createdAt: -1 });
 
     const approvedBooks = await Book.find({ isApproved: true })
       .populate("seller", "name email")
-      .sort({ createdAt: -1 })
+      .sort({ approvalDate: -1 })
+      .limit(10);
+
+    // Rejected books for admin reference
+    const rejectedBooks = await Book.find({ 
+      isApproved: false,
+      rejectionReason: { $exists: true, $ne: null }
+    })
+      .populate("seller", "name email")
+      .sort({ rejectionDate: -1 })
       .limit(10);
 
     res.json({
       success: true,
       message: "Content retrieved successfully",
-      data: { pendingBooks, approvedBooks },
+      data: { pendingBooks, approvedBooks, rejectedBooks },
     });
   } catch (err) {
     console.error(err);
@@ -424,7 +440,16 @@ exports.getContent = async (req, res) => {
 // @access  Private (Admin)
 exports.approveBook = async (req, res) => {
   try {
-    const book = await Book.findByIdAndUpdate(req.params.id, { isApproved: true }, { new: true });
+    const book = await Book.findByIdAndUpdate(
+      req.params.id,
+      {
+        isApproved: true,
+        approvalDate: new Date(),
+        rejectionReason: null,
+        rejectionDate: null,
+      },
+      { new: true }
+    );
 
     if (!book) {
       return res.status(404).json({
@@ -448,12 +473,30 @@ exports.approveBook = async (req, res) => {
   }
 };
 
-// @desc    Reject and delete book
+// @desc    Reject book with reason (keeps in seller's inventory for reference)
 // @route   POST /api/admin/content/:id/reject
 // @access  Private (Admin)
 exports.rejectBook = async (req, res) => {
   try {
-    const book = await Book.findByIdAndDelete(req.params.id);
+    const { reason } = req.body;
+
+    if (!reason || reason.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        message: "Rejection reason is required",
+      });
+    }
+
+    const book = await Book.findByIdAndUpdate(
+      req.params.id,
+      {
+        isApproved: false,
+        rejectionReason: reason,
+        rejectionDate: new Date(),
+        approvalDate: null,
+      },
+      { new: true }
+    );
 
     if (!book) {
       return res.status(404).json({
@@ -464,7 +507,8 @@ exports.rejectBook = async (req, res) => {
 
     res.json({
       success: true,
-      message: "Book rejected and removed",
+      message: "Book rejected successfully. Seller will be notified.",
+      data: { book },
     });
   } catch (err) {
     console.error(err);

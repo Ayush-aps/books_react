@@ -122,15 +122,40 @@ exports.getInventory = async (req, res) => {
 
     const query = { seller: req.user._id };
 
+    // Build search query conditions
+    const searchConditions = [];
     if (search) {
-      query.$or = [{ title: { $regex: search, $options: "i" } }, { author: { $regex: search, $options: "i" } }];
+      searchConditions.push({ title: { $regex: search, $options: "i" } });
+      searchConditions.push({ author: { $regex: search, $options: "i" } });
     }
 
+    // Filter by status
     if (status === "approved") {
       query.isApproved = true;
     } else if (status === "pending") {
       query.isApproved = false;
+      query.$and = [
+        {
+          $or: [
+            { rejectionReason: null },
+            { rejectionReason: { $exists: false } }
+          ]
+        }
+      ];
+    } else if (status === "rejected") {
+      query.isApproved = false;
+      query.rejectionReason = { $exists: true, $ne: null };
     }
+    
+    // Add search conditions to query
+    if (searchConditions.length > 0) {
+      if (query.$and) {
+        query.$and.push({ $or: searchConditions });
+      } else {
+        query.$or = searchConditions;
+      }
+    }
+    // If no status filter, show all books
 
     let sortOptions = { createdAt: -1 };
     if (sort === "price-asc") sortOptions = { price: 1 };

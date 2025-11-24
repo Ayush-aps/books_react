@@ -28,7 +28,7 @@ const OrderDetails = () => {
     try {
       setLoading(true);
       const response = await sellerService.getOrderDetails(id);
-      setOrder(response.data);
+      setOrder(response.data?.order);
       setError(null);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load order details');
@@ -41,7 +41,7 @@ const OrderDetails = () => {
     try {
       setUpdating(true);
       await sellerService.updateOrderStatus(id, newStatus);
-      setOrder({ ...order, status: newStatus });
+      setOrder({ ...order, orderStatus: newStatus });
       setSuccessMessage(`Order status updated to ${newStatus}`);
       setShowSuccessToast(true);
     } catch (err) {
@@ -101,7 +101,7 @@ const OrderDetails = () => {
 
   const subtotal = order.totalAmount / 1.08; // Reverse calculate from total (8% tax)
   const tax = order.totalAmount - subtotal;
-  const steps = getStatusSteps(order.status);
+  const steps = getStatusSteps(order.orderStatus);
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -134,8 +134,8 @@ const OrderDetails = () => {
               </div>
               <div className="text-right">
                 <p className="text-blue-100 text-sm mb-1">Order Status</p>
-                <span className={`inline-block px-4 py-2 rounded-full text-sm font-semibold ${getStatusColor(order.status)}`}>
-                  {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                <span className={`inline-block px-4 py-2 rounded-full text-sm font-semibold ${getStatusColor(order.orderStatus)}`}>
+                  {order.orderStatus.charAt(0).toUpperCase() + order.orderStatus.slice(1)}
                 </span>
               </div>
             </div>
@@ -143,7 +143,7 @@ const OrderDetails = () => {
         </div>
 
         {/* Status Update */}
-        {order.status !== 'delivered' && order.status !== 'cancelled' && (
+        {order.orderStatus !== 'delivered' && order.orderStatus !== 'cancelled' && (
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Update Order Status</h2>
             <div className="flex flex-wrap gap-3">
@@ -151,9 +151,9 @@ const OrderDetails = () => {
                 <button
                   key={status}
                   onClick={() => handleStatusUpdate(status)}
-                  disabled={updating || order.status === status}
+                  disabled={updating || order.orderStatus === status}
                   className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                    order.status === status
+                    order.orderStatus === status
                       ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                       : 'bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed'
                   }`}
@@ -166,7 +166,7 @@ const OrderDetails = () => {
         )}
 
         {/* Status Timeline */}
-        {order.status !== 'cancelled' && (
+        {order.orderStatus !== 'cancelled' && (
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-6">Order Progress</h2>
             <div className="relative">
@@ -211,16 +211,16 @@ const OrderDetails = () => {
               <div className="space-y-4">
                 {order.items.map((item, index) => (
                   <div key={index} className="flex gap-4 pb-4 border-b border-gray-200 last:border-0 last:pb-0">
-                    {item.bookId?.coverImage && (
+                    {item.book?.coverImage && (
                       <img
-                        src={item.bookId.coverImage}
-                        alt={item.bookId.title}
+                        src={item.book.coverImage}
+                        alt={item.book.title}
                         className="w-20 h-28 object-cover rounded"
                       />
                     )}
                     <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900">{item.bookId?.title || 'Unknown Book'}</h3>
-                      <p className="text-sm text-gray-600 mt-1">by {item.bookId?.author || 'Unknown Author'}</p>
+                      <h3 className="font-semibold text-gray-900">{item.book?.title || 'Unknown Book'}</h3>
+                      <p className="text-sm text-gray-600 mt-1">by {item.book?.author || 'Unknown Author'}</p>
                       <p className="text-sm text-gray-500 mt-2">Quantity: {item.quantity}</p>
                       <p className="text-lg font-semibold text-gray-900 mt-2">
                         ₹{(item.price * item.quantity).toFixed(2)}
@@ -240,11 +240,11 @@ const OrderDetails = () => {
               <div className="space-y-3 text-sm">
                 <div>
                   <p className="text-gray-600">Name</p>
-                  <p className="font-medium text-gray-900">{order.userId?.name || 'N/A'}</p>
+                  <p className="font-medium text-gray-900">{order.buyer?.name || 'N/A'}</p>
                 </div>
                 <div>
                   <p className="text-gray-600">Email</p>
-                  <p className="font-medium text-gray-900">{order.userId?.email || 'N/A'}</p>
+                  <p className="font-medium text-gray-900">{order.buyer?.email || 'N/A'}</p>
                 </div>
               </div>
             </div>

@@ -76,13 +76,16 @@ const Inventory = () => {
     }
   };
 
-  const getStatusVariant = (status) => {
-    const variants = {
-      approved: 'success',
-      pending: 'warning',
-      rejected: 'error'
-    };
-    return variants[status] || 'default';
+  const getStatusVariant = (book) => {
+    if (book.isApproved) return 'success';
+    if (book.rejectionReason) return 'error';
+    return 'warning';
+  };
+
+  const getStatusText = (book) => {
+    if (book.isApproved) return 'Approved';
+    if (book.rejectionReason) return 'Rejected';
+    return 'Pending Review';
   };
 
   if (loading) {
@@ -130,6 +133,39 @@ const Inventory = () => {
           </motion.div>
         )}
 
+        {/* Status Filter Tabs */}
+        <motion.div
+          variants={fadeInUp}
+          initial="hidden"
+          animate="visible"
+          className="mb-6"
+        >
+          <Card>
+            <Card.Body className="p-0">
+              <nav className="flex space-x-1 overflow-x-auto p-2">
+                {[
+                  { value: '', label: 'All Books' },
+                  { value: 'pending', label: 'Pending Review' },
+                  { value: 'approved', label: 'Approved' },
+                  { value: 'rejected', label: 'Rejected' }
+                ].map(tab => (
+                  <button
+                    key={tab.value}
+                    onClick={() => handleFilterChange('status', tab.value)}
+                    className={`px-6 py-3 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
+                      filters.status === tab.value
+                        ? 'bg-brown text-white shadow-sm'
+                        : 'text-charcoal/70 hover:bg-taupe/10'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </nav>
+            </Card.Body>
+          </Card>
+        </motion.div>
+
         {/* Filters */}
         <motion.div
           variants={fadeInUp}
@@ -138,7 +174,7 @@ const Inventory = () => {
         >
           <Card className="mb-8">
             <Card.Body>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Input
                   label="Search"
                   type="text"
@@ -146,16 +182,6 @@ const Inventory = () => {
                   onChange={(e) => handleFilterChange('search', e.target.value)}
                   placeholder="Title or Author..."
                 />
-                <Input.Select
-                  label="Status"
-                  value={filters.status}
-                  onChange={(e) => handleFilterChange('status', e.target.value)}
-                >
-                  <option value="">All Status</option>
-                  <option value="approved">Approved</option>
-                  <option value="pending">Pending</option>
-                  <option value="rejected">Rejected</option>
-                </Input.Select>
                 <Input
                   label="Genre"
                   type="text"
@@ -189,11 +215,31 @@ const Inventory = () => {
                   d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
                 />
               </svg>
-              <h2 className="heading-2 text-charcoal mb-3">No books found</h2>
-              <p className="body text-charcoal/60 mb-6">Start adding books to your inventory</p>
-              <Link to="/seller/upload">
-                <Button variant="primary" size="lg">Upload Your First Book</Button>
-              </Link>
+              <h2 className="heading-2 text-charcoal mb-3">
+                {filters.status === 'rejected' 
+                  ? 'No rejected books' 
+                  : filters.status === 'pending'
+                  ? 'No pending books'
+                  : filters.status === 'approved'
+                  ? 'No approved books'
+                  : 'No books found'}
+              </h2>
+              <p className="body text-charcoal/60 mb-6">
+                {filters.status === 'rejected'
+                  ? 'Great! You have no rejected books. Keep up the good work!'
+                  : filters.status === 'pending'
+                  ? 'All your books have been reviewed by admin'
+                  : filters.status === 'approved'
+                  ? 'No approved books yet. Upload books and wait for admin approval'
+                  : filters.search || filters.genre
+                  ? 'Try adjusting your search filters'
+                  : 'Start adding books to your inventory'}
+              </p>
+              {!filters.status && !filters.search && !filters.genre && (
+                <Link to="/seller/upload">
+                  <Button variant="primary" size="lg">Upload Your First Book</Button>
+                </Link>
+              )}
             </Card>
           </motion.div>
         ) : (
@@ -223,8 +269,8 @@ const Inventory = () => {
                                 <p className="body-sm text-charcoal/60 mb-1">by {book.author}</p>
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <Badge variant="default" size="sm">{book.condition}</Badge>
-                                  <Badge variant={getStatusVariant(book.approvalStatus)} size="sm">
-                                    {book.approvalStatus}
+                                  <Badge variant={getStatusVariant(book)} size="sm">
+                                    {getStatusText(book)}
                                   </Badge>
                                   {book.discountPercentage > 0 && (
                                     <Badge variant="success" size="sm">
@@ -232,6 +278,15 @@ const Inventory = () => {
                                     </Badge>
                                   )}
                                 </div>
+                                {book.rejectionReason && (
+                                  <div className="mt-3 p-3 bg-error-light/10 border border-error-light rounded-lg">
+                                    <p className="body-sm font-semibold text-error-dark mb-1">⚠️ Admin Feedback:</p>
+                                    <p className="body-sm text-charcoal/80">{book.rejectionReason}</p>
+                                    <p className="body-sm text-charcoal/60 mt-1 italic">
+                                      Please update this book based on the feedback above.
+                                    </p>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>

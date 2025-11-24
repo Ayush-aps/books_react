@@ -34,10 +34,13 @@ const Orders = () => {
     try {
       setLoading(true);
       const response = await sellerService.getOrders();
-      setOrders(response.data);
+      // Backend returns: { success: true, data: { orders: [...], totalSales, etc } }
+      const ordersData = response.data?.orders || response.orders || [];
+      setOrders(Array.isArray(ordersData) ? ordersData : []);
       setError(null);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load orders');
+      setOrders([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
@@ -222,19 +225,19 @@ const Orders = () => {
                           <div>
                             <p className="body-sm text-charcoal/60 mb-1">Items</p>
                             <p className="body-sm font-medium text-charcoal">
-                              {order.items.length} book{order.items.length > 1 ? 's' : ''}
+                              {order.items?.length || 0} book{(order.items?.length || 0) > 1 ? 's' : ''}
                             </p>
                           </div>
                           <div>
                             <p className="body-sm text-charcoal/60 mb-1">Total</p>
                             <p className="heading-5 text-brown">
-                              ₹{order.totalAmount.toFixed(2)}
+                              ₹{order.totalAmount?.toFixed(2) || '0.00'}
                             </p>
                           </div>
                           <div>
                             <p className="body-sm text-charcoal/60 mb-1">Buyer</p>
                             <p className="body-sm font-medium text-charcoal">
-                              {order.userId?.name || 'N/A'}
+                              {order.buyer?.name || order.userId?.name || 'N/A'}
                             </p>
                           </div>
                         </div>
@@ -243,26 +246,26 @@ const Orders = () => {
                         <div>
                           <p className="body-sm font-medium text-charcoal mb-3">Items in this order:</p>
                           <div className="space-y-3">
-                            {order.items.slice(0, 2).map((item, index) => (
+                            {order.items && order.items.slice(0, 2).map((item, index) => (
                               <div key={index} className="flex items-center gap-4">
-                                {item.bookId?.coverImage && (
+                                {item.book?.coverImage && (
                                   <img 
-                                    src={item.bookId.coverImage} 
-                                    alt={item.bookId.title}
+                                    src={item.book.coverImage} 
+                                    alt={item.book.title}
                                     className="w-12 h-16 object-cover rounded shadow-sm"
                                   />
                                 )}
                                 <div className="flex-1 min-w-0">
                                   <p className="body-sm font-medium text-charcoal truncate">
-                                    {item.bookId?.title || 'Unknown Book'}
+                                    {item.book?.title || item.bookId?.title || 'Unknown Book'}
                                   </p>
                                   <p className="body-sm text-charcoal/60">
-                                    Qty: {item.quantity} × ₹{item.price.toFixed(2)}
+                                    Qty: {item.quantity} × ₹{item.price?.toFixed(2) || '0.00'}
                                   </p>
                                 </div>
                               </div>
                             ))}
-                            {order.items.length > 2 && (
+                            {order.items && order.items.length > 2 && (
                               <p className="body-sm text-charcoal/60 italic">
                                 + {order.items.length - 2} more item(s)
                               </p>

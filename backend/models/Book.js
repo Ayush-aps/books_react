@@ -88,6 +88,18 @@ const BookSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  rejectionReason: {
+    type: String,
+    default: null,
+  },
+  rejectionDate: {
+    type: Date,
+    default: null,
+  },
+  approvalDate: {
+    type: Date,
+    default: null,
+  },
   rating: {
     type: Number,
     min: 0,

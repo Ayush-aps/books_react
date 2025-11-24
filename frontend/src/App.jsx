@@ -43,6 +43,7 @@ import Inventory from './pages/seller/Inventory'
 import UploadBook from './pages/seller/UploadBook'
 import EditBook from './pages/seller/EditBook'
 import SellerOrders from './pages/seller/Orders'
+import SellerOrderDetails from './pages/seller/OrderDetails'
 import SellerComplaints from './pages/seller/Complaints'
 import SellerRegisterComplaint from './pages/seller/RegisterComplaint'
 import SellerComplaintDetails from './pages/seller/ComplaintDetails'
@@ -51,6 +52,7 @@ import SellerComplaintDetails from './pages/seller/ComplaintDetails'
 import AdminDashboard from './pages/admin/Dashboard'
 import AdminUsers from './pages/admin/Users'
 import AdminBooks from './pages/admin/Books'
+import AdminBookDetails from './pages/admin/BookDetails'
 import AdminOrders from './pages/admin/Orders'
 import AdminOrderDetails from './pages/admin/OrderDetails'
 import AdminReports from './pages/admin/Reports'
@@ -124,6 +126,7 @@ function App() {
           <Route path="/seller/upload" element={<PrivateRoute role="seller"><UploadBook /></PrivateRoute>} />
           <Route path="/seller/edit-book/:id" element={<PrivateRoute role="seller"><EditBook /></PrivateRoute>} />
           <Route path="/seller/orders" element={<PrivateRoute role="seller"><SellerOrders /></PrivateRoute>} />
+          <Route path="/seller/orders/:id" element={<PrivateRoute role="seller"><SellerOrderDetails /></PrivateRoute>} />
           <Route path="/seller/complaints" element={<PrivateRoute role="seller"><SellerComplaints /></PrivateRoute>} />
           <Route path="/seller/complaints/:id" element={<PrivateRoute role="seller"><SellerComplaintDetails /></PrivateRoute>} />
           <Route path="/seller/register-complaint" element={<PrivateRoute role="seller"><SellerRegisterComplaint /></PrivateRoute>} />
@@ -133,6 +136,7 @@ function App() {
           <Route path="/admin/users" element={<PrivateRoute role="admin"><AdminUsers /></PrivateRoute>} />
           <Route path="/admin/books" element={<PrivateRoute role="admin"><AdminBooks /></PrivateRoute>} />
           <Route path="/admin/content" element={<PrivateRoute role="admin"><AdminBooks /></PrivateRoute>} />
+          <Route path="/admin/content/:id" element={<PrivateRoute role="admin"><AdminBookDetails /></PrivateRoute>} />
           <Route path="/admin/orders" element={<PrivateRoute role="admin"><AdminOrders /></PrivateRoute>} />
           <Route path="/admin/orders/:id" element={<PrivateRoute role="admin"><AdminOrderDetails /></PrivateRoute>} />
           <Route path="/admin/reports" element={<PrivateRoute role="admin"><AdminReports /></PrivateRoute>} />

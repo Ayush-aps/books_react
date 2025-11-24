@@ -61,8 +61,8 @@ const adminService = {
   },
 
   // Reject book
-  rejectBook: async (bookId) => {
-    const response = await api.post(`/admin/content/${bookId}/reject`);
+  rejectBook: async (bookId, reason) => {
+    const response = await api.post(`/admin/content/${bookId}/reject`, { reason });
     return response.data;
   },
 

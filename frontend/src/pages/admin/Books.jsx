@@ -18,7 +18,9 @@ import { motion } from 'framer-motion';
 import { fadeInUp, staggerContainer, staggerItem } from '../../utils/animations';
 
 const Books = () => {
-  const [books, setBooks] = useState([]);
+  const [pendingBooks, setPendingBooks] = useState([]);
+  const [approvedBooks, setApprovedBooks] = useState([]);
+  const [rejectedBooks, setRejectedBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [statusFilter, setStatusFilter] = useState('pending');
@@ -36,8 +38,10 @@ const Books = () => {
   const fetchBooks = async () => {
     try {
       setLoading(true);
-      const response = await adminService.getBooks();
-      setBooks(response.data?.books || []);
+      const response = await adminService.getContent();
+      setPendingBooks(response.data?.pendingBooks || []);
+      setApprovedBooks(response.data?.approvedBooks || []);
+      setRejectedBooks(response.data?.rejectedBooks || []);
       setError(null);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load books');
@@ -50,10 +54,15 @@ const Books = () => {
     try {
       setProcessing(true);
       await adminService.approveBook(bookId);
-      setBooks(books.map(book => 
-        book._id === bookId ? { ...book, approvalStatus: 'approved' } : book
-      ));
-      setSuccessMessage('Book approved successfully');
+      
+      // Move book from pending to approved
+      const approvedBook = pendingBooks.find(book => book._id === bookId);
+      if (approvedBook) {
+        setPendingBooks(pendingBooks.filter(book => book._id !== bookId));
+        setApprovedBooks([{ ...approvedBook, isApproved: true }, ...approvedBooks]);
+      }
+      
+      setSuccessMessage('Book approved successfully and now available for buyers');
       setShowSuccessToast(true);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to approve book');
@@ -75,11 +84,22 @@ const Books = () => {
 
     try {
       setProcessing(true);
-      await adminService.rejectBook(selectedBook._id, rejectReason);
-      setBooks(books.map(book => 
-        book._id === selectedBook._id ? { ...book, approvalStatus: 'rejected' } : book
-      ));
-      setSuccessMessage('Book rejected');
+      const response = await adminService.rejectBook(selectedBook._id, rejectReason);
+      
+      // Use the book data from the response to ensure it has the correct structure
+      const rejectedBook = response.data?.book || { 
+        ...selectedBook, 
+        rejectionReason: rejectReason, 
+        rejectionDate: new Date(), 
+        isApproved: false 
+      };
+      
+      // Move book from pending/approved to rejected list
+      setPendingBooks(pendingBooks.filter(book => book._id !== selectedBook._id));
+      setApprovedBooks(approvedBooks.filter(book => book._id !== selectedBook._id));
+      setRejectedBooks([rejectedBook, ...rejectedBooks]);
+      
+      setSuccessMessage('Book rejected. Seller has been notified with feedback.');
       setShowSuccessToast(true);
       setShowRejectModal(false);
       setRejectReason('');
@@ -91,17 +111,28 @@ const Books = () => {
     }
   };
 
+  const allBooks = [...pendingBooks, ...approvedBooks, ...rejectedBooks];
+  
   const filteredBooks = statusFilter === 'all' 
-    ? books 
-    : books.filter(book => (book.approvalStatus || 'pending') === statusFilter);
+    ? allBooks
+    : statusFilter === 'pending'
+    ? pendingBooks
+    : statusFilter === 'approved'
+    ? approvedBooks
+    : statusFilter === 'rejected'
+    ? rejectedBooks
+    : [];
 
-  const getStatusVariant = (status) => {
-    const variants = {
-      approved: 'success',
-      pending: 'warning',
-      rejected: 'error'
-    };
-    return variants[status] || 'default';
+  const getStatusVariant = (book) => {
+    if (book.isApproved) return 'success';
+    if (book.rejectionReason) return 'error';
+    return 'warning';
+  };
+
+  const getStatusText = (book) => {
+    if (book.isApproved) return 'Approved';
+    if (book.rejectionReason) return 'Rejected';
+    return 'Pending';
   };
 
   if (loading) {
@@ -148,10 +179,10 @@ const Books = () => {
             <Card.Body className="p-0">
               <nav className="flex space-x-1 overflow-x-auto p-2">
                 {[
-                  { value: 'pending', label: 'Pending Review', count: books.filter(b => b.approvalStatus === 'pending').length },
-                  { value: 'approved', label: 'Approved', count: books.filter(b => b.approvalStatus === 'approved').length },
-                  { value: 'rejected', label: 'Rejected', count: books.filter(b => b.approvalStatus === 'rejected').length },
-                  { value: 'all', label: 'All Books', count: books.length }
+                  { value: 'pending', label: 'Pending Review', count: pendingBooks.length },
+                  { value: 'approved', label: 'Approved', count: approvedBooks.length },
+                  { value: 'rejected', label: 'Rejected', count: rejectedBooks.length },
+                  { value: 'all', label: 'All Books', count: allBooks.length }
                 ].map(tab => (
                   <button
                     key={tab.value}
@@ -225,8 +256,8 @@ const Books = () => {
                       </div>
                     )}
                     <div className="absolute top-3 right-3">
-                      <Badge variant={getStatusVariant(book.approvalStatus)}>
-                        {book.approvalStatus ? book.approvalStatus.charAt(0).toUpperCase() + book.approvalStatus.slice(1) : 'Pending'}
+                      <Badge variant={getStatusVariant(book)}>
+                        {getStatusText(book)}
                       </Badge>
                     </div>
                   </div>
@@ -237,7 +268,7 @@ const Books = () => {
                     <p className="body-sm text-charcoal/60 mb-3">by {book.author || 'Unknown'}</p>
                     
                     <div className="flex items-center gap-2 mb-4">
-                      <Badge variant="default" size="sm">{book.genre || 'N/A'}</Badge>
+                      <Badge variant="default" size="sm">{book.genres?.[0] || 'N/A'}</Badge>
                       <Badge variant="default" size="sm">{book.condition || 'N/A'}</Badge>
                     </div>
 
@@ -248,7 +279,7 @@ const Books = () => {
                       </div>
                       <div className="text-right">
                         <p className="body-sm text-charcoal/60">Seller</p>
-                        <p className="body-sm font-medium text-charcoal">{book.sellerId?.name || 'N/A'}</p>
+                        <p className="body-sm font-medium text-charcoal">{book.seller?.name || 'N/A'}</p>
                       </div>
                     </div>
 
@@ -258,7 +289,7 @@ const Books = () => {
 
                     {/* Actions */}
                     <div className="flex gap-2 mt-auto">
-                      {(!book.approvalStatus || book.approvalStatus === 'pending') && (
+                      {!book.isApproved && !book.rejectionReason && (
                         <>
                           <Button
                             variant="success"
@@ -280,15 +311,15 @@ const Books = () => {
                           </Button>
                         </>
                       )}
-                      <Button
-                        as={Link}
-                        to={`/admin/books/${book._id}`}
-                        variant="outline"
-                        size="sm"
-                        fullWidth={book.approvalStatus !== 'pending'}
-                      >
-                        View Details
-                      </Button>
+                      <Link to={`/admin/content/${book._id}`} className="flex-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          fullWidth
+                        >
+                          View Details
+                        </Button>
+                      </Link>
                     </div>
                   </Card.Body>
                 </Card>
@@ -311,13 +342,16 @@ const Books = () => {
           >
             <div className="p-6">
               <p className="body text-charcoal mb-4">
-                Provide a reason for rejecting <span className="font-semibold">{selectedBook?.title}</span>:
+                Provide feedback to the seller for <span className="font-semibold">{selectedBook?.title}</span>:
+              </p>
+              <p className="body-sm text-charcoal/60 mb-4">
+                This message will be visible to the seller in their inventory. Please provide constructive feedback to help them improve.
               </p>
               <Input.Textarea
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
                 rows={4}
-                placeholder="Enter reason for rejection..."
+                placeholder="e.g., 'Please provide a higher quality cover image and fix the ISBN format.'"
               />
               <div className="flex gap-3 mt-6">
                 <Button
