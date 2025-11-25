@@ -57,7 +57,7 @@ const Pricing = () => {
 
   const handleSubscribe = (planType) => {
     if (!user) {
-      navigate('/auth/login', { state: { from: '/pricing' } });
+      navigate('/login', { state: { from: '/pricing' } });
       return;
     }
     navigate(`/subscription/checkout?plan=${planType}`);

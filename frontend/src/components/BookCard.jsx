@@ -3,11 +3,26 @@
  * Display a book in a card format
  */
 
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
 const BookCard = ({ book, onAddToCart, compact = false }) => {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useSelector(state => state.auth);
   const effectivePrice = book.discountPrice || book.price;
   const hasDiscount = book.discountPrice && book.discountPrice < book.price;
+
+  const handleAddToCartClick = () => {
+    if (!isAuthenticated) {
+      // Redirect to login if not authenticated
+      navigate('/login', { state: { from: window.location.pathname } });
+      return;
+    }
+    // Call the parent's onAddToCart handler if authenticated
+    if (onAddToCart) {
+      onAddToCart(book._id);
+    }
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-300 h-full flex flex-col">
@@ -74,7 +89,7 @@ const BookCard = ({ book, onAddToCart, compact = false }) => {
           )}
 
           <button
-            onClick={() => onAddToCart && onAddToCart(book._id)}
+            onClick={handleAddToCartClick}
             disabled={book.stock === 0 || book.approvalStatus === 'pending' || book.approvalStatus === 'rejected'}
             className={`w-full bg-accent-brown text-white rounded font-medium hover:bg-accent-brown/90 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 shadow-sm ${compact ? 'py-1.5 text-xs' : 'py-2 text-sm'}`}
           >
