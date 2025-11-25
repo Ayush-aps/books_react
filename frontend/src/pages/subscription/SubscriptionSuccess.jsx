@@ -195,7 +195,7 @@ const SubscriptionSuccess = () => {
               <div>
                 <p className="text-sm text-gray-600 mb-1">Amount</p>
                 <p className="text-lg font-semibold text-gray-900">
-                  ${subscription.amount || '9.99'} / {subscription.interval || 'month'}
+                  ₹{subscription.amount || '9.99'} / {subscription.interval || 'month'}
                 </p>
               </div>
               <div>

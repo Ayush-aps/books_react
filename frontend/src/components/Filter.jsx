@@ -39,7 +39,7 @@ const Filter = ({ filters, onFilterChange, genres = [], onClearFilters }) => {
           )}
         </div>
 
-        <div className="space-y-6">\n          {/* Search */}
+        <div className="space-y-6">        {/* Search */}
           <div>
             <label htmlFor="search" className="block text-sm font-medium text-text-primary mb-2">
               Search

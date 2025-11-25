@@ -3,7 +3,7 @@
  * Handle subscription plan selection and Stripe payment
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
@@ -16,6 +16,11 @@ const SubscriptionCheckout = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const subscriptionPlans = {
     monthly: {
@@ -104,7 +109,7 @@ const SubscriptionCheckout = () => {
                 </div>
                 <div className="text-right">
                   <div className="text-4xl font-bold text-blue-600">
-                    ${selectedPlan.price}
+                    ₹{selectedPlan.price}
                   </div>
                   <div className="text-sm text-gray-600">per {selectedPlan.interval}</div>
                   {selectedPlan.savings && (

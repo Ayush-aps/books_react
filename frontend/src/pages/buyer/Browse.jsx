@@ -95,7 +95,7 @@ const Browse = () => {
               >
                 <div className="flex items-center gap-3">
                   <Badge variant="brown" size="md">
-                    {pagination.totalBooks} {pagination.totalBooks === 1 ? 'Book' : 'Books'}
+                    {pagination?.totalBooks ?? books.length} {(pagination?.totalBooks ?? books.length) === 1 ? 'Book' : 'Books'}
                   </Badge>
                   <span className="text-text-secondary body">found</span>
                 </div>

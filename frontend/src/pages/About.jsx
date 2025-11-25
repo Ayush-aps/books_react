@@ -129,21 +129,23 @@ const About = () => {
             animate="visible"
           >
             <motion.div variants={staggerItem} className="mb-6">
-              <Badge variant="outline" className="text-cream border-cream/30">
+              <Badge variant="outline" className="border-cream/50 bg-transparent" style={{ color: '#F5F1E8' }}>
                 Est. 2024
               </Badge>
             </motion.div>
             
             <motion.h1 
               variants={staggerItem}
-              className="heading-1 mb-6"
+              className="font-serif font-bold text-5xl md:text-6xl lg:text-7xl leading-tight tracking-tight mb-6"
+              style={{ color: '#F5F1E8' }}
             >
               About Bookish
             </motion.h1>
             
             <motion.p 
               variants={staggerItem}
-              className="body-xl text-taupe max-w-3xl mx-auto"
+              className="text-lg md:text-xl max-w-3xl mx-auto"
+              style={{ color: '#C4B5A0' }}
             >
               Connecting book lovers worldwide through a trusted marketplace for buying and selling books.
             </motion.p>
@@ -334,10 +336,10 @@ const About = () => {
         </div>
 
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="heading-2 mb-6">
+          <h2 className="font-serif font-bold text-4xl md:text-5xl leading-tight mb-6" style={{ color: '#F5F1E8' }}>
             Join Our Community Today
           </h2>
-          <p className="body-xl text-taupe mb-10">
+          <p className="text-lg md:text-xl mb-10" style={{ color: '#C4B5A0' }}>
             Whether you're buying or selling, Bookish is the perfect place to connect with fellow book enthusiasts.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

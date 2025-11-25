@@ -57,7 +57,7 @@ const Pricing = () => {
 
   const handleSubscribe = (planType) => {
     if (!user) {
-      navigate('/auth/login', { state: { from: '/pricing' } });
+      navigate('/login', { state: { from: '/pricing' } });
       return;
     }
     navigate(`/subscription/checkout?plan=${planType}`);
@@ -187,13 +187,15 @@ const Pricing = () => {
           >
             <motion.h1 
               variants={staggerItem}
-              className="heading-1 mb-4"
+              className="font-serif font-bold text-5xl md:text-6xl lg:text-7xl leading-tight tracking-tight mb-4"
+              style={{ color: '#F5F1E8' }}
             >
               Simple, Transparent Pricing
             </motion.h1>
             <motion.p 
               variants={staggerItem}
-              className="body-xl text-taupe max-w-3xl mx-auto"
+              className="text-lg md:text-xl max-w-3xl mx-auto"
+              style={{ color: '#C4B5A0' }}
             >
               Choose the plan that's right for you. No hidden fees, cancel anytime.
             </motion.p>
@@ -233,7 +235,7 @@ const Pricing = () => {
                 </div>
                 
                 <div className="mb-6">
-                  <span className="text-5xl font-serif font-bold text-charcoal">$0</span>
+                  <span className="text-5xl font-serif font-bold text-charcoal">₹0</span>
                   <span className="body text-text-secondary ml-2">/ month</span>
                 </div>
 
@@ -276,7 +278,7 @@ const Pricing = () => {
                 </div>
                 
                 <div className="mb-6">
-                  <span className="text-5xl font-serif font-bold text-brown">$9.99</span>
+                  <span className="text-5xl font-serif font-bold text-brown">₹199</span>
                   <span className="body text-text-secondary ml-2">/ month</span>
                 </div>
 
@@ -314,16 +316,16 @@ const Pricing = () => {
               </div>
               <Card.Body className="flex flex-col h-full">
                 <div className="mb-6">
-                  <h3 className="heading-3 mb-2">Premium Yearly</h3>
-                  <p className="body text-text-secondary">Save 20% with annual billing</p>
+                  <h3 className="heading-3 mb-2">Premium Plus Yearly</h3>
+                  <p className="body text-text-secondary">Best value with annual billing</p>
                 </div>
                 
                 <div className="mb-2">
-                  <span className="text-5xl font-serif font-bold text-success">$99.99</span>
+                  <span className="text-5xl font-serif font-bold text-success">₹499</span>
                   <span className="body text-text-secondary ml-2">/ year</span>
                 </div>
                 <div className="mb-6">
-                  <Badge variant="success" size="sm">Save $20 per year</Badge>
+                  <Badge variant="success" size="sm">Save ₹880 per year</Badge>
                 </div>
 
                 <Button
@@ -442,15 +444,15 @@ const Pricing = () => {
                         <div className="border-b border-border pb-4">
                           <div className="flex justify-between mb-2">
                             <span className="body text-text-secondary">Book Price:</span>
-                            <span className="heading-5">$20.00</span>
+                            <span className="heading-5">₹20.00</span>
                           </div>
                           <div className="flex justify-between mb-2">
                             <span className="body text-text-secondary">Commission (10%):</span>
-                            <span className="body text-error">-$2.00</span>
+                            <span className="body text-error">-₹2.00</span>
                           </div>
                           <div className="flex justify-between pt-2">
                             <span className="heading-4">You Earn:</span>
-                            <span className="heading-4 text-success">$18.00</span>
+                            <span className="heading-4 text-success">₹18.00</span>
                           </div>
                         </div>
                         <p className="body-sm text-text-secondary italic">
@@ -523,10 +525,10 @@ const Pricing = () => {
         </div>
 
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="heading-2 mb-6">
+          <h2 className="font-serif font-bold text-4xl md:text-5xl leading-tight mb-6" style={{ color: '#F5F1E8' }}>
             Ready to Get Started?
           </h2>
-          <p className="body-xl text-taupe mb-10">
+          <p className="text-lg md:text-xl mb-10" style={{ color: '#C4B5A0' }}>
             Join thousands of book lovers and start your journey today.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
