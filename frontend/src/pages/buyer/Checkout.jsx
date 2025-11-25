@@ -96,10 +96,10 @@ const Checkout = () => {
       if (paymentMethod === 'card') {
         // Create payment intent for Stripe
         console.log('Creating payment intent for amount:', total);
-        
+
         // Get the full address object
         const fullAddress = addresses.find(addr => addr._id === selectedAddress);
-        
+
         const response = await api.post('/orders/create-payment-intent', {
           amount: total,
           items: items.map(item => ({
@@ -113,11 +113,11 @@ const Checkout = () => {
         });
 
         console.log('Payment intent response:', response.data);
-        
+
         // Extract client secret from nested data object
         const clientSecretValue = response.data?.data?.clientSecret || response.data?.clientSecret;
         console.log('Client secret:', clientSecretValue);
-        
+
         if (clientSecretValue) {
           setClientSecret(clientSecretValue);
           setShowStripeForm(true);
@@ -129,7 +129,7 @@ const Checkout = () => {
         // Handle COD
         // Get the full address object
         const fullAddress = addresses.find(addr => addr._id === selectedAddress);
-        
+
         // Transform address to match Order model schema
         const transformedAddress = {
           name: fullAddress.name,
@@ -139,7 +139,7 @@ const Checkout = () => {
           pincode: fullAddress.zipCode, // zipCode -> pincode
           phone: fullAddress.phone
         };
-        
+
         const orderData = {
           items: items.map(item => ({
             book: item.book?._id || item._id,
@@ -160,9 +160,9 @@ const Checkout = () => {
 
         // Don't use .unwrap() - handle the promise directly
         const response = await dispatch(createOrder(orderData));
-        
+
         console.log('COD order creation response:', response);
-        
+
         if (response && response._id) {
           await dispatch(clearCart());
           navigate(`/buyer/payment-success?orderId=${response._id}`);
@@ -180,10 +180,10 @@ const Checkout = () => {
   const handlePaymentSuccess = async (paymentIntentId) => {
     try {
       setSubmitting(true);
-      
+
       // Get the full address object
       const fullAddress = addresses.find(addr => addr._id === selectedAddress);
-      
+
       // Transform address to match Order model schema
       const transformedAddress = {
         name: fullAddress.name,
@@ -193,7 +193,7 @@ const Checkout = () => {
         pincode: fullAddress.zipCode, // zipCode -> pincode
         phone: fullAddress.phone
       };
-      
+
       const orderData = {
         items: items.map(item => ({
           book: item.book?._id || item._id,
@@ -215,9 +215,9 @@ const Checkout = () => {
 
       // Don't use .unwrap() - handle the promise directly
       const response = await dispatch(createOrder(orderData));
-      
+
       console.log('Order creation response:', response);
-      
+
       if (response && response._id) {
         await dispatch(clearCart());
         navigate(`/buyer/payment-success?orderId=${response._id}`);
@@ -553,7 +553,7 @@ const Checkout = () => {
                         {shipping === 0 ? (
                           <Badge variant="success" size="sm">FREE</Badge>
                         ) : (
-                          `$₹{shipping.toFixed(2)}`
+                          `₹${shipping.toFixed(2)}`
                         )}
                       </span>
                     </div>

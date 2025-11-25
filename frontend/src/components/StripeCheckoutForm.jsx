@@ -76,7 +76,7 @@ const StripeCheckoutForm = ({ onSuccess, amount }) => {
             Processing Payment...
           </span>
         ) : (
-          `Pay $₹{amount.toFixed(2)}`
+          `Pay ₹${amount.toFixed(2)}`
         )}
       </button>
 

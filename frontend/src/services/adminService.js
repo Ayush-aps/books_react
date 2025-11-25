@@ -19,19 +19,19 @@ const adminService = {
 
   // Update user role
   updateUserRole: async (userId, role) => {
-    const response = await api.put(`/admin/user/${userId}/role`, { role });
+    const response = await api.put(`/admin/users/${userId}/role`, { role });
     return response.data;
   },
 
   // Toggle user status
   toggleUserStatus: async (userId) => {
-    const response = await api.put(`/admin/user/${userId}/status`);
+    const response = await api.put(`/admin/users/${userId}/status`);
     return response.data;
   },
 
   // Delete user
   deleteUser: async (userId) => {
-    const response = await api.delete(`/admin/user/${userId}`);
+    const response = await api.delete(`/admin/users/${userId}`);
     return response.data;
   },
 
