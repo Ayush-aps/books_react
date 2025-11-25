@@ -244,7 +244,7 @@ const OrderDetails = () => {
                     </div>
                     <div className="flex justify-between body text-charcoal/70">
                       <span>Shipping</span>
-                      <span>$5.99</span>
+                      <span>₹5.99</span>
                     </div>
                     <div className="flex justify-between heading-4 text-charcoal pt-2 border-t border-surface">
                       <span>Total</span>

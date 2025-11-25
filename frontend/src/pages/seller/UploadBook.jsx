@@ -559,7 +559,7 @@ const UploadBook = () => {
                     type="number"
                     id="price"
                     name="price"
-                    label="Price ($)"
+                    label="Price (₹)"
                     required
                     value={values.price}
                     onChange={handleChange}

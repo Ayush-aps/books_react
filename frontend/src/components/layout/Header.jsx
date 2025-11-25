@@ -150,16 +150,20 @@ export default function Header() {
   };
 
   // --- Dynamic Navigation Items ---
-  let navItems = [
-    { name: "Home", link: "/" },
-    { name: "About", link: "/about" },
-    { name: "Pricing", link: "/pricing" },
-    { name: "Contact", link: "/contact" },
-  ];
-
+  let navItems = [];
+  
+  // Add Browse first for buyers (better UX)
   if (isAuthenticated && user?.role === "buyer") {
     navItems.push({ name: "Browse", link: "/buyer/browse" });
   }
+  
+  // Add standard navigation items
+  navItems.push(
+    { name: "Home", link: "/" },
+    { name: "About", link: "/about" },
+    { name: "Pricing", link: "/pricing" },
+    { name: "Contact", link: "/contact" }
+  );
 
   // For dropdown: include Cart
   const dropdownItems = isAuthenticated && user?.role === "buyer"
@@ -177,7 +181,7 @@ export default function Header() {
     <>
       <Navbar
         className={`fixed !top-0 !left-0 !right-0 !w-full !rounded-none z-30 transition-all duration-300 ${isScrolled
-          ? "bg-white/90 backdrop-blur-md shadow-md border-b border-border-light"
+          ? "bg-white shadow-lg border-b border-gray-200"
           : "bg-white border-b border-border-light"
           }`}
       >
@@ -208,7 +212,7 @@ export default function Header() {
             <div className="flex flex-col">
               <span
                 className={`font-serif font-bold ${isScrolled ? "text-xl" : "text-2xl"
-                  } text-charcoal group-hover:text-accent-brown transition-all duration-300`}
+                  } text-gray-900 group-hover:text-accent-brown transition-all duration-300`}
               >
                 Bookish
               </span>
@@ -235,9 +239,9 @@ export default function Header() {
                 key={item.name}
                 to={item.link}
                 onClick={handleNavClick}
-                className={`text-sm font-medium transition-colors px-4 py-2 rounded-full ${location.pathname === item.link
-                  ? "bg-neutral-200 text-neutral-900"
-                  : "text-neutral-600 hover:bg-gray-100"
+                className={`text-sm font-semibold transition-colors px-4 py-2 rounded-full ${location.pathname === item.link
+                  ? "bg-accent-brown text-white"
+                  : "text-gray-800 hover:bg-gray-100 hover:text-accent-brown"
                   }`}
               >
                 {item.name}
@@ -253,9 +257,12 @@ export default function Header() {
               <>
                 {/* Show Cart for buyers */}
                 {user?.role === "buyer" && (
-                  <NavLink
+                  <Link
                     to="/buyer/cart"
-                    isActive={location.pathname === "/buyer/cart"}
+                    className={`text-sm font-semibold transition-colors px-4 py-2 rounded-full ${location.pathname === "/buyer/cart"
+                      ? "bg-accent-brown text-white"
+                      : "text-gray-800 hover:bg-gray-100 hover:text-accent-brown"
+                      }`}
                   >
                     <span className="flex items-center gap-2">
                       Cart
@@ -265,20 +272,20 @@ export default function Header() {
                         </Badge>
                       )}
                     </span>
-                  </NavLink>
+                  </Link>
                 )}
 
                 {/* User Menu */}
                 <div className="relative">
                   <button
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-background-secondary transition-all duration-200 hover:-translate-y-0.5"
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-all duration-200 hover:-translate-y-0.5"
                   >
                     <div className="w-8 h-8 bg-accent-brown/10 text-accent-brown rounded-full flex items-center justify-center font-medium">
                       {user?.name?.charAt(0).toUpperCase()}
                     </div>
                     {!isScrolled && (
-                      <span className="text-text-primary font-medium hidden xl:block">
+                      <span className="text-gray-900 font-medium hidden xl:block">
                         {user?.name}
                       </span>
                     )}
@@ -336,20 +343,18 @@ export default function Header() {
               </>
             ) : (
               <div className="flex items-center gap-3">
-                <NavbarButton
-                  as="button"
-                  variant="secondary"
+                <button
                   onClick={() => navigate("/login")}
+                  className="px-5 py-2.5 text-sm font-semibold text-accent-brown border-2 border-accent-brown rounded-lg hover:bg-accent-brown hover:text-white transition-all duration-200 hover:-translate-y-0.5"
                 >
                   Login
-                </NavbarButton>
-                <NavbarButton
-                  as="button"
-                  variant="primary"
+                </button>
+                <button
                   onClick={() => navigate("/register")}
+                  className="px-5 py-2.5 text-sm font-semibold text-white bg-accent-brown rounded-lg hover:bg-accent-brown-hover transition-all duration-200 hover:-translate-y-0.5 shadow-md hover:shadow-lg"
                 >
                   Sign Up
-                </NavbarButton>
+                </button>
               </div>
             )}
           </div>

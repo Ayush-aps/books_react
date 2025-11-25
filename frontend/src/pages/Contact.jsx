@@ -166,13 +166,15 @@ const Contact = () => {
           >
             <motion.h1 
               variants={staggerItem}
-              className="heading-1 mb-4"
+              className="font-serif font-bold text-5xl md:text-6xl lg:text-7xl leading-tight tracking-tight mb-4"
+              style={{ color: '#F5F1E8' }}
             >
               Contact Us
             </motion.h1>
             <motion.p 
               variants={staggerItem}
-              className="body-xl text-taupe max-w-2xl mx-auto"
+              className="text-lg md:text-xl max-w-2xl mx-auto"
+              style={{ color: '#C4B5A0' }}
             >
               Have a question or need assistance? We're here to help!
             </motion.p>

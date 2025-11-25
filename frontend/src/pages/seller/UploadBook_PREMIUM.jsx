@@ -432,7 +432,7 @@ const UploadBook = () => {const UploadBook = () => {
 
                   <Input                </div>
 
-                    label="Price ($)"              </Card.Header>
+                    label="Price (₹)"              </Card.Header>
 
                     type="number"              <Card.Body>
 
@@ -440,7 +440,7 @@ const UploadBook = () => {const UploadBook = () => {
 
                     name="price"                  <Input
 
-                    value={values.price}                    label="Price ($)"
+                    value={values.price}                    label="Price (₹)"
 
                     onChange={handleChange}                    type="number"
 
