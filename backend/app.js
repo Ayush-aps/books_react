@@ -30,6 +30,7 @@ const { router: subscriptionRouter } = require('./routes/subscription');
 const libraryRouter = require('./routes/library');
 const videosRouter = require('./routes/videos');
 const ordersRoutes = require("./routes/orders");
+const reviewsRoutes = require("./routes/reviews");
 
 // Import database connection
 const connectDB = require("./config/db");
@@ -115,6 +116,7 @@ app.use("/api/public", publicRoutes);
 app.use("/api/subscription", subscriptionRouter);
 app.use("/api/library", libraryRouter);
 app.use("/api/videos", videosRouter);
+app.use("/api/reviews", reviewsRoutes);
 app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/buyer", buyerRoutes);
 app.use("/api/seller", sellerRoutes);

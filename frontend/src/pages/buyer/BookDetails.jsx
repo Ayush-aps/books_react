@@ -18,6 +18,9 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
 import SuccessToast from '../../components/SuccessToast';
 import BookCard from '../../components/BookCard';
+import ReviewForm from '../../components/ReviewForm';
+import ReviewsList from '../../components/ReviewsList';
+import api from '../../services/api';
 
 const BookDetails = () => {
   const { id } = useParams();
@@ -29,11 +32,49 @@ const BookDetails = () => {
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [activeTab, setActiveTab] = useState('description');
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [canReview, setCanReview] = useState(false);
+  const [existingReview, setExistingReview] = useState(null);
 
   useEffect(() => {
     dispatch(fetchBookDetails(id));
     window.scrollTo(0, 0);
   }, [dispatch, id]);
+
+  // Check if user can review
+  useEffect(() => {
+    const checkReviewEligibility = async () => {
+      if (!user) {
+        setCanReview(false);
+        return;
+      }
+
+      try {
+        const response = await api.get(`/reviews/user/can-review/${id}`);
+        if (response.data.success) {
+          setCanReview(response.data.data.canReview);
+          if (response.data.data.review) {
+            setExistingReview(response.data.data.review);
+          }
+        }
+      } catch (err) {
+        console.error('Error checking review eligibility:', err);
+      }
+    };
+
+    if (id) {
+      checkReviewEligibility();
+    }
+  }, [id, user]);
+
+  // Auto-open review form if coming from orders page
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('review') === 'true' && canReview) {
+      setActiveTab('reviews');
+      setShowReviewForm(true);
+    }
+  }, [canReview]);
 
   const handleAddToCart = async () => {
     if (!user) {
@@ -96,6 +137,23 @@ const BookDetails = () => {
     if (result.success) {
       setToastMessage('Book added to cart successfully!');
       setShowSuccessToast(true);
+    }
+  };
+
+  const handleReviewSubmit = (newReview) => {
+    setShowReviewForm(false);
+    setExistingReview(newReview);
+    setCanReview(false);
+    setToastMessage('Review submitted successfully!');
+    setShowSuccessToast(true);
+  };
+
+  const handleReviewsUpdate = (reviews) => {
+    // Update book average rating based on reviews
+    if (currentBook && reviews.length > 0) {
+      const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+      const avgRating = totalRating / reviews.length;
+      // Update local book data (optional)
     }
   };
 
@@ -383,31 +441,91 @@ const BookDetails = () => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.3 }}
+                  className="space-y-6"
                 >
-                  {book.videos && book.videos.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                      {book.videos.map((video) => (
-                        <Link key={video._id} to={`/buyer/videos/${video._id}`}>
-                          <Card hoverable className="overflow-hidden h-full">
-                            <div className="relative aspect-video bg-charcoal">
-                              <video src={video.videoUrl} className="w-full h-full object-cover" />
-                              <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                                <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center">
-                                  <svg className="h-6 w-6 text-accent-brown ml-1" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                                  </svg>
+                  {/* Not Eligible Notice */}
+                  {user && !canReview && !existingReview && (
+                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mb-4">
+                      <p className="text-sm text-blue-700">
+                        You can write a review once your order is delivered. Only verified purchases can be reviewed.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Write Review Button */}
+                  {user && canReview && !showReviewForm && !existingReview && (
+                    <div className="flex justify-end">
+                      <Button
+                        onClick={() => setShowReviewForm(true)}
+                        className="bg-brown hover:bg-brown/90 text-white"
+                      >
+                        Write a Review
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Existing Review Notice */}
+                  {existingReview && (
+                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                      <p className="text-sm text-green-700">
+                        You have already reviewed this book. Your review is displayed below.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Review Form */}
+                  {showReviewForm && (
+                    <ReviewForm
+                      bookId={id}
+                      onReviewSubmit={handleReviewSubmit}
+                      onCancel={() => setShowReviewForm(false)}
+                    />
+                  )}
+
+                  {/* Reviews List */}
+                  <ReviewsList
+                    bookId={id}
+                    onReviewsUpdate={handleReviewsUpdate}
+                  />
+
+                  {/* Link to Video Reviews Page */}
+                  {book.videos && book.videos.length > 0 && (
+                    <div className="mt-8 pt-6 border-t border-primary">
+                      <h4 className="text-lg font-bold text-charcoal mb-4">
+                        Video Reviews ({book.videos.length})
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {book.videos.slice(0, 3).map((video) => (
+                          <Link key={video._id} to={`/buyer/videos/${video._id}`}>
+                            <Card hoverable className="overflow-hidden h-full">
+                              <div className="relative aspect-video bg-charcoal">
+                                <video src={video.videoUrl} className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                                  <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center">
+                                    <svg className="h-6 w-6 text-accent-brown ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                      <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                                    </svg>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                            <div className="p-4">
-                              <p className="font-medium line-clamp-2">{video.title}</p>
-                            </div>
-                          </Card>
-                        </Link>
-                      ))}
+                              <div className="p-3">
+                                <p className="text-sm font-medium line-clamp-2">{video.title}</p>
+                              </div>
+                            </Card>
+                          </Link>
+                        ))}
+                      </div>
+                      {book.videos.length > 3 && (
+                        <div className="text-center mt-4">
+                          <Link
+                            to="/buyer/videos"
+                            className="text-brown hover:text-brown/80 font-medium"
+                          >
+                            View all video reviews →
+                          </Link>
+                        </div>
+                      )}
                     </div>
-                  ) : (
-                    <p className="text-text-tertiary italic">No video reviews available yet.</p>
                   )}
                 </motion.div>
               )}

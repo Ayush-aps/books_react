@@ -154,25 +154,25 @@ const OrderDetails = () => {
               {order.items.map((item) => (
                 <div key={item._id} className="flex gap-4">
                   <img
-                    src={item.bookId?.coverImage || '/placeholder-book.png'}
-                    alt={item.bookId?.title}
+                    src={item.book?.coverImage || '/placeholder-book.png'}
+                    alt={item.book?.title}
                     className="w-20 h-28 object-cover rounded"
                   />
                   <div className="flex-1">
                     <Link
-                      to={`/buyer/books/${item.bookId?._id}`}
+                      to={`/buyer/book/${item.book?._id}`}
                       className="font-semibold text-gray-900 hover:text-blue-600"
                     >
-                      {item.bookId?.title || 'Book Title'}
+                      {item.book?.title || 'Book Title'}
                     </Link>
                     <p className="text-sm text-gray-600 mt-1">
-                      by {item.bookId?.author || 'Unknown'}
+                      by {item.book?.author || 'Unknown'}
                     </p>
                     <p className="text-sm text-gray-600 mt-1">
                       Quantity: {item.quantity}
                     </p>
                     <p className="text-sm text-gray-600 mt-1 capitalize">
-                      Condition: {item.bookId?.condition}
+                      Condition: {item.book?.condition}
                     </p>
                   </div>
                   <div className="text-right">
@@ -182,6 +182,14 @@ const OrderDetails = () => {
                     <p className="text-sm text-gray-600 mt-1">
                       ₹{item.price.toFixed(2)} each
                     </p>
+                    {orderStatus === 'delivered' && item.book?._id && (
+                      <Link
+                        to={`/buyer/book/${item.book._id}?review=true`}
+                        className="mt-3 inline-block px-4 py-2 bg-brown text-white text-sm rounded hover:bg-brown/90 transition-colors"
+                      >
+                        Write Review
+                      </Link>
+                    )}
                   </div>
                 </div>
               ))}

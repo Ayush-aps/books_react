@@ -177,13 +177,13 @@ const Orders = () => {
                         {order.items.slice(0, 2).map((item, index) => (
                           <div key={item._id || index} className="flex gap-4">
                             <img
-                              src={item.bookId?.coverImage || item.book?.coverImage || '/placeholder-book.png'}
-                              alt={item.bookId?.title || item.book?.title || 'Book'}
+                              src={item.book?.coverImage || '/placeholder-book.png'}
+                              alt={item.book?.title || 'Book'}
                               className="w-16 h-20 object-cover rounded shadow-sm flex-shrink-0"
                             />
                             <div className="flex-1 min-w-0">
                               <p className="body font-semibold text-charcoal truncate mb-1">
-                                {item.bookId?.title || item.book?.title || 'Book Title'}
+                                {item.book?.title || 'Book Title'}
                               </p>
                               <p className="body-sm text-charcoal/60 mb-2">
                                 Quantity: {item.quantity}
@@ -191,6 +191,14 @@ const Orders = () => {
                               <p className="body font-semibold text-brown">
                                 ₹{item.price.toFixed(2)}
                               </p>
+                              {getOrderStatus(order) === 'delivered' && item.book?._id && (
+                                <Link
+                                  to={`/buyer/book/${item.book._id}?review=true`}
+                                  className="mt-2 inline-block px-3 py-1 bg-brown text-white text-xs rounded hover:bg-brown/90 transition-colors"
+                                >
+                                  Write Review
+                                </Link>
+                              )}
                             </div>
                           </div>
                         ))}

@@ -98,13 +98,33 @@ router.get("/", ensureAuthenticated, async (req, res) => {
       .skip((parseInt(page) - 1) * parseInt(limit))
       .limit(parseInt(limit));
 
-    // Add like status for current user
+    // Get comments for each video (for reels-style feed)
+    const videoIds = videos.map(v => v._id);
+    const allComments = await VideoComment.find({ video: { $in: videoIds } })
+      .populate("user", "name avatar")
+      .sort("-createdAt");
+
+    // Group comments by video ID
+    const commentsByVideo = allComments.reduce((acc, comment) => {
+      const videoId = comment.video.toString();
+      if (!acc[videoId]) acc[videoId] = [];
+      acc[videoId].push(comment);
+      return acc;
+    }, {});
+
+    // Add like status and comments for current user
     const videosWithLikeStatus = videos.map((video) => ({
       ...video.toObject(),
       isLiked: video.likes.includes(req.user._id),
       likeCount: video.likes.length,
+      comments: commentsByVideo[video._id.toString()] || [],
     }));
 
+    // Disable caching for videos endpoint to ensure fresh comment data
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    
     res.json({
       success: true,
       message: "Videos retrieved successfully",

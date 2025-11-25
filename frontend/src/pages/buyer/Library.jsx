@@ -392,7 +392,7 @@ const Library = () => {
                             {progress > 0 ? 'Continue Reading' : 'Start Reading'}
                           </Button>
                         </Link>
-                        <Link to={`/buyer/books/${book._id}`} title="View Book Details">
+                        <Link to={`/buyer/book/${book._id}`} title="View Book Details">
                           <Button
                             variant="outline"
                             size="sm"
