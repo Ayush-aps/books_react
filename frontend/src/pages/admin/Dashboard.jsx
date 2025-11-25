@@ -46,7 +46,16 @@ const Dashboard = () => {
       const booksResponse = await adminService.getBooks();
       const books = booksResponse.data?.books || [];
       const booksByStatus = books.reduce((acc, book) => {
-        acc[book.approvalStatus] = (acc[book.approvalStatus] || 0) + 1;
+        // Determine book status based on isApproved and rejectionReason fields
+        let status;
+        if (book.isApproved) {
+          status = 'approved';
+        } else if (book.rejectionReason) {
+          status = 'rejected';
+        } else {
+          status = 'pending';
+        }
+        acc[status] = (acc[status] || 0) + 1;
         return acc;
       }, { approved: 0, pending: 0, rejected: 0 });
 

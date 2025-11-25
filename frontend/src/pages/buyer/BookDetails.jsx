@@ -124,8 +124,8 @@ const BookDetails = () => {
     ? book.price - (book.price * book.discountPercentage / 100)
     : book.price;
   const isOutOfStock = book.stock === 0;
-  const isPending = book.approvalStatus === 'pending';
-  const isAvailable = (book.approvalStatus === 'approved' || !book.approvalStatus) && !isOutOfStock;
+  const isPending = book.isApproved === false && !book.rejectionReason;
+  const isAvailable = book.isApproved === true && !isOutOfStock;
 
   return (
     <div className="min-h-screen bg-background-primary py-8 md:py-12">

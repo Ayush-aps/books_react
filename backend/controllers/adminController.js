@@ -449,7 +449,7 @@ exports.approveBook = async (req, res) => {
         rejectionDate: null,
       },
       { new: true }
-    );
+    ).populate("seller", "name email");
 
     if (!book) {
       return res.status(404).json({
@@ -496,7 +496,7 @@ exports.rejectBook = async (req, res) => {
         approvalDate: null,
       },
       { new: true }
-    );
+    ).populate("seller", "name email");
 
     if (!book) {
       return res.status(404).json({

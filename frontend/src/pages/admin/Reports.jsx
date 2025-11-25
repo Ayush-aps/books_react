@@ -96,9 +96,9 @@ const Reports = () => {
   ] : [];
 
   const bookStatusData = reports.books ? [
-    { name: 'Approved', value: reports.books.filter(b => b.approvalStatus === 'approved').length, color: '#10B981' },
-    { name: 'Pending', value: reports.books.filter(b => b.approvalStatus === 'pending').length, color: '#F59E0B' },
-    { name: 'Rejected', value: reports.books.filter(b => b.approvalStatus === 'rejected').length, color: '#EF4444' }
+    { name: 'Approved', value: reports.books.filter(b => b.isApproved === true).length, color: '#10B981' },
+    { name: 'Pending', value: reports.books.filter(b => b.isApproved === false && !b.rejectionReason).length, color: '#F59E0B' },
+    { name: 'Rejected', value: reports.books.filter(b => b.isApproved === false && b.rejectionReason).length, color: '#EF4444' }
   ] : [];
 
   const orderStatusData = reports.orders ? [
