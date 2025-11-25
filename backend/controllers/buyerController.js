@@ -1144,6 +1144,12 @@ exports.browseBooks = async (req, res) => {
         books,
         genres,
         filters: { search, genre, condition, minPrice, maxPrice, sort },
+        pagination: {
+          totalBooks: books.length,
+          currentPage: 1,
+          totalPages: 1,
+          limit: books.length
+        }
       },
     });
   } catch (err) {
