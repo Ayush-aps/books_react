@@ -5,9 +5,10 @@
 
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../services/api';
+import { addToCart } from '../redux/actions/cartActions';
 import BookCard from '../components/BookCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
@@ -18,6 +19,7 @@ import { fadeInUp, staggerContainer, staggerItem, imageZoom } from '../utils/ani
 
 const Home = () => {
   const { isAuthenticated, user } = useSelector(state => state.auth);
+  const dispatch = useDispatch();
   const [data, setData] = useState({
     featuredBooks: [],
     newBooks: [],
@@ -79,6 +81,24 @@ const Home = () => {
       setError(err.response?.data?.message || err.message || 'Failed to load home page data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAddToCart = async (bookId) => {
+    if (!isAuthenticated) {
+      return;
+    }
+    
+    try {
+      const result = await dispatch(addToCart(bookId, 1));
+      if (result.success) {
+        // Success feedback - you can add a toast notification here if needed
+        console.log('Added to cart successfully');
+      } else {
+        console.error('Failed to add to cart:', result.message);
+      }
+    } catch (error) {
+      console.error('Error adding to cart:', error);
     }
   };
 
@@ -299,7 +319,7 @@ const Home = () => {
             >
               {data.featuredBooks.slice(0, 6).map(book => (
                 <motion.div key={book._id} variants={staggerItem}>
-                  <BookCard book={book} compact={true} />
+                  <BookCard book={book} compact={true} onAddToCart={handleAddToCart} />
                 </motion.div>
               ))}
             </motion.div>
@@ -338,7 +358,7 @@ const Home = () => {
             >
               {data.newBooks.slice(0, 6).map(book => (
                 <motion.div key={book._id} variants={staggerItem}>
-                  <BookCard book={book} compact={true} />
+                  <BookCard book={book} compact={true} onAddToCart={handleAddToCart} />
                 </motion.div>
               ))}
             </motion.div>
@@ -377,7 +397,7 @@ const Home = () => {
             >
               {data.trendingBooks.slice(0, 6).map(book => (
                 <motion.div key={book._id} variants={staggerItem}>
-                  <BookCard book={book} compact={true} />
+                  <BookCard book={book} compact={true} onAddToCart={handleAddToCart} />
                 </motion.div>
               ))}
             </motion.div>
