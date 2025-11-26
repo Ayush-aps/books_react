@@ -233,9 +233,18 @@ exports.getReports = async (req, res) => {
     // Get recent orders
     const recentOrders = await Order.find().populate("buyer", "name email").sort({ orderDate: -1 }).limit(5);
 
-    // Calculate total revenue
-    const allOrders = await Order.find({ orderStatus: { $in: ["delivered", "shipped"] } });
-    const totalRevenue = allOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+    // Calculate total admin revenue (5% commission from delivered orders only)
+    const allOrders = await Order.find({ orderStatus: "delivered" });
+    const totalRevenue = allOrders.reduce((sum, order) => {
+      // Use adminCommission if calculated, otherwise calculate 5% of subtotal
+      if (order.adminCommission && order.adminCommission > 0) {
+        return sum + order.adminCommission;
+      } else {
+        // Fallback for old orders: calculate 5% of items total
+        const subtotal = order.items.reduce((itemSum, item) => itemSum + (item.price * item.quantity), 0);
+        return sum + (subtotal * 0.05);
+      }
+    }, 0);
 
     // Sales by genre (top 5 genres)
     const salesByGenre = await Book.aggregate([
@@ -396,8 +405,8 @@ exports.getReports = async (req, res) => {
 exports.getContent = async (req, res) => {
   try {
     // Pending books: not approved and no rejection reason (never reviewed or re-submitted)
-    const pendingBooks = await Book.find({ 
-      isApproved: false, 
+    const pendingBooks = await Book.find({
+      isApproved: false,
       $or: [
         { rejectionReason: null },
         { rejectionReason: { $exists: false } }
@@ -412,7 +421,7 @@ exports.getContent = async (req, res) => {
       .limit(10);
 
     // Rejected books for admin reference
-    const rejectedBooks = await Book.find({ 
+    const rejectedBooks = await Book.find({
       isApproved: false,
       rejectionReason: { $exists: true, $ne: null }
     })
@@ -590,7 +599,7 @@ exports.getAllComplaints = async (req, res) => {
     res.json({
       success: true,
       message: "Complaints retrieved successfully",
-      data: { 
+      data: {
         complaints,
         pagination: {
           total: totalComplaints,

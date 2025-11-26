@@ -113,36 +113,36 @@ const Dashboard = () => {
       label: 'Upload New Book',
       description: 'Add books to your inventory',
       link: '/seller/upload',
-      icon: 'M12 4v16m8-8H4',
+      icon: 'M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z',
       color: 'bg-accent-brown'
     },
     {
       label: 'Manage Inventory',
       description: 'Edit and organize your books',
       link: '/seller/inventory',
-      icon: 'M4 6h16M4 10h16M4 14h16M4 18h16',
+      icon: 'M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z',
       color: 'bg-accent-green'
     },
     {
       label: 'Process Orders',
       description: 'Update order status',
       link: '/seller/orders',
-      icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2',
-      color: 'bg-info'
+      icon: 'M9 2a1 1 0 000 2h2a1 1 0 100-2H9z M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z',
+      color: 'bg-blue-600'
     },
     {
       label: 'View Complaints',
       description: 'Track your submitted complaints',
       link: '/seller/complaints',
       icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-      color: 'bg-info'
+      color: 'bg-purple-600'
     },
     {
       label: 'Register Complaint',
       description: 'Report issues or concerns',
       link: '/seller/register-complaint',
-      icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z',
-      color: 'bg-warning'
+      icon: 'M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z',
+      color: 'bg-orange-600'
     }
   ];
 
@@ -256,8 +256,8 @@ const Dashboard = () => {
                     className="flex items-center gap-4 p-4 bg-background-secondary hover:bg-accent-brown/5 rounded-lg transition-all border border-transparent hover:border-accent-brown group"
                   >
                     <div className={`${action.color} p-3 rounded-lg group-hover:scale-110 transition-transform`}>
-                      <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={action.icon} />
+                      <svg className="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d={action.icon} clipRule="evenodd" />
                       </svg>
                     </div>
                     <div>

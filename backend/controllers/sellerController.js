@@ -53,7 +53,16 @@ exports.getDashboard = async (req, res) => {
 
           // Calculate revenue only from delivered orders
           if (order.orderStatus === "delivered") {
-            totalRevenue += itemTotal;
+            // Use sellerRevenue if calculated, otherwise calculate 95% of item total
+            if (order.sellerRevenue && order.sellerRevenue > 0) {
+              // Calculate this seller's proportional share of the seller revenue
+              const orderSubtotal = order.items.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+              const sellerShare = orderSubtotal > 0 ? (itemTotal / orderSubtotal) : 0;
+              totalRevenue += order.sellerRevenue * sellerShare;
+            } else {
+              // Fallback for old orders: 95% of item total
+              totalRevenue += itemTotal * 0.95;
+            }
           }
 
           const orderDate = new Date(order.orderDate);
@@ -146,7 +155,7 @@ exports.getInventory = async (req, res) => {
       query.isApproved = false;
       query.rejectionReason = { $exists: true, $ne: null };
     }
-    
+
     // Add search conditions to query
     if (searchConditions.length > 0) {
       if (query.$and) {
