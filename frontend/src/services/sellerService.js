@@ -45,20 +45,26 @@ const sellerService = {
   },
 
   // Get book details
+  getBookDetails: async (bookId) => {
+    const response = await api.get(`/seller/books/${bookId}`);
+    return response.data;
+  },
+
+  // Get book (alias for getBookDetails for backward compatibility)
   getBook: async (bookId) => {
-    const response = await api.get(`/seller/book/${bookId}`);
+    const response = await api.get(`/seller/books/${bookId}`);
     return response.data;
   },
 
   // Update book
   updateBook: async (bookId, bookData) => {
-    const response = await api.put(`/seller/book/${bookId}`, bookData);
+    const response = await api.put(`/seller/books/${bookId}`, bookData);
     return response.data;
   },
 
   // Delete book
   deleteBook: async (bookId) => {
-    const response = await api.delete(`/seller/book/${bookId}`);
+    const response = await api.delete(`/seller/books/${bookId}`);
     return response.data;
   },
 
