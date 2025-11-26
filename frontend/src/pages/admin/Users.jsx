@@ -35,7 +35,12 @@ const Users = () => {
     try {
       setLoading(true);
       const response = await adminService.getUsers();
-      setUsers(response.data?.users || []);
+      // Map isVerified to status for frontend display
+      const usersWithStatus = (response.data?.users || []).map(user => ({
+        ...user,
+        status: user.isVerified ? 'active' : 'inactive'
+      }));
+      setUsers(usersWithStatus);
       setError(null);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load users');
@@ -48,7 +53,7 @@ const Users = () => {
     try {
       setUpdatingUserId(userId);
       await adminService.updateUserRole(userId, newRole);
-      setUsers(users.map(user => 
+      setUsers(users.map(user =>
         user._id === userId ? { ...user, role: newRole } : user
       ));
       setSuccessMessage(`User role updated to ${newRole}`);
@@ -65,8 +70,8 @@ const Users = () => {
       setUpdatingUserId(userId);
       await adminService.toggleUserStatus(userId);
       const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
-      setUsers(users.map(user => 
-        user._id === userId ? { ...user, status: newStatus } : user
+      setUsers(users.map(user =>
+        user._id === userId ? { ...user, status: newStatus, isVerified: newStatus === 'active' } : user
       ));
       setSuccessMessage(`User ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully`);
       setShowSuccessToast(true);
@@ -98,8 +103,8 @@ const Users = () => {
     }
   };
 
-  const filteredUsers = roleFilter === 'all' 
-    ? users 
+  const filteredUsers = roleFilter === 'all'
+    ? users
     : users.filter(user => user.role === roleFilter);
 
   const getRoleVariant = (role) => {
@@ -123,7 +128,7 @@ const Users = () => {
     <div className="min-h-screen bg-cream py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <motion.div 
+        <motion.div
           className="mb-12"
           variants={fadeInUp}
           initial="hidden"
@@ -134,7 +139,7 @@ const Users = () => {
         </motion.div>
 
         {error && (
-          <motion.div 
+          <motion.div
             className="mb-6"
             variants={fadeInUp}
             initial="hidden"
@@ -145,7 +150,7 @@ const Users = () => {
         )}
 
         {/* Filter Tabs */}
-        <motion.div 
+        <motion.div
           className="mb-8"
           variants={fadeInUp}
           initial="hidden"
@@ -163,16 +168,15 @@ const Users = () => {
                   <button
                     key={tab.value}
                     onClick={() => setRoleFilter(tab.value)}
-                    className={`px-6 py-3 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
-                      roleFilter === tab.value
+                    className={`px-6 py-3 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${roleFilter === tab.value
                         ? 'bg-brown text-white shadow-sm'
                         : 'text-charcoal/70 hover:bg-taupe/10'
-                    }`}
+                      }`}
                   >
                     {tab.label}
-                    <Badge 
-                      variant={roleFilter === tab.value ? 'light' : 'default'} 
-                      size="sm" 
+                    <Badge
+                      variant={roleFilter === tab.value ? 'light' : 'default'}
+                      size="sm"
                       className="ml-2"
                     >
                       {tab.count}
@@ -207,7 +211,7 @@ const Users = () => {
             </Card>
           </motion.div>
         ) : (
-          <motion.div 
+          <motion.div
             className="space-y-4"
             variants={staggerContainer}
             initial="hidden"
