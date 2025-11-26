@@ -100,7 +100,7 @@ const Inventory = () => {
     <div className="min-h-screen bg-cream py-12">
       <div className="container-custom">
         {/* Header */}
-        <motion.div 
+        <motion.div
           className="flex flex-wrap items-center justify-between gap-4 mb-12"
           variants={fadeInUp}
           initial="hidden"
@@ -123,7 +123,7 @@ const Inventory = () => {
         </motion.div>
 
         {error && (
-          <motion.div 
+          <motion.div
             className="mb-6"
             variants={fadeInUp}
             initial="hidden"
@@ -152,11 +152,10 @@ const Inventory = () => {
                   <button
                     key={tab.value}
                     onClick={() => handleFilterChange('status', tab.value)}
-                    className={`px-6 py-3 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
-                      filters.status === tab.value
+                    className={`px-6 py-3 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${filters.status === tab.value
                         ? 'bg-brown text-white shadow-sm'
                         : 'text-charcoal/70 hover:bg-taupe/10'
-                    }`}
+                      }`}
                   >
                     {tab.label}
                   </button>
@@ -216,24 +215,24 @@ const Inventory = () => {
                 />
               </svg>
               <h2 className="heading-2 text-charcoal mb-3">
-                {filters.status === 'rejected' 
-                  ? 'No rejected books' 
+                {filters.status === 'rejected'
+                  ? 'No rejected books'
                   : filters.status === 'pending'
-                  ? 'No pending books'
-                  : filters.status === 'approved'
-                  ? 'No approved books'
-                  : 'No books found'}
+                    ? 'No pending books'
+                    : filters.status === 'approved'
+                      ? 'No approved books'
+                      : 'No books found'}
               </h2>
               <p className="body text-charcoal/60 mb-6">
                 {filters.status === 'rejected'
                   ? 'Great! You have no rejected books. Keep up the good work!'
                   : filters.status === 'pending'
-                  ? 'All your books have been reviewed by admin'
-                  : filters.status === 'approved'
-                  ? 'No approved books yet. Upload books and wait for admin approval'
-                  : filters.search || filters.genre
-                  ? 'Try adjusting your search filters'
-                  : 'Start adding books to your inventory'}
+                    ? 'All your books have been reviewed by admin'
+                    : filters.status === 'approved'
+                      ? 'No approved books yet. Upload books and wait for admin approval'
+                      : filters.search || filters.genre
+                        ? 'Try adjusting your search filters'
+                        : 'Start adding books to your inventory'}
               </p>
               {!filters.status && !filters.search && !filters.genre && (
                 <Link to="/seller/upload">
@@ -244,7 +243,7 @@ const Inventory = () => {
           </motion.div>
         ) : (
           <>
-            <motion.div 
+            <motion.div
               className="space-y-4"
               variants={staggerContainer}
               initial="hidden"
@@ -313,7 +312,7 @@ const Inventory = () => {
                             <Link to={`/seller/books/${book._id}`}>
                               <Button variant="ghost" size="sm">View</Button>
                             </Link>
-                            <Link to={`/seller/books/${book._id}/edit`}>
+                            <Link to={`/seller/edit-book/${book._id}`}>
                               <Button variant="outline" size="sm">Edit</Button>
                             </Link>
                             <Button
@@ -338,7 +337,7 @@ const Inventory = () => {
 
             {/* Pagination */}
             {pagination.totalPages > 1 && (
-              <motion.div 
+              <motion.div
                 className="mt-8 flex justify-center"
                 variants={fadeInUp}
                 initial="hidden"

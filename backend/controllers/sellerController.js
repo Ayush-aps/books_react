@@ -501,7 +501,7 @@ exports.deleteBook = async (req, res) => {
       });
     }
 
-    await book.remove();
+    await Book.findByIdAndDelete(req.params.id);
 
     res.json({
       success: true,

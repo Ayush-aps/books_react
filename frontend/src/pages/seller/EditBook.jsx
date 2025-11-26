@@ -75,19 +75,20 @@ const EditBook = () => {
     try {
       setLoading(true);
       const response = await sellerService.getBook(id);
-      const book = response.data;
-      
+      const book = response.data?.book || response.data;
+
       // Update form values using setFieldValue
       setFieldValue('title', book.title || '');
       setFieldValue('author', book.author || '');
-      setFieldValue('genre', book.genre || '');
+      // Handle genre - it might be an array in the database
+      setFieldValue('genre', Array.isArray(book.genres) ? book.genres[0] : (book.genre || ''));
       setFieldValue('price', book.price || '');
       setFieldValue('discountPercentage', book.discountPercentage || '');
       setFieldValue('stock', book.stock || '');
       setFieldValue('condition', book.condition || 'new');
       setFieldValue('description', book.description || '');
       setFieldValue('isbn', book.isbn || '');
-      setFieldValue('publicationYear', book.publicationYear || '');
+      setFieldValue('publicationYear', book.publishedDate ? new Date(book.publishedDate).getFullYear() : (book.publicationYear || ''));
       setFieldValue('coverImage', book.coverImage || '');
 
       setError(null);
@@ -158,11 +159,10 @@ const EditBook = () => {
                   value={values.title}
                   onChange={handleChange}
                   onBlur={handleBlur}
-                  className={`w-full px-3 py-2 border ${
-                    touched.title && errors.title 
-                      ? 'border-red-500 focus:ring-red-500' 
+                  className={`w-full px-3 py-2 border ${touched.title && errors.title
+                      ? 'border-red-500 focus:ring-red-500'
                       : 'border-gray-300 focus:ring-blue-500'
-                  } rounded-md focus:outline-none focus:ring-2`}
+                    } rounded-md focus:outline-none focus:ring-2`}
                   placeholder="Enter book title"
                 />
                 {touched.title && errors.title && (
@@ -181,11 +181,10 @@ const EditBook = () => {
                   value={values.author}
                   onChange={handleChange}
                   onBlur={handleBlur}
-                  className={`w-full px-3 py-2 border ${
-                    touched.author && errors.author 
-                      ? 'border-red-500 focus:ring-red-500' 
+                  className={`w-full px-3 py-2 border ${touched.author && errors.author
+                      ? 'border-red-500 focus:ring-red-500'
                       : 'border-gray-300 focus:ring-blue-500'
-                  } rounded-md focus:outline-none focus:ring-2`}
+                    } rounded-md focus:outline-none focus:ring-2`}
                   placeholder="Author name"
                 />
                 {touched.author && errors.author && (
@@ -203,11 +202,10 @@ const EditBook = () => {
                   value={values.genre}
                   onChange={handleChange}
                   onBlur={handleBlur}
-                  className={`w-full px-3 py-2 border ${
-                    touched.genre && errors.genre 
-                      ? 'border-red-500 focus:ring-red-500' 
+                  className={`w-full px-3 py-2 border ${touched.genre && errors.genre
+                      ? 'border-red-500 focus:ring-red-500'
                       : 'border-gray-300 focus:ring-blue-500'
-                  } rounded-md focus:outline-none focus:ring-2`}
+                    } rounded-md focus:outline-none focus:ring-2`}
                 >
                   <option value="">Select genre</option>
                   {genres.map(genre => (
@@ -230,11 +228,10 @@ const EditBook = () => {
                   value={values.isbn}
                   onChange={handleChange}
                   onBlur={handleBlur}
-                  className={`w-full px-3 py-2 border ${
-                    touched.isbn && errors.isbn 
-                      ? 'border-red-500 focus:ring-red-500' 
+                  className={`w-full px-3 py-2 border ${touched.isbn && errors.isbn
+                      ? 'border-red-500 focus:ring-red-500'
                       : 'border-gray-300 focus:ring-blue-500'
-                  } rounded-md focus:outline-none focus:ring-2`}
+                    } rounded-md focus:outline-none focus:ring-2`}
                   placeholder="10 or 13 digit ISBN"
                 />
                 {touched.isbn && errors.isbn && (
@@ -255,11 +252,10 @@ const EditBook = () => {
                   onBlur={handleBlur}
                   min="1800"
                   max={new Date().getFullYear()}
-                  className={`w-full px-3 py-2 border ${
-                    touched.publicationYear && errors.publicationYear 
-                      ? 'border-red-500 focus:ring-red-500' 
+                  className={`w-full px-3 py-2 border ${touched.publicationYear && errors.publicationYear
+                      ? 'border-red-500 focus:ring-red-500'
                       : 'border-gray-300 focus:ring-blue-500'
-                  } rounded-md focus:outline-none focus:ring-2`}
+                    } rounded-md focus:outline-none focus:ring-2`}
                   placeholder="YYYY"
                 />
                 {touched.publicationYear && errors.publicationYear && (
@@ -286,11 +282,10 @@ const EditBook = () => {
                   onBlur={handleBlur}
                   min="0"
                   step="0.01"
-                  className={`w-full px-3 py-2 border ${
-                    touched.price && errors.price 
-                      ? 'border-red-500 focus:ring-red-500' 
+                  className={`w-full px-3 py-2 border ${touched.price && errors.price
+                      ? 'border-red-500 focus:ring-red-500'
                       : 'border-gray-300 focus:ring-blue-500'
-                  } rounded-md focus:outline-none focus:ring-2`}
+                    } rounded-md focus:outline-none focus:ring-2`}
                   placeholder="0.00"
                 />
                 {touched.price && errors.price && (
@@ -311,11 +306,10 @@ const EditBook = () => {
                   onBlur={handleBlur}
                   min="0"
                   max="100"
-                  className={`w-full px-3 py-2 border ${
-                    touched.discountPercentage && errors.discountPercentage 
-                      ? 'border-red-500 focus:ring-red-500' 
+                  className={`w-full px-3 py-2 border ${touched.discountPercentage && errors.discountPercentage
+                      ? 'border-red-500 focus:ring-red-500'
                       : 'border-gray-300 focus:ring-blue-500'
-                  } rounded-md focus:outline-none focus:ring-2`}
+                    } rounded-md focus:outline-none focus:ring-2`}
                   placeholder="0"
                 />
                 {touched.discountPercentage && errors.discountPercentage && (
@@ -335,11 +329,10 @@ const EditBook = () => {
                   onChange={handleChange}
                   onBlur={handleBlur}
                   min="0"
-                  className={`w-full px-3 py-2 border ${
-                    touched.stock && errors.stock 
-                      ? 'border-red-500 focus:ring-red-500' 
+                  className={`w-full px-3 py-2 border ${touched.stock && errors.stock
+                      ? 'border-red-500 focus:ring-red-500'
                       : 'border-gray-300 focus:ring-blue-500'
-                  } rounded-md focus:outline-none focus:ring-2`}
+                    } rounded-md focus:outline-none focus:ring-2`}
                   placeholder="0"
                 />
                 {touched.stock && errors.stock && (
@@ -359,7 +352,7 @@ const EditBook = () => {
               name="condition"
               value={values.condition}
               onChange={handleChange}
-                  onBlur={handleBlur}
+              onBlur={handleBlur}
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
@@ -378,7 +371,7 @@ const EditBook = () => {
               name="description"
               value={values.description}
               onChange={handleChange}
-                  onBlur={handleBlur}
+              onBlur={handleBlur}
               rows="5"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               placeholder="Provide a detailed description of the book..."
@@ -397,11 +390,10 @@ const EditBook = () => {
               value={values.coverImage}
               onChange={handleChange}
               onBlur={handleBlur}
-              className={`w-full px-3 py-2 border ${
-                touched.coverImage && errors.coverImage 
-                  ? 'border-red-500 focus:ring-red-500' 
+              className={`w-full px-3 py-2 border ${touched.coverImage && errors.coverImage
+                  ? 'border-red-500 focus:ring-red-500'
                   : 'border-gray-300 focus:ring-blue-500'
-              } rounded-md focus:outline-none focus:ring-2`}
+                } rounded-md focus:outline-none focus:ring-2`}
               placeholder="https://example.com/cover.jpg"
             />
             {touched.coverImage && errors.coverImage && (
