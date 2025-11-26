@@ -59,11 +59,22 @@ const Dashboard = () => {
         return acc;
       }, { approved: 0, pending: 0, rejected: 0 });
 
-      const ordersResponse = await adminService.getOrders();
+      // Fetch ALL delivered orders for accurate revenue calculation (no pagination)
+      const ordersResponse = await adminService.getOrders({ limit: 1000 }); // Fetch up to 1000 orders
       const orders = ordersResponse.data?.orders || [];
+
+      // Calculate admin revenue (5% commission from delivered orders only)
       const totalRevenue = orders
-        .filter(order => order.status === 'delivered')
-        .reduce((sum, order) => sum + order.totalAmount, 0);
+        .filter(order => order.orderStatus === 'delivered')
+        .reduce((sum, order) => {
+          // Use adminCommission if available, otherwise calculate 5% of total
+          if (order.adminCommission && order.adminCommission > 0) {
+            return sum + order.adminCommission;
+          } else {
+            // Fallback: estimate 5% of total amount (approximation for old orders)
+            return sum + (order.totalAmount * 0.05);
+          }
+        }, 0);
 
       const reportsResponse = await adminService.getReports();
       const pendingComplaints = reportsResponse.data?.complaints?.filter(
@@ -175,33 +186,33 @@ const Dashboard = () => {
     {
       label: 'Manage Users',
       link: '/admin/users',
-      icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
+      icon: 'M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z',
       color: 'bg-accent-brown'
     },
     {
       label: 'Moderate Content',
       link: '/admin/content',
-      icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+      icon: 'M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z',
       badge: stats.booksByStatus.pending > 0 ? `${stats.booksByStatus.pending} pending` : null,
       color: 'bg-accent-green'
     },
     {
       label: 'View All Orders',
       link: '/admin/orders',
-      icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2',
+      icon: 'M9 2a1 1 0 000 2h2a1 1 0 100-2H9z M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z',
       color: 'bg-info'
     },
     {
       label: 'View Complaints',
       link: '/admin/complaints',
-      icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z',
+      icon: 'M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z',
       badge: stats.pendingComplaints > 0 ? `${stats.pendingComplaints} pending` : null,
       color: 'bg-error'
     },
     {
       label: 'View Reports',
       link: '/admin/reports',
-      icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
+      icon: 'M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z',
       color: 'bg-warning'
     }
   ];
@@ -317,8 +328,8 @@ const Dashboard = () => {
                   >
                     <div className="flex items-center gap-3">
                       <div className={`${action.color} p-2 rounded-lg group-hover:scale-110 transition-transform`}>
-                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={action.icon} />
+                        <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d={action.icon} clipRule="evenodd" />
                         </svg>
                       </div>
                       <div className="flex-1">

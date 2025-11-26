@@ -122,13 +122,38 @@ const OrderSchema = new mongoose.Schema({
       default: Date.now
     },
     note: String
-  }]
+  }],
+  // Commission and Revenue Tracking
+  subtotal: {
+    type: Number,
+    default: 0
+  },
+  tax: {
+    type: Number,
+    default: 0
+  },
+  shippingCost: {
+    type: Number,
+    default: 0
+  },
+  adminCommission: {
+    type: Number,
+    default: 0
+  },
+  sellerRevenue: {
+    type: Number,
+    default: 0
+  },
+  commissionCalculated: {
+    type: Boolean,
+    default: false
+  }
 }, {
   timestamps: true  // This will add createdAt and updatedAt fields
 });
 
 // Generate orderId before saving
-OrderSchema.pre("save", async function(next) {
+OrderSchema.pre("save", async function (next) {
   try {
     if (!this.orderId) {
       const date = new Date();
@@ -146,7 +171,7 @@ OrderSchema.pre("save", async function(next) {
       deliveryDate.setDate(deliveryDate.getDate() + deliveryDays);
       this.deliveryDate = deliveryDate;
     }
-    
+
     next();
   } catch (error) {
     next(error);
@@ -154,12 +179,33 @@ OrderSchema.pre("save", async function(next) {
 });
 
 // Add a pre-save hook to track status changes
-OrderSchema.pre('save', function(next) {
+OrderSchema.pre('save', function (next) {
   if (this.isNew || this.isModified('status')) {
     this.statusHistory.push({
       status: this.status,
       date: Date.now()
     });
+  }
+  next();
+});
+
+// Calculate commission when order is delivered
+OrderSchema.pre('save', function (next) {
+  // Only calculate if order status changed to delivered and not already calculated
+  if (this.isModified('orderStatus') && this.orderStatus === 'delivered' && !this.commissionCalculated) {
+    // Calculate subtotal from items if not already set
+    if (!this.subtotal || this.subtotal === 0) {
+      this.subtotal = this.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    }
+
+    // Admin gets 5% of subtotal (book prices only)
+    this.adminCommission = this.subtotal * 0.05;
+
+    // Seller gets 95% of subtotal + all other charges (tax + shipping)
+    this.sellerRevenue = (this.subtotal * 0.95) + (this.tax || 0) + (this.shippingCost || 0);
+
+    // Mark as calculated to prevent recalculation
+    this.commissionCalculated = true;
   }
   next();
 });
