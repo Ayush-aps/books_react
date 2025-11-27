@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useLocation } from 'react-router-dom';
 import { sellerService } from '../../services/sellerService';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
@@ -14,6 +14,7 @@ import { motion } from 'framer-motion';
 import { fadeInUp, staggerContainer, staggerItem } from '../../utils/animations';
 
 const Inventory = () => {
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [books, setBooks] = useState([]);
   const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, totalBooks: 0 });
@@ -30,6 +31,16 @@ const Inventory = () => {
     genre: searchParams.get('genre') || '',
     page: parseInt(searchParams.get('page')) || 1
   };
+
+  // Handle success message from navigation state (e.g., after book update/resubmit)
+  useEffect(() => {
+    if (location.state?.success) {
+      setSuccessMessage(location.state.success);
+      setShowSuccessToast(true);
+      // Clear the state to prevent showing again on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     fetchInventory();
@@ -312,8 +323,10 @@ const Inventory = () => {
                             <Link to={`/seller/books/${book._id}`}>
                               <Button variant="ghost" size="sm">View</Button>
                             </Link>
-                            <Link to={`/seller/edit-book/${book._id}`}>
-                              <Button variant="outline" size="sm">Edit</Button>
+                            <Link to={`/seller/edit-book/${book._id}${book.rejectionReason ? '?resubmit=true' : ''}`}>
+                              <Button variant={book.rejectionReason ? "primary" : "outline"} size="sm">
+                                {book.rejectionReason ? 'Edit & Resubmit' : 'Edit'}
+                              </Button>
                             </Link>
                             <Button
                               variant="ghost"

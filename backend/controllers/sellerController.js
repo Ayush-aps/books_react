@@ -445,7 +445,22 @@ exports.getBookDetails = async (req, res) => {
 // @access  Private (Seller)
 exports.updateBook = async (req, res) => {
   try {
-    const { title, author, description, price, discountPrice, stock, isAvailable } = req.body;
+    const { 
+      title, 
+      author, 
+      description, 
+      price, 
+      discountPrice, 
+      stock, 
+      isAvailable,
+      isbn,
+      genre,
+      condition,
+      publicationYear,
+      coverImage,
+      discountPercentage,
+      resubmit 
+    } = req.body;
 
     const book = await Book.findOne({
       _id: req.params.id,
@@ -459,20 +474,42 @@ exports.updateBook = async (req, res) => {
       });
     }
 
-    book.title = title;
-    book.author = author;
-    book.description = description;
-    book.price = price;
-    book.discountPrice = discountPrice || price;
-    book.stock = stock;
-    book.isAvailable = isAvailable;
+    // Check if this is a resubmission of a rejected book
+    const wasRejected = book.rejectionReason !== null && book.rejectionReason !== undefined;
+    const isResubmission = resubmit === true || (wasRejected && !book.isApproved);
+
+    // Update book fields
+    book.title = title || book.title;
+    book.author = author || book.author;
+    book.description = description || book.description;
+    book.price = price || book.price;
+    book.discountPrice = discountPrice || (discountPercentage ? price * (1 - discountPercentage / 100) : price) || book.discountPrice;
+    book.stock = stock !== undefined ? stock : book.stock;
+    book.isAvailable = isAvailable !== undefined ? isAvailable : book.isAvailable;
+    
+    // Update additional fields if provided
+    if (isbn) book.isbn = isbn;
+    if (genre) book.genres = Array.isArray(genre) ? genre : [genre];
+    if (condition) book.condition = condition;
+    if (publicationYear) book.publishedDate = new Date(publicationYear, 0, 1);
+    if (coverImage) book.coverImage = coverImage;
+
+    // Handle resubmission logic - clear rejection and set back to pending
+    if (isResubmission) {
+      book.rejectionReason = null;
+      book.rejectionDate = null;
+      book.isApproved = false; // Set to pending for admin review
+      book.approvalDate = null;
+    }
 
     await book.save();
 
     res.json({
       success: true,
-      message: "Book updated successfully",
-      data: { book },
+      message: isResubmission 
+        ? "Book resubmitted successfully and is pending admin approval" 
+        : "Book updated successfully",
+      data: { book, isResubmission },
     });
   } catch (err) {
     console.error(err);

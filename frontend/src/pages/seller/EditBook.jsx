@@ -1,10 +1,11 @@
 /**
  * Edit Book Page (Seller)
  * Form to update existing book details
+ * Supports resubmission of rejected books
  */
 
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { sellerService } from '../../services/sellerService';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
@@ -13,9 +14,14 @@ import { validateRequired, validateNumber, validateURL, validateISBN, validateYe
 
 const EditBook = () => {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [bookData, setBookData] = useState(null);
+  
+  // Check if this is a resubmission
+  const isResubmitMode = searchParams.get('resubmit') === 'true';
 
   const genres = [
     'Fiction', 'Non-Fiction', 'Mystery', 'Thriller', 'Romance', 'Science Fiction',
@@ -76,6 +82,9 @@ const EditBook = () => {
       setLoading(true);
       const response = await sellerService.getBook(id);
       const book = response.data?.book || response.data;
+      
+      // Store full book data for rejection info
+      setBookData(book);
 
       // Update form values using setFieldValue
       setFieldValue('title', book.title || '');
@@ -104,16 +113,22 @@ const EditBook = () => {
 
     try {
       // Prepare data
-      const bookData = {
+      const updateData = {
         ...formData,
         price: parseFloat(formData.price),
         stock: parseInt(formData.stock),
         discountPercentage: formData.discountPercentage ? parseFloat(formData.discountPercentage) : 0,
-        publicationYear: formData.publicationYear ? parseInt(formData.publicationYear) : undefined
+        publicationYear: formData.publicationYear ? parseInt(formData.publicationYear) : undefined,
+        // Include resubmit flag if this is a rejected book being resubmitted
+        resubmit: isResubmitMode || (bookData?.rejectionReason ? true : false)
       };
 
-      await sellerService.updateBook(id, bookData);
-      navigate('/seller/inventory', { state: { success: 'Book updated successfully!' } });
+      const response = await sellerService.updateBook(id, updateData);
+      const successMessage = response.data?.isResubmission 
+        ? 'Book resubmitted successfully! It is now pending admin approval.'
+        : 'Book updated successfully!';
+      
+      navigate('/seller/inventory', { state: { success: successMessage } });
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update book');
     }
@@ -132,9 +147,50 @@ const EditBook = () => {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Edit Book</h1>
-          <p className="text-gray-600 mt-2">Update book information</p>
+          <h1 className="text-3xl font-bold text-gray-900">
+            {bookData?.rejectionReason ? 'Edit & Resubmit Book' : 'Edit Book'}
+          </h1>
+          <p className="text-gray-600 mt-2">
+            {bookData?.rejectionReason 
+              ? 'Make the required changes and resubmit for approval'
+              : 'Update book information'
+            }
+          </p>
         </div>
+
+        {/* Rejection Notice Banner */}
+        {bookData?.rejectionReason && (
+          <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-red-800 mb-2">
+                  ⚠️ This book was rejected by admin
+                </h3>
+                <div className="bg-white p-3 rounded border border-red-200 mb-3">
+                  <p className="text-sm font-medium text-gray-700 mb-1">Admin Feedback:</p>
+                  <p className="text-gray-800">{bookData.rejectionReason}</p>
+                </div>
+                {bookData.rejectionDate && (
+                  <p className="text-sm text-red-600">
+                    Rejected on: {new Date(bookData.rejectionDate).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </p>
+                )}
+                <p className="text-sm text-gray-600 mt-2">
+                  Please address the feedback above and click <strong>"Resubmit for Approval"</strong> when ready.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {error && (
           <div className="mb-6">
@@ -405,27 +461,31 @@ const EditBook = () => {
           </div>
 
           {/* Submit Buttons */}
-          <div className="flex gap-4 pt-4 border-t border-gray-200">
+          <div className="flex gap-4 pt-6 border-t border-gray-200 bg-gray-50 -mx-6 px-6 -mb-6 pb-6 rounded-b-lg">
             <button
               type="button"
               onClick={() => navigate('/seller/inventory')}
               disabled={isSubmitting}
-              className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-6 py-3 bg-white border-2 border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-100 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting || !isValid}
-              className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              className={`flex-1 py-3 px-6 rounded-lg font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors shadow-md ${
+                bookData?.rejectionReason
+                  ? 'bg-emerald-600 text-white hover:bg-emerald-700 border-2 border-emerald-700'
+                  : 'bg-blue-600 text-white hover:bg-blue-700 border-2 border-blue-700'
+              }`}
             >
               {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">
                   <LoadingSpinner size="sm" />
-                  Updating...
+                  {bookData?.rejectionReason ? 'Resubmitting...' : 'Updating...'}
                 </span>
               ) : (
-                'Update Book'
+                bookData?.rejectionReason ? '✓ Resubmit for Approval' : 'Update Book'
               )}
             </button>
           </div>
