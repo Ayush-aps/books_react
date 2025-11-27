@@ -30,9 +30,9 @@ const Button = ({
     outline: 'btn-outline',
     ghost: 'btn-ghost',
     text: 'btn-text',
-    success: 'bg-success-primary hover:bg-success-dark text-white',
-    error: 'bg-error-primary hover:bg-error-dark text-white',
-    warning: 'bg-warning-primary hover:bg-warning-dark text-charcoal'
+    success: 'btn-success',
+    error: 'btn-error',
+    warning: 'btn-warning'
   };
 
   // Size classes

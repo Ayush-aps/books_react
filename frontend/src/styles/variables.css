@@ -373,6 +373,48 @@
   box-shadow: none;
 }
 
+/* Success Button - Forest Green */
+.btn-success {
+  background-color: var(--success-primary);
+  color: var(--text-white);
+  border-color: var(--success-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-success:hover {
+  background-color: var(--success-dark);
+  border-color: var(--success-dark);
+  box-shadow: var(--shadow-hover-md);
+}
+
+/* Error Button - Terracotta Red */
+.btn-error {
+  background-color: var(--error-primary);
+  color: var(--text-white);
+  border-color: var(--error-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-error:hover {
+  background-color: var(--error-dark);
+  border-color: var(--error-dark);
+  box-shadow: var(--shadow-hover-md);
+}
+
+/* Warning Button - Warm Gold */
+.btn-warning {
+  background-color: var(--warning-primary);
+  color: var(--text-primary);
+  border-color: var(--warning-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-warning:hover {
+  background-color: var(--warning-dark);
+  border-color: var(--warning-dark);
+  box-shadow: var(--shadow-hover-md);
+}
+
 /* Button Sizes */
 .btn-sm {
   padding: var(--space-2) var(--space-4);
