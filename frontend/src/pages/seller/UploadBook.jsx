@@ -491,7 +491,7 @@ const UploadBook = () => {
                     onBlur={handleBlur}
                     error={touched.isbn && errors.isbn}
                     placeholder="10 or 13 digit ISBN"
-                    disabled={entryMode === 'search'}
+                    helpText={entryMode === 'search' ? "Auto-filled from search. You can edit if needed." : undefined}
                   />
 
                   <Input
