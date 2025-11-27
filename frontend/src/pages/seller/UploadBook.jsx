@@ -4,7 +4,7 @@
  * Supports both manual entry and Google Books API lookup
  */
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sellerService } from '../../services/sellerService';
 import LoadingSpinner from '../../components/LoadingSpinner';
@@ -16,6 +16,133 @@ import Card from '../../components/Card';
 import Input from '../../components/Input';
 import { motion } from 'framer-motion';
 import { fadeInUp, staggerContainer, staggerItem } from '../../utils/animations';
+
+/**
+ * Cover Image Preview Component
+ * Displays a preview of the cover image URL with smooth loading animations
+ */
+const CoverImagePreview = ({ imageUrl }) => {
+  const [imageStatus, setImageStatus] = useState('loading'); // 'loading' | 'loaded' | 'error'
+  const [currentUrl, setCurrentUrl] = useState(imageUrl);
+
+  // Reset status when URL changes
+  useState(() => {
+    if (imageUrl !== currentUrl) {
+      setImageStatus('loading');
+      setCurrentUrl(imageUrl);
+    }
+  }, [imageUrl, currentUrl]);
+
+  // Use useEffect to properly handle URL changes
+  React.useEffect(() => {
+    setImageStatus('loading');
+    setCurrentUrl(imageUrl);
+  }, [imageUrl]);
+
+  const handleImageLoad = () => {
+    setImageStatus('loaded');
+  };
+
+  const handleImageError = () => {
+    setImageStatus('error');
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
+      className="mt-4"
+    >
+      <label className="body-sm font-semibold text-charcoal mb-2 block">
+        Cover Image Preview
+      </label>
+      <div className="relative inline-block rounded-lg overflow-hidden border-2 border-taupe/30 bg-taupe/5">
+        {/* Loading State */}
+        {imageStatus === 'loading' && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 flex items-center justify-center bg-taupe/10 z-10"
+          >
+            <div className="flex flex-col items-center gap-2">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                className="w-8 h-8 border-3 border-brown/30 border-t-brown rounded-full"
+              />
+              <span className="text-sm text-charcoal/60">Loading preview...</span>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Error State */}
+        {imageStatus === 'error' && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+            className="w-48 h-64 flex flex-col items-center justify-center bg-red-50 p-4"
+          >
+            <svg className="w-12 h-12 text-red-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span className="text-sm text-red-600 font-medium text-center">Failed to load image</span>
+            <span className="text-xs text-red-500 text-center mt-1">Please check the URL</span>
+          </motion.div>
+        )}
+
+        {/* Image */}
+        <motion.img
+          key={currentUrl}
+          src={currentUrl}
+          alt="Book cover preview"
+          onLoad={handleImageLoad}
+          onError={handleImageError}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ 
+            opacity: imageStatus === 'loaded' ? 1 : 0,
+            scale: imageStatus === 'loaded' ? 1 : 0.95
+          }}
+          transition={{ 
+            duration: 0.4, 
+            ease: [0.4, 0, 0.2, 1] // Custom easing for smooth reveal
+          }}
+          className={`max-w-48 max-h-64 object-contain shadow-lg ${
+            imageStatus !== 'loaded' ? 'invisible absolute' : ''
+          }`}
+        />
+
+        {/* Success Overlay (briefly shows on successful load) */}
+        {imageStatus === 'loaded' && (
+          <motion.div
+            initial={{ opacity: 1 }}
+            animate={{ opacity: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="absolute inset-0 bg-green/10 pointer-events-none"
+          />
+        )}
+      </div>
+
+      {/* Status Indicator */}
+      {imageStatus === 'loaded' && (
+        <motion.div
+          initial={{ opacity: 0, y: 5 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
+          className="flex items-center gap-2 mt-2"
+        >
+          <svg className="w-4 h-4 text-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          <span className="text-sm text-green font-medium">Image loaded successfully</span>
+        </motion.div>
+      )}
+    </motion.div>
+  );
+};
 
 const UploadBook = () => {
   const navigate = useNavigate();
@@ -663,18 +790,25 @@ const UploadBook = () => {
                     placeholder="Provide a detailed description of the book..."
                   />
 
-                  <Input
-                    type="url"
-                    id="coverImage"
-                    name="coverImage"
-                    label="Cover Image URL"
-                    value={values.coverImage}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={touched.coverImage && errors.coverImage}
-                    placeholder="https://example.com/cover.jpg"
-                    helpText="Enter a direct URL to the book cover image (auto-filled if using ISBN lookup)"
-                  />
+                  <div className="space-y-4">
+                    <Input
+                      type="url"
+                      id="coverImage"
+                      name="coverImage"
+                      label="Cover Image URL"
+                      value={values.coverImage}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={touched.coverImage && errors.coverImage}
+                      placeholder="https://example.com/cover.jpg"
+                      helpText="Enter a direct URL to the book cover image (auto-filled if using ISBN lookup)"
+                    />
+                    
+                    {/* Cover Image Preview */}
+                    {values.coverImage && (
+                      <CoverImagePreview imageUrl={values.coverImage} />
+                    )}
+                  </div>
                 </div>
               </Card.Body>
             </Card>
