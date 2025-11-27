@@ -3,15 +3,18 @@
  * Floating label inputs with validation states
  */
 
-import { useState } from 'react';
+import React, { useState, forwardRef } from 'react'; // ⬅️ Import forwardRef
 import { motion } from 'framer-motion';
 
-const Input = ({
+// -----------------------------------------------------------
+// 1. Primary Input Component (Floating or Standard)
+// -----------------------------------------------------------
+
+// ⬅️ Use forwardRef to pass ref from RHF's register()
+const Input = forwardRef(({
   label,
   type = 'text',
   name,
-  value,
-  onChange,
   placeholder = ' ',
   error = '',
   success = '',
@@ -21,8 +24,9 @@ const Input = ({
   floatingLabel = true,
   icon = null,
   iconPosition = 'left',
-  ...props
-}) => {
+  // RHF props (value, onChange, onBlur) are automatically spread into props
+  ...props 
+}, ref) => { // ⬅️ Receive ref
   const [isFocused, setIsFocused] = useState(false);
 
   // Validation state classes
@@ -57,11 +61,11 @@ const Input = ({
 
           {/* Input */}
           <input
+            ref={ref} // ⬅️ Attach the ref here
             type={type}
             name={name}
             id={name}
-            value={value}
-            onChange={onChange}
+            // RHF controls value, onChange, onBlur via {...props}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             placeholder={placeholder}
@@ -127,11 +131,10 @@ const Input = ({
 
         {/* Input */}
         <input
+          ref={ref} // ⬅️ Attach the ref here
           type={type}
           name={name}
           id={name}
-          value={value}
-          onChange={onChange}
           placeholder={placeholder}
           disabled={disabled}
           required={required}
@@ -163,14 +166,18 @@ const Input = ({
       )}
     </div>
   );
-};
+});
 
-// Textarea Component
-export const Textarea = ({
+Input.displayName = 'Input'; // Good practice for forwardRef
+
+// -----------------------------------------------------------
+// 2. Textarea Component
+// -----------------------------------------------------------
+
+// ⬅️ Use forwardRef
+export const Textarea = forwardRef(({
   label,
   name,
-  value,
-  onChange,
   placeholder,
   error = '',
   success = '',
@@ -179,7 +186,7 @@ export const Textarea = ({
   rows = 4,
   className = '',
   ...props
-}) => {
+}, ref) => { // ⬅️ Receive ref
   return (
     <div className={`form-group ${className}`}>
       {label && (
@@ -190,10 +197,9 @@ export const Textarea = ({
       )}
 
       <textarea
+        ref={ref} // ⬅️ Attach the ref here
         name={name}
         id={name}
-        value={value}
-        onChange={onChange}
         placeholder={placeholder}
         disabled={disabled}
         required={required}
@@ -224,15 +230,18 @@ export const Textarea = ({
       )}
     </div>
   );
-};
+});
 
-// Select Component
-export const Select = ({
+Textarea.displayName = 'Textarea';
+
+// -----------------------------------------------------------
+// 3. Select Component
+// -----------------------------------------------------------
+
+// ⬅️ Use forwardRef
+export const Select = forwardRef(({
   label,
   name,
-  value,
-  onChange,
-  onBlur,
   options = [],
   placeholder = 'Select an option',
   error = '',
@@ -243,7 +252,7 @@ export const Select = ({
   children,
   helpText = '',
   ...props
-}) => {
+}, ref) => { // ⬅️ Receive ref
   return (
     <div className={`form-group ${className}`}>
       {label && (
@@ -254,11 +263,9 @@ export const Select = ({
       )}
 
       <select
+        ref={ref} // ⬅️ Attach the ref here
         name={name}
         id={name}
-        value={value}
-        onChange={onChange}
-        onBlur={onBlur}
         disabled={disabled}
         required={required}
         className={`form-control ${error ? 'is-invalid' : success ? 'is-valid' : ''}`}
@@ -306,9 +313,17 @@ export const Select = ({
       )}
     </div>
   );
-};
+});
 
-// Checkbox Component
+Select.displayName = 'Select';
+
+
+// -----------------------------------------------------------
+// 4. Checkbox Component (Use Controller)
+// -----------------------------------------------------------
+// NOTE: Checkbox and Radio are generally managed better with RHF's <Controller> or use a separate onChange handler, 
+// so we don't apply forwardRef here, but keep the component clean.
+
 export const Checkbox = ({
   label,
   name,
@@ -342,7 +357,10 @@ export const Checkbox = ({
   );
 };
 
-// Radio Component
+// -----------------------------------------------------------
+// 5. Radio Component (Use Controller)
+// -----------------------------------------------------------
+
 export const Radio = ({
   label,
   name,
