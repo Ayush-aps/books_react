@@ -6,11 +6,12 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { sellerService } from '../../services/sellerService';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
-import useFormValidation from '../../hooks/useFormValidation';
-import { validateRequired, validateNumber, validateURL, validateISBN, validateYear } from '../../utils/validation';
+import { bookListingSchema } from '../../schemas/allFormSchemas';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
 import Input from '../../components/Input';
@@ -102,17 +103,16 @@ const CoverImagePreview = ({ imageUrl }) => {
           onLoad={handleImageLoad}
           onError={handleImageError}
           initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ 
+          animate={{
             opacity: imageStatus === 'loaded' ? 1 : 0,
             scale: imageStatus === 'loaded' ? 1 : 0.95
           }}
-          transition={{ 
-            duration: 0.4, 
+          transition={{
+            duration: 0.4,
             ease: [0.4, 0, 0.2, 1] // Custom easing for smooth reveal
           }}
-          className={`max-w-48 max-h-64 object-contain shadow-lg ${
-            imageStatus !== 'loaded' ? 'invisible absolute' : ''
-          }`}
+          className={`max-w-48 max-h-64 object-contain shadow-lg ${imageStatus !== 'loaded' ? 'invisible absolute' : ''
+            }`}
         />
 
         {/* Success Overlay (briefly shows on successful load) */}
@@ -163,37 +163,18 @@ const UploadBook = () => {
   const formats = ['paperback', 'hardcover', 'ebook', 'audiobook'];
   const conditions = ['new', 'used'];
 
-  // Validation schema
-  const validationSchema = {
-    title: (value) => validateRequired(value, 'Book Title'),
-    author: (value) => validateRequired(value, 'Author'),
-    genre: (value) => validateRequired(value, 'Genre'),
-    price: (value) => validateNumber(value, 0.01, undefined, 'Price'),
-    discountPercentage: (value) => {
-      if (!value) return { isValid: true, error: '' };
-      return validateNumber(value, 0, 100, 'Discount Percentage');
-    },
-    stock: (value) => validateNumber(value, 0, undefined, 'Stock Quantity'),
-    isbn: (value) => validateISBN(value, true), // Always required now
-    publicationYear: (value) => validateYear(value, false),
-    coverImage: (value) => validateURL(value, false),
-    format: (value) => validateRequired(value, 'Format'),
-    condition: (value) => validateRequired(value, 'Condition'),
-  };
-
-  // Form validation hook
+  // React Hook Form setup
   const {
-    values,
-    errors,
-    touched,
-    isSubmitting,
-    handleChange,
-    handleBlur,
+    register,
     handleSubmit,
-    isValid,
-    setValues,
-  } = useFormValidation(
-    {
+    watch,
+    setValue,
+    reset,
+    formState: { errors, isSubmitting, isValid }
+  } = useForm({
+    resolver: zodResolver(bookListingSchema),
+    mode: 'onTouched',
+    defaultValues: {
       title: '',
       author: '',
       genre: '',
@@ -209,9 +190,10 @@ const UploadBook = () => {
       language: 'English',
       coverImage: '',
       format: '',
-    },
-    validationSchema
-  );
+    }
+  });
+
+  const coverImageValue = watch('coverImage');
 
   // Check if query looks like an ISBN
   const isISBNFormat = (query) => {
@@ -234,13 +216,13 @@ const UploadBook = () => {
 
     try {
       const query = searchQuery.trim();
-      
+
       // Auto-detect if it's an ISBN
       if (isISBNFormat(query)) {
         // Search by ISBN - returns single result
         const response = await sellerService.lookupBookByISBN(query);
         const bookData = response.data.book;
-        
+
         // Populate form directly for ISBN
         populateFormWithBookData(bookData);
         setSearchError(null);
@@ -249,7 +231,7 @@ const UploadBook = () => {
         // Search by title/author - returns multiple results
         const response = await sellerService.searchBooks(query, 20);
         const books = response.data.books;
-        
+
         if (books && books.length > 0) {
           setSearchResults(books);
           setSearchError(null);
@@ -274,12 +256,11 @@ const UploadBook = () => {
 
   // Populate form with book data from API
   const populateFormWithBookData = (bookData) => {
-    const fullTitle = bookData.subtitle 
-      ? `${bookData.title}: ${bookData.subtitle}` 
+    const fullTitle = bookData.subtitle
+      ? `${bookData.title}: ${bookData.subtitle}`
       : bookData.title;
 
-    setValues({
-      ...values,
+    reset({
       title: fullTitle || '',
       author: bookData.author || '',
       description: bookData.description || '',
@@ -290,6 +271,12 @@ const UploadBook = () => {
       language: bookData.language || 'English',
       genre: bookData.genres && bookData.genres.length > 0 ? bookData.genres[0] : '',
       coverImage: bookData.coverImage || '',
+      // Preserve other fields
+      price: '',
+      discountPercentage: '',
+      stock: '',
+      condition: 'new',
+      format: ''
     });
   };
 
@@ -305,29 +292,29 @@ const UploadBook = () => {
     }
   };
 
-  const onSubmit = async (formData) => {
+  const onSubmit = async (data) => {
     setError(null);
 
     try {
       // Prepare data
       const bookData = {
-        title: formData.title,
-        author: formData.author,
-        description: formData.description,
-        isbn: formData.isbn,
-        publisher: formData.publisher,
-        publishedDate: formData.publishedDate,
-        pageCount: formData.pageCount ? parseInt(formData.pageCount) : null,
-        language: formData.language,
-        genres: formData.genre,
-        condition: formData.condition,
-        stock: parseInt(formData.stock),
-        format: formData.format,
-        price: parseFloat(formData.price),
-        discountPrice: formData.discountPercentage 
-          ? parseFloat(formData.price) * (1 - parseFloat(formData.discountPercentage) / 100)
-          : parseFloat(formData.price),
-        coverImageUrl: formData.coverImage,
+        title: data.title,
+        author: data.author,
+        description: data.description,
+        isbn: data.isbn,
+        publisher: data.publisher,
+        publishedDate: data.publishedDate,
+        pageCount: data.pageCount ? parseInt(data.pageCount) : null,
+        language: data.language,
+        genres: data.genre,
+        condition: data.condition,
+        stock: parseInt(data.stock),
+        format: data.format,
+        price: parseFloat(data.price),
+        discountPrice: data.discountPercentage
+          ? parseFloat(data.price) * (1 - parseFloat(data.discountPercentage) / 100)
+          : parseFloat(data.price),
+        coverImageUrl: data.coverImage,
       };
 
       await sellerService.uploadBook(bookData);
@@ -341,7 +328,7 @@ const UploadBook = () => {
     <div className="min-h-screen bg-cream py-12">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <motion.div 
+        <motion.div
           className="mb-12"
           variants={fadeInUp}
           initial="hidden"
@@ -367,16 +354,14 @@ const UploadBook = () => {
                   <button
                     type="button"
                     onClick={() => handleModeSwitch('manual')}
-                    className={`p-4 rounded-lg border-2 transition-all ${
-                      entryMode === 'manual'
-                        ? 'border-brown bg-brown/5 shadow-md'
-                        : 'border-taupe/30 hover:border-taupe'
-                    }`}
+                    className={`p-4 rounded-lg border-2 transition-all ${entryMode === 'manual'
+                      ? 'border-brown bg-brown/5 shadow-md'
+                      : 'border-taupe/30 hover:border-taupe'
+                      }`}
                   >
                     <div className="flex items-start gap-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        entryMode === 'manual' ? 'bg-brown text-white' : 'bg-taupe/20 text-charcoal'
-                      }`}>
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${entryMode === 'manual' ? 'bg-brown text-white' : 'bg-taupe/20 text-charcoal'
+                        }`}>
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
@@ -392,16 +377,14 @@ const UploadBook = () => {
                   <button
                     type="button"
                     onClick={() => handleModeSwitch('search')}
-                    className={`p-4 rounded-lg border-2 transition-all ${
-                      entryMode === 'search'
-                        ? 'border-brown bg-brown/5 shadow-md'
-                        : 'border-taupe/30 hover:border-taupe'
-                    }`}
+                    className={`p-4 rounded-lg border-2 transition-all ${entryMode === 'search'
+                      ? 'border-brown bg-brown/5 shadow-md'
+                      : 'border-taupe/30 hover:border-taupe'
+                      }`}
                   >
                     <div className="flex items-start gap-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        entryMode === 'search' ? 'bg-brown text-white' : 'bg-taupe/20 text-charcoal'
-                      }`}>
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${entryMode === 'search' ? 'bg-brown text-white' : 'bg-taupe/20 text-charcoal'
+                        }`}>
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
@@ -488,11 +471,10 @@ const UploadBook = () => {
                       key={book.id}
                       type="button"
                       onClick={() => handleSelectBook(book)}
-                      className={`p-4 border-2 rounded-lg text-left transition-all hover:shadow-md ${
-                        selectedBook?.id === book.id
-                          ? 'border-brown bg-brown/5'
-                          : 'border-taupe/30 hover:border-brown/50'
-                      }`}
+                      className={`p-4 border-2 rounded-lg text-left transition-all hover:shadow-md ${selectedBook?.id === book.id
+                        ? 'border-brown bg-brown/5'
+                        : 'border-taupe/30 hover:border-brown/50'
+                        }`}
                     >
                       <div className="flex gap-3">
                         {book.coverImage ? (
@@ -533,7 +515,7 @@ const UploadBook = () => {
         )}
 
         {error && (
-          <motion.div 
+          <motion.div
             className="mb-6"
             variants={fadeInUp}
             initial="hidden"
@@ -544,7 +526,7 @@ const UploadBook = () => {
         )}
 
         {/* Form */}
-        <motion.form 
+        <motion.form
           onSubmit={handleSubmit(onSubmit)}
           variants={staggerContainer}
           initial="hidden"
@@ -569,38 +551,29 @@ const UploadBook = () => {
                   <div className="md:col-span-2">
                     <Input
                       id="title"
-                      name="title"
                       label="Book Title"
                       required
-                      value={values.title}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      error={touched.title && errors.title}
+                      {...register("title")}
+                      error={errors.title?.message}
                       placeholder="Enter book title"
                     />
                   </div>
 
                   <Input
                     id="author"
-                    name="author"
                     label="Author"
                     required
-                    value={values.author}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={touched.author && errors.author}
+                    {...register("author")}
+                    error={errors.author?.message}
                     placeholder="Author name"
                   />
 
                   <Input.Select
                     id="genre"
-                    name="genre"
                     label="Genre"
                     required
-                    value={values.genre}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={touched.genre && errors.genre}
+                    {...register("genre")}
+                    error={errors.genre?.message}
                   >
                     <option value="">Select genre</option>
                     {genres.map(genre => (
@@ -610,56 +583,45 @@ const UploadBook = () => {
 
                   <Input
                     id="isbn"
-                    name="isbn"
                     label="ISBN"
                     required
-                    value={values.isbn}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={touched.isbn && errors.isbn}
+                    {...register("isbn")}
+                    error={errors.isbn?.message}
                     placeholder="10 or 13 digit ISBN"
                     helpText={entryMode === 'search' ? "Auto-filled from search. You can edit if needed." : undefined}
                   />
 
                   <Input
                     id="publisher"
-                    name="publisher"
                     label="Publisher"
-                    value={values.publisher}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
+                    {...register("publisher")}
+                    error={errors.publisher?.message}
                     placeholder="Publisher name"
                   />
 
                   <Input
                     id="publishedDate"
-                    name="publishedDate"
                     label="Published Date"
-                    value={values.publishedDate}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
+                    {...register("publishedDate")}
+                    error={errors.publishedDate?.message}
                     placeholder="YYYY or YYYY-MM-DD"
                   />
 
                   <Input
                     type="number"
                     id="pageCount"
-                    name="pageCount"
                     label="Page Count"
-                    value={values.pageCount}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
+                    {...register("pageCount")}
+                    error={errors.pageCount?.message}
                     min="1"
                     placeholder="Number of pages"
                   />
 
                   <Input
                     id="language"
-                    name="language"
                     label="Language"
-                    value={values.language}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
+                    {...register("language")}
+                    error={errors.language?.message}
                     placeholder="e.g., English"
                   />
                 </div>
@@ -685,43 +647,34 @@ const UploadBook = () => {
                   <Input
                     type="number"
                     id="price"
-                    name="price"
                     label="Price (₹)"
                     required
-                    value={values.price}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
+                    {...register("price")}
                     min="0"
                     step="0.01"
-                    error={touched.price && errors.price}
+                    error={errors.price?.message}
                     placeholder="0.00"
                   />
 
                   <Input
                     type="number"
                     id="discountPercentage"
-                    name="discountPercentage"
                     label="Discount (%)"
-                    value={values.discountPercentage}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
+                    {...register("discountPercentage")}
                     min="0"
                     max="100"
-                    error={touched.discountPercentage && errors.discountPercentage}
+                    error={errors.discountPercentage?.message}
                     placeholder="0"
                   />
 
                   <Input
                     type="number"
                     id="stock"
-                    name="stock"
                     label="Stock Quantity"
                     required
-                    value={values.stock}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
+                    {...register("stock")}
                     min="0"
-                    error={touched.stock && errors.stock}
+                    error={errors.stock?.message}
                     placeholder="0"
                   />
                 </div>
@@ -747,11 +700,10 @@ const UploadBook = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Input.Select
                       id="condition"
-                      name="condition"
                       label="Condition"
                       required
-                      value={values.condition}
-                      onChange={handleChange}
+                      {...register("condition")}
+                      error={errors.condition?.message}
                     >
                       <option value="">Select condition</option>
                       {conditions.map(cond => (
@@ -763,13 +715,10 @@ const UploadBook = () => {
 
                     <Input.Select
                       id="format"
-                      name="format"
                       label="Format"
                       required
-                      value={values.format}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      error={touched.format && errors.format}
+                      {...register("format")}
+                      error={errors.format?.message}
                     >
                       <option value="">Select format</option>
                       {formats.map(fmt => (
@@ -782,10 +731,9 @@ const UploadBook = () => {
 
                   <Input.Textarea
                     id="description"
-                    name="description"
                     label="Description"
-                    value={values.description}
-                    onChange={handleChange}
+                    {...register("description")}
+                    error={errors.description?.message}
                     rows={5}
                     placeholder="Provide a detailed description of the book..."
                   />
@@ -794,19 +742,16 @@ const UploadBook = () => {
                     <Input
                       type="url"
                       id="coverImage"
-                      name="coverImage"
                       label="Cover Image URL"
-                      value={values.coverImage}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      error={touched.coverImage && errors.coverImage}
-                      placeholder="https://example.com/cover.jpg"
-                      helpText="Enter a direct URL to the book cover image (auto-filled if using ISBN lookup)"
+                      {...register("coverImage")}
+                      error={errors.coverImage?.message}
+                      placeholder="https://example.com/book-cover.jpg"
+                      helpText="Enter a direct link to the book cover image"
                     />
-                    
+
                     {/* Cover Image Preview */}
-                    {values.coverImage && (
-                      <CoverImagePreview imageUrl={values.coverImage} />
+                    {coverImageValue && (
+                      <CoverImagePreview imageUrl={coverImageValue} />
                     )}
                   </div>
                 </div>

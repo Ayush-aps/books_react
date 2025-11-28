@@ -1,120 +1,135 @@
+// src/pages/Login.jsx
 /**
- * Login Page
+ * Login Page - Refactored with React Hook Form and Zod
  */
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { login } from '../../redux/actions/authActions';
-import useFormValidation from '../../hooks/useFormValidation';
-import { validateEmail, validateRequired } from '../../utils/validation';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
 import Input from '../../components/Input';
-import ErrorMessage from '../../components/ErrorMessage';
+import SuccessToast from '../../components/SuccessToast';
 import { motion } from 'framer-motion';
 import { fadeInUp } from '../../utils/animations';
 
+// RHF and Zod Imports
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { loginSchema } from '../../schemas/allFormSchemas';
+
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const { loading, error, isAuthenticated, user } = useSelector(state => state.auth);
 
-  // Scroll to top when component mounts
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
-  // Redirect if already logged in
+  // Check for redirect message (e.g. from registration)
+  useEffect(() => {
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message);
+      setShowSuccessToast(true);
+      // Clear state to prevent showing again on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isValid, isSubmitting }
+  } = useForm({
+    resolver: zodResolver(loginSchema),
+    mode: 'onTouched',
+    defaultValues: { email: '', password: '' }
+  });
+
+  useEffect(() => { window.scrollTo(0, 0); }, []);
+
   useEffect(() => {
     if (isAuthenticated && user) {
       const role = user.role;
-      navigate(role === 'admin' ? '/admin/dashboard' : role === 'seller' ? '/seller/dashboard' : '/buyer/dashboard');
+      navigate(role === 'admin' ? '/admin/dashboard' : '/');
     }
   }, [isAuthenticated, user, navigate]);
 
-  // Validation schema
-  const validationSchema = {
-    email: (value) => validateEmail(value),
-    password: (value) => validateRequired(value, 'Password'),
-  };
-
-  // Form validation hook
-  const {
-    values,
-    errors,
-    touched,
-    handleChange,
-    handleBlur,
-    handleSubmit,
-    isValid
-  } = useFormValidation(
-    { email: '', password: '' },
-    validationSchema
-  );
-
-  const onSubmit = async (formData) => {
-    const result = await dispatch(login(formData.email, formData.password));
+  const onSubmit = async (data) => {
+    const result = await dispatch(login(data.email, data.password));
 
     if (result.success) {
-      // Redirect based on role (handled by Header component)
-      navigate('/');
+      // Show success toast
+      setSuccessMessage('Login successful! Redirecting...');
+      setShowSuccessToast(true);
+
+      // Redirect after short delay
+      setTimeout(() => {
+        const role = user?.role || 'buyer';
+        navigate(role === 'admin' ? '/admin/dashboard' : '/');
+      }, 1500);
+    } else {
+      // Check if error indicates user not found
+      const errorMessage = result.message || error || '';
+      const isUserNotFound = errorMessage.toLowerCase().includes('not found') ||
+        errorMessage.toLowerCase().includes('not registered') ||
+        errorMessage.toLowerCase().includes('does not exist') ||
+        errorMessage.toLowerCase().includes('no user');
+
+      if (isUserNotFound) {
+        // Redirect immediately to signup
+        navigate('/register', {
+          state: {
+            message: 'Account not found. Please sign up to create an account.',
+            email: data.email
+          }
+        });
+      }
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-cream py-12 px-4 sm:px-6 lg:px-8">
-      <motion.div 
+      <motion.div
         className="max-w-md w-full"
         variants={fadeInUp}
         initial="hidden"
         animate="visible"
       >
-        {/* Header */}
         <div className="text-center mb-8">
-          <h2 className="heading-1 text-charcoal mb-2">
-            Welcome Back
-          </h2>
-          <p className="body text-charcoal/70">
-            Sign in to access your account
-          </p>
+          <h2 className="heading-1 text-charcoal mb-2">Welcome Back</h2>
+          <p className="body text-charcoal/70">Sign in to access your account</p>
         </div>
 
-        {/* Login Card */}
         <Card>
           <Card.Body className="p-8">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               {error && (
-                <div className="mb-6">
-                  <ErrorMessage message={error} />
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-800">{error}</p>
                 </div>
               )}
 
               <div className="space-y-4">
                 <Input
                   id="email"
-                  name="email"
-                  type="email"
                   label="Email Address"
                   placeholder="Enter your email"
-                  value={values.email}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  error={touched.email && errors.email ? errors.email : ''}
                   required
+                  {...register("email")}
+                  error={errors.email?.message}
                 />
 
                 <Input
                   id="password"
-                  name="password"
-                  type="password"
                   label="Password"
+                  type="password"
                   placeholder="Enter your password"
-                  value={values.password}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  error={touched.password && errors.password ? errors.password : ''}
                   required
+                  {...register("password")}
+                  error={errors.password?.message}
                 />
               </div>
 
@@ -123,37 +138,33 @@ const Login = () => {
                 variant="primary"
                 size="lg"
                 fullWidth
-                disabled={loading || !isValid || !values.email || !values.password}
-                loading={loading}
+                disabled={loading || isSubmitting || !isValid}
+                isLoading={loading || isSubmitting}
               >
-                {loading ? 'Signing in...' : 'Sign In'}
+                {loading || isSubmitting ? 'Signing in...' : 'Sign In'}
               </Button>
             </form>
 
             <div className="mt-6 text-center">
-              <p className="body-sm text-charcoal/70">
+              <p className="body-sm text-charcoal/60">
                 Don't have an account?{' '}
-                <Link to="/register" className="text-brown hover:text-brown/80 font-semibold transition-colors">
-                  Create one now
+                <Link to="/register" className="text-brown font-semibold hover:text-accent-brown transition-colors">
+                  Sign up
                 </Link>
               </p>
             </div>
           </Card.Body>
         </Card>
-
-        {/* Help Links */}
-        <div className="mt-8 text-center">
-          <p className="body-sm text-charcoal/60 mb-3">Need assistance?</p>
-          <div className="flex justify-center gap-6">
-            <Link to="/about" className="body-sm text-brown hover:text-brown/80 transition-colors">
-              About Us
-            </Link>
-            <Link to="/contact" className="body-sm text-brown hover:text-brown/80 transition-colors">
-              Contact Support
-            </Link>
-          </div>
-        </div>
       </motion.div>
+
+      {/* Success Toast */}
+      {showSuccessToast && (
+        <SuccessToast
+          message={successMessage}
+          onClose={() => setShowSuccessToast(false)}
+          duration={3000}
+        />
+      )}
     </div>
   );
 };

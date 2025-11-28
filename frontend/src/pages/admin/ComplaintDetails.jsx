@@ -6,6 +6,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { complaintCommentSchema, complaintResolutionSchema } from '../../schemas/allFormSchemas';
 import api from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
@@ -35,8 +38,18 @@ const ComplaintDetails = () => {
 
   // Resolution state
   const [showResolutionForm, setShowResolutionForm] = useState(false);
-  const [resolutionAction, setResolutionAction] = useState('');
-  const [resolutionDetails, setResolutionDetails] = useState('');
+
+  // React Hook Form for comment
+  const { register: registerComment, handleSubmit: handleSubmitComment, formState: { errors: commentErrors }, reset: resetComment } = useForm({
+    resolver: zodResolver(complaintCommentSchema),
+    defaultValues: { message: '' }
+  });
+
+  // React Hook Form for resolution
+  const { register: registerResolution, handleSubmit: handleSubmitResolution, formState: { errors: resolutionErrors }, reset: resetResolution } = useForm({
+    resolver: zodResolver(complaintResolutionSchema),
+    defaultValues: { action: '', details: '' }
+  });
 
   useEffect(() => {
     fetchComplaintDetails();
@@ -93,18 +106,15 @@ const ComplaintDetails = () => {
     }
   };
 
-  const handleAddComment = async (e) => {
-    e.preventDefault();
-    if (!comment.trim()) return;
-
+  const handleAddComment = async (data) => {
     try {
       setSubmitting(true);
       const response = await api.post(`/admin/complaints/${id}/comment`, {
-        message: comment.trim()
+        message: data.message
       });
-      
+
       setComplaint(response.data.data.complaint);
-      setComment('');
+      resetComment();
       setToastMessage('Comment added successfully');
       setToastType('success');
       setShowToast(true);
@@ -117,26 +127,17 @@ const ComplaintDetails = () => {
     }
   };
 
-  const handleResolve = async (e) => {
-    e.preventDefault();
-    if (!resolutionAction || !resolutionDetails.trim()) {
-      setToastMessage('Please provide both action and details');
-      setToastType('error');
-      setShowToast(true);
-      return;
-    }
-
+  const handleResolve = async (data) => {
     try {
       setSubmitting(true);
       const response = await api.post(`/admin/complaints/${id}/resolve`, {
-        action: resolutionAction,
-        details: resolutionDetails.trim()
+        action: data.action,
+        details: data.details
       });
-      
+
       setComplaint(response.data.data.complaint);
       setShowResolutionForm(false);
-      setResolutionAction('');
-      setResolutionDetails('');
+      resetResolution();
       setToastMessage('Complaint resolved successfully');
       setToastType('success');
       setShowToast(true);
@@ -232,7 +233,7 @@ const ComplaintDetails = () => {
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                           </svg>
-                          {complaint.user?.name} 
+                          {complaint.user?.name}
                           <Badge variant="secondary" className="ml-1">{complaint.userRole}</Badge>
                         </span>
                         <span className="flex items-center gap-1">
@@ -351,11 +352,10 @@ const ComplaintDetails = () => {
                       {complaint.comments.map((comment, index) => (
                         <div
                           key={index}
-                          className={`p-4 rounded-lg ${
-                            comment.userRole === 'admin'
+                          className={`p-4 rounded-lg ${comment.userRole === 'admin'
                               ? 'bg-blue-50 border border-blue-200'
                               : 'bg-gray-50 border border-gray-200'
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
@@ -387,20 +387,22 @@ const ComplaintDetails = () => {
                     <h2 className="heading-5 text-charcoal">Add Comment</h2>
                   </Card.Header>
                   <Card.Body>
-                    <form onSubmit={handleAddComment}>
+                    <form onSubmit={handleSubmitComment(handleAddComment)}>
                       <textarea
-                        value={comment}
-                        onChange={(e) => setComment(e.target.value)}
+                        {...registerComment('message')}
                         rows="4"
                         className="form-control resize-none mb-4"
                         placeholder="Add a comment or update..."
                         disabled={submitting}
                       />
+                      {commentErrors.message && (
+                        <p className="text-red-600 text-sm mb-2">{commentErrors.message.message}</p>
+                      )}
                       <div className="flex justify-end">
                         <Button
                           type="submit"
                           variant="primary"
-                          disabled={!comment.trim() || submitting}
+                          disabled={submitting}
                           isLoading={submitting}
                         >
                           {submitting ? 'Posting...' : 'Post Comment'}
@@ -508,14 +510,12 @@ const ComplaintDetails = () => {
                         Resolve This Complaint
                       </Button>
                     ) : (
-                      <form onSubmit={handleResolve} className="space-y-4">
+                      <form onSubmit={handleSubmitResolution(handleResolve)} className="space-y-4">
                         <div>
                           <label className="form-label">Resolution Action</label>
                           <select
-                            value={resolutionAction}
-                            onChange={(e) => setResolutionAction(e.target.value)}
+                            {...registerResolution('action')}
                             className="form-control"
-                            required
                           >
                             <option value="">Select action...</option>
                             <option value="refund_issued">Refund Issued</option>
@@ -525,17 +525,21 @@ const ComplaintDetails = () => {
                             <option value="no_action">No Action Required</option>
                             <option value="other">Other</option>
                           </select>
+                          {resolutionErrors.action && (
+                            <p className="text-red-600 text-sm mt-1">{resolutionErrors.action.message}</p>
+                          )}
                         </div>
                         <div>
                           <label className="form-label">Resolution Details</label>
                           <textarea
-                            value={resolutionDetails}
-                            onChange={(e) => setResolutionDetails(e.target.value)}
+                            {...registerResolution('details')}
                             rows="4"
                             className="form-control resize-none"
                             placeholder="Provide details about the resolution..."
-                            required
                           />
+                          {resolutionErrors.details && (
+                            <p className="text-red-600 text-sm mt-1">{resolutionErrors.details.message}</p>
+                          )}
                         </div>
                         <div className="flex gap-2">
                           <Button
@@ -543,8 +547,7 @@ const ComplaintDetails = () => {
                             variant="outline"
                             onClick={() => {
                               setShowResolutionForm(false);
-                              setResolutionAction('');
-                              setResolutionDetails('');
+                              resetResolution();
                             }}
                             className="flex-1"
                           >

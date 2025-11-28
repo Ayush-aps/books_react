@@ -151,15 +151,16 @@ export default function Header() {
 
   // --- Dynamic Navigation Items ---
   let navItems = [];
-  
-  // Add Browse first for buyers (better UX)
+
+  // Add standard navigation items
+  navItems.push({ name: "Home", link: "/" });
+
+  // Add Browse for buyers after Home
   if (isAuthenticated && user?.role === "buyer") {
     navItems.push({ name: "Browse", link: "/buyer/browse" });
   }
-  
-  // Add standard navigation items
+
   navItems.push(
-    { name: "Home", link: "/" },
     { name: "About", link: "/about" },
     { name: "Pricing", link: "/pricing" },
     { name: "Contact", link: "/contact" }

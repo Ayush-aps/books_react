@@ -5,6 +5,9 @@
 
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { bookRejectionSchema } from '../../schemas/allFormSchemas';
 import { adminService } from '../../services/adminService';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
@@ -26,10 +29,15 @@ const Books = () => {
   const [statusFilter, setStatusFilter] = useState('pending');
   const [selectedBook, setSelectedBook] = useState(null);
   const [showRejectModal, setShowRejectModal] = useState(false);
-  const [rejectReason, setRejectReason] = useState('');
   const [processing, setProcessing] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+
+  // React Hook Form for rejection
+  const { register, handleSubmit, formState: { errors }, reset } = useForm({
+    resolver: zodResolver(bookRejectionSchema),
+    defaultValues: { reason: '' }
+  });
 
   useEffect(() => {
     fetchBooks();
@@ -54,14 +62,14 @@ const Books = () => {
     try {
       setProcessing(true);
       await adminService.approveBook(bookId);
-      
+
       // Move book from pending to approved
       const approvedBook = pendingBooks.find(book => book._id === bookId);
       if (approvedBook) {
         setPendingBooks(pendingBooks.filter(book => book._id !== bookId));
         setApprovedBooks([{ ...approvedBook, isApproved: true }, ...approvedBooks]);
       }
-      
+
       setSuccessMessage('Book approved successfully and now available for buyers');
       setShowSuccessToast(true);
     } catch (err) {
@@ -73,36 +81,34 @@ const Books = () => {
 
   const handleRejectClick = (book) => {
     setSelectedBook(book);
+    reset({ reason: '' });
     setShowRejectModal(true);
   };
 
-  const handleRejectConfirm = async () => {
-    if (!selectedBook || !rejectReason.trim()) {
-      setError('Please provide a reason for rejection');
-      return;
-    }
+  const handleRejectConfirm = async (data) => {
+    if (!selectedBook) return;
 
     try {
       setProcessing(true);
-      const response = await adminService.rejectBook(selectedBook._id, rejectReason);
-      
+      const response = await adminService.rejectBook(selectedBook._id, data.reason);
+
       // Use the book data from the response to ensure it has the correct structure
-      const rejectedBook = response.data?.book || { 
-        ...selectedBook, 
-        rejectionReason: rejectReason, 
-        rejectionDate: new Date(), 
-        isApproved: false 
+      const rejectedBook = response.data?.book || {
+        ...selectedBook,
+        rejectionReason: rejectReason,
+        rejectionDate: new Date(),
+        isApproved: false
       };
-      
+
       // Move book from pending/approved to rejected list
       setPendingBooks(pendingBooks.filter(book => book._id !== selectedBook._id));
       setApprovedBooks(approvedBooks.filter(book => book._id !== selectedBook._id));
       setRejectedBooks([rejectedBook, ...rejectedBooks]);
-      
+
       setSuccessMessage('Book rejected. Seller has been notified with feedback.');
       setShowSuccessToast(true);
       setShowRejectModal(false);
-      setRejectReason('');
+      reset({ reason: '' });
       setSelectedBook(null);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to reject book');
@@ -112,16 +118,16 @@ const Books = () => {
   };
 
   const allBooks = [...pendingBooks, ...approvedBooks, ...rejectedBooks];
-  
-  const filteredBooks = statusFilter === 'all' 
+
+  const filteredBooks = statusFilter === 'all'
     ? allBooks
     : statusFilter === 'pending'
-    ? pendingBooks
-    : statusFilter === 'approved'
-    ? approvedBooks
-    : statusFilter === 'rejected'
-    ? rejectedBooks
-    : [];
+      ? pendingBooks
+      : statusFilter === 'approved'
+        ? approvedBooks
+        : statusFilter === 'rejected'
+          ? rejectedBooks
+          : [];
 
   const getStatusVariant = (book) => {
     if (book.isApproved) return 'success';
@@ -147,7 +153,7 @@ const Books = () => {
     <div className="min-h-screen bg-cream py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <motion.div 
+        <motion.div
           className="mb-12"
           variants={fadeInUp}
           initial="hidden"
@@ -158,7 +164,7 @@ const Books = () => {
         </motion.div>
 
         {error && (
-          <motion.div 
+          <motion.div
             className="mb-6"
             variants={fadeInUp}
             initial="hidden"
@@ -169,7 +175,7 @@ const Books = () => {
         )}
 
         {/* Filter Tabs */}
-        <motion.div 
+        <motion.div
           className="mb-8"
           variants={fadeInUp}
           initial="hidden"
@@ -187,16 +193,15 @@ const Books = () => {
                   <button
                     key={tab.value}
                     onClick={() => setStatusFilter(tab.value)}
-                    className={`px-6 py-3 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
-                      statusFilter === tab.value
+                    className={`px-6 py-3 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${statusFilter === tab.value
                         ? 'bg-brown text-white shadow-sm'
                         : 'text-charcoal/70 hover:bg-taupe/10'
-                    }`}
+                      }`}
                   >
                     {tab.label}
-                    <Badge 
-                      variant={statusFilter === tab.value ? 'light' : 'default'} 
-                      size="sm" 
+                    <Badge
+                      variant={statusFilter === tab.value ? 'light' : 'default'}
+                      size="sm"
                       className="ml-2"
                     >
                       {tab.count}
@@ -231,7 +236,7 @@ const Books = () => {
             </Card>
           </motion.div>
         ) : (
-          <motion.div 
+          <motion.div
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
             variants={staggerContainer}
             initial="hidden"
@@ -243,8 +248,8 @@ const Books = () => {
                   {/* Book Cover */}
                   <div className="aspect-[3/4] bg-taupe/10 relative overflow-hidden">
                     {book.coverImage ? (
-                      <img 
-                        src={book.coverImage} 
+                      <img
+                        src={book.coverImage}
                         alt={book.title}
                         className="w-full h-full object-cover"
                       />
@@ -266,7 +271,7 @@ const Books = () => {
                   <Card.Body className="flex-1 flex flex-col">
                     <h3 className="heading-5 text-charcoal line-clamp-2 mb-2">{book.title || 'Untitled'}</h3>
                     <p className="body-sm text-charcoal/60 mb-3">by {book.author || 'Unknown'}</p>
-                    
+
                     <div className="flex items-center gap-2 mb-4">
                       <Badge variant="default" size="sm">{book.genres?.[0] || 'N/A'}</Badge>
                       <Badge variant="default" size="sm">{book.condition || 'N/A'}</Badge>
@@ -347,37 +352,40 @@ const Books = () => {
               <p className="body-sm text-charcoal/60 mb-4">
                 This message will be visible to the seller in their inventory. Please provide constructive feedback to help them improve.
               </p>
-              <Input.Textarea
-                value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
-                rows={4}
-                placeholder="e.g., 'Please provide a higher quality cover image and fix the ISBN format.'"
-              />
-              <div className="flex gap-3 mt-6">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  fullWidth
-                  onClick={() => {
-                    setShowRejectModal(false);
-                    setRejectReason('');
-                    setSelectedBook(null);
-                  }}
-                  disabled={processing}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="error"
-                  size="lg"
-                  fullWidth
-                  onClick={handleRejectConfirm}
-                  disabled={processing || !rejectReason.trim()}
-                  loading={processing}
-                >
-                  Confirm Rejection
-                </Button>
-              </div>
+              <form onSubmit={handleSubmit(handleRejectConfirm)}>
+                <Input.Textarea
+                  {...register('reason')}
+                  rows={4}
+                  placeholder="e.g., 'Please provide a higher quality cover image and fix the ISBN format.'"
+                  error={errors.reason?.message}
+                />
+                <div className="flex gap-3 mt-6">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    fullWidth
+                    type="button"
+                    onClick={() => {
+                      setShowRejectModal(false);
+                      reset({ reason: '' });
+                      setSelectedBook(null);
+                    }}
+                    disabled={processing}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="error"
+                    size="lg"
+                    fullWidth
+                    type="submit"
+                    disabled={processing}
+                    loading={processing}
+                  >
+                    Confirm Rejection
+                  </Button>
+                </div>
+              </form>
             </div>
           </Modal>
         )}

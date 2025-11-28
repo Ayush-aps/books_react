@@ -4,6 +4,9 @@
  */
 
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { contactSchema } from '../schemas/allFormSchemas';
 import { motion } from 'framer-motion';
 import { fadeInUp, staggerContainer, staggerItem } from '../utils/animations';
 import api from '../services/api';
@@ -12,51 +15,27 @@ import Button from '../components/Button';
 import Input from '../components/Input';
 import ErrorMessage from '../components/ErrorMessage';
 import SuccessToast from '../components/SuccessToast';
-import useFormValidation from '../hooks/useFormValidation';
-import { validateEmail, validateRequired, validateLength } from '../utils/validation';
 
 const Contact = () => {
   const [error, setError] = useState(null);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
 
-  // Validation schema
-  const validationSchema = {
-    name: (value) => validateRequired(value, 'Name'),
-    email: (value) => validateEmail(value),
-    subject: (value) => validateRequired(value, 'Subject'),
-    message: (value) => {
-      const requiredCheck = validateRequired(value, 'Message');
-      if (!requiredCheck.isValid) return requiredCheck;
-      
-      return validateLength(value, 10, 1000, 'Message');
-    }
-  };
-
-  // Form validation hook
-  const {
-    values,
-    errors,
-    touched,
-    isSubmitting,
-    handleChange,
-    handleBlur,
-    handleSubmit,
-    resetForm,
-    isValid
-  } = useFormValidation(
-    { name: '', email: '', subject: '', message: '' },
-    validationSchema
-  );
+  // React Hook Form setup
+  const { register, handleSubmit, formState: { errors, isSubmitting, isValid }, reset } = useForm({
+    resolver: zodResolver(contactSchema),
+    mode: 'onChange',
+    defaultValues: { name: '', email: '', subject: '', message: '' }
+  });
 
   const onSubmit = async (formData) => {
     setError(null);
 
     try {
       await api.post('/public/contact', formData);
-      
+
       // Reset form
-      resetForm();
-      
+      reset();
+
       setShowSuccessToast(true);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to send message. Please try again.');
@@ -145,7 +124,7 @@ const Contact = () => {
   return (
     <div className="min-h-screen bg-cream">
       {/* Hero Section */}
-      <motion.div 
+      <motion.div
         className="relative bg-charcoal text-cream overflow-hidden pt-20"
         initial="initial"
         animate="animate"
@@ -158,20 +137,20 @@ const Contact = () => {
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-24">
-          <motion.div 
+          <motion.div
             className="text-center"
             variants={staggerContainer}
             initial="hidden"
             animate="visible"
           >
-            <motion.h1 
+            <motion.h1
               variants={staggerItem}
               className="font-serif font-bold text-5xl md:text-6xl lg:text-7xl leading-tight tracking-tight mb-4"
               style={{ color: '#F5F1E8' }}
             >
               Contact Us
             </motion.h1>
-            <motion.p 
+            <motion.p
               variants={staggerItem}
               className="text-lg md:text-xl max-w-2xl mx-auto"
               style={{ color: '#C4B5A0' }}
@@ -184,7 +163,7 @@ const Contact = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
-        <motion.div 
+        <motion.div
           className="grid grid-cols-1 lg:grid-cols-3 gap-8"
           variants={staggerContainer}
           initial="hidden"
@@ -254,26 +233,18 @@ const Contact = () => {
                     <Input
                       type="text"
                       id="name"
-                      name="name"
                       label="Your Name"
-                      required
-                      value={values.name}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      error={touched.name ? errors.name : null}
+                      {...register('name')}
+                      error={errors.name?.message}
                       placeholder="John Doe"
                     />
 
                     <Input
                       type="email"
                       id="email"
-                      name="email"
                       label="Email Address"
-                      required
-                      value={values.email}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      error={touched.email ? errors.email : null}
+                      {...register('email')}
+                      error={errors.email?.message}
                       placeholder="john@example.com"
                     />
                   </div>
@@ -281,26 +252,18 @@ const Contact = () => {
                   <Input
                     type="text"
                     id="subject"
-                    name="subject"
                     label="Subject"
-                    required
-                    value={values.subject}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={touched.subject ? errors.subject : null}
+                    {...register('subject')}
+                    error={errors.subject?.message}
                     placeholder="How can we help you?"
                   />
 
                   <Input.Textarea
                     id="message"
-                    name="message"
                     label="Message"
-                    required
-                    value={values.message}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={touched.message ? errors.message : null}
-                    placeholder="Please describe your inquiry in detail... (min 10 characters)"
+                    {...register('message')}
+                    error={errors.message?.message}
+                    placeholder="Please describe your inquiry in detail... (min 20 characters)"
                     rows={6}
                   />
 
@@ -324,7 +287,7 @@ const Contact = () => {
       {/* FAQ Section */}
       <div className="bg-white py-16 md:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div 
+          <motion.div
             className="text-center mb-12"
             variants={fadeInUp}
             initial="hidden"
@@ -335,7 +298,7 @@ const Contact = () => {
             <p className="body-lg text-text-secondary">Find quick answers to common questions</p>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto"
             variants={staggerContainer}
             initial="hidden"

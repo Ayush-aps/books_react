@@ -10,8 +10,12 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
 import Modal from '../../components/Modal';
 import ConfirmDialog from '../../components/ConfirmDialog';
-import useFormValidation from '../../hooks/useFormValidation';
-import { validateRequired, validatePhone, validateZipCode } from '../../utils/validation';
+// Removed: useFormValidation and manual validation utils
+
+// RHF Imports
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { addressSchema } from '../../schemas/allFormSchemas';
 
 const Addresses = () => {
   const navigate = useNavigate();
@@ -22,31 +26,17 @@ const Addresses = () => {
   const [editingAddress, setEditingAddress] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
-  // Validation schema
-  const validationSchema = {
-    fullName: (value) => validateRequired(value, 'Full Name'),
-    phone: (value) => validatePhone(value, true),
-    street: (value) => validateRequired(value, 'Street Address'),
-    city: (value) => validateRequired(value, 'City'),
-    state: (value) => validateRequired(value, 'State'),
-    zipCode: (value) => validateZipCode(value, true),
-    country: (value) => validateRequired(value, 'Country'),
-  };
-
-  // Form validation hook
+  // React Hook Form setup
   const {
-    values,
-    errors,
-    touched,
-    isSubmitting,
-    handleChange,
-    handleBlur,
+    register,
     handleSubmit,
-    resetForm,
-    setFieldValue,
-    isValid
-  } = useFormValidation(
-    {
+    reset,
+    setValue,
+    formState: { errors, isSubmitting, isValid }
+  } = useForm({
+    resolver: zodResolver(addressSchema),
+    mode: 'onTouched',
+    defaultValues: {
       fullName: '',
       phone: '',
       street: '',
@@ -55,9 +45,8 @@ const Addresses = () => {
       zipCode: '',
       country: 'United States',
       isDefault: false
-    },
-    validationSchema
-  );
+    }
+  });
 
   useEffect(() => {
     fetchAddresses();
@@ -77,30 +66,42 @@ const Addresses = () => {
   };
 
   const handleAddAddress = () => {
-    resetForm();
     setEditingAddress(null);
+    reset({
+      fullName: '',
+      phone: '',
+      street: '',
+      city: '',
+      state: '',
+      zipCode: '',
+      country: 'United States',
+      isDefault: false
+    });
     setShowAddModal(true);
   };
 
   const handleEditAddress = (address) => {
     setEditingAddress(address);
-    setFieldValue('fullName', address.name || address.fullName); // Backend uses 'name'
-    setFieldValue('phone', address.phone);
-    setFieldValue('street', address.street);
-    setFieldValue('city', address.city);
-    setFieldValue('state', address.state);
-    setFieldValue('zipCode', address.zipCode);
-    setFieldValue('country', address.country || 'United States');
-    setFieldValue('isDefault', address.isDefault || false);
+    // Map address data to form fields
+    reset({
+      fullName: address.name || address.fullName,
+      phone: address.phone,
+      street: address.street,
+      city: address.city,
+      state: address.state,
+      zipCode: address.zipCode,
+      country: address.country || 'United States',
+      isDefault: address.isDefault || false
+    });
     setShowAddModal(true);
   };
 
-  const onSubmitAddress = async (formData) => {
+  const onSubmitAddress = async (data) => {
     try {
       if (editingAddress) {
-        await api.put(`/buyer/addresses/${editingAddress._id}`, formData);
+        await api.put(`/buyer/addresses/${editingAddress._id}`, data);
       } else {
-        await api.post('/buyer/addresses', formData);
+        await api.post('/buyer/addresses', data);
       }
 
       setShowAddModal(false);
@@ -254,17 +255,14 @@ const Addresses = () => {
                 </label>
                 <input
                   type="text"
-                  name="fullName"
-                  value={values.fullName}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  className={`w-full px-3 py-2 border ${touched.fullName && errors.fullName
+                  {...register("fullName")}
+                  className={`w-full px-3 py-2 border ${errors.fullName
                     ? 'border-red-500 focus:ring-red-500'
                     : 'border-gray-300 focus:ring-blue-500'
                     } rounded-md focus:outline-none focus:ring-2`}
                 />
-                {touched.fullName && errors.fullName && (
-                  <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>
+                {errors.fullName && (
+                  <p className="text-red-500 text-sm mt-1">{errors.fullName.message}</p>
                 )}
               </div>
 
@@ -274,17 +272,14 @@ const Addresses = () => {
                 </label>
                 <input
                   type="tel"
-                  name="phone"
-                  value={values.phone}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  className={`w-full px-3 py-2 border ${touched.phone && errors.phone
+                  {...register("phone")}
+                  className={`w-full px-3 py-2 border ${errors.phone
                     ? 'border-red-500 focus:ring-red-500'
                     : 'border-gray-300 focus:ring-blue-500'
                     } rounded-md focus:outline-none focus:ring-2`}
                 />
-                {touched.phone && errors.phone && (
-                  <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
+                {errors.phone && (
+                  <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>
                 )}
               </div>
 
@@ -294,17 +289,14 @@ const Addresses = () => {
                 </label>
                 <input
                   type="text"
-                  name="street"
-                  value={values.street}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  className={`w-full px-3 py-2 border ${touched.street && errors.street
+                  {...register("street")}
+                  className={`w-full px-3 py-2 border ${errors.street
                     ? 'border-red-500 focus:ring-red-500'
                     : 'border-gray-300 focus:ring-blue-500'
                     } rounded-md focus:outline-none focus:ring-2`}
                 />
-                {touched.street && errors.street && (
-                  <p className="text-red-500 text-sm mt-1">{errors.street}</p>
+                {errors.street && (
+                  <p className="text-red-500 text-sm mt-1">{errors.street.message}</p>
                 )}
               </div>
 
@@ -315,17 +307,14 @@ const Addresses = () => {
                   </label>
                   <input
                     type="text"
-                    name="city"
-                    value={values.city}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    className={`w-full px-3 py-2 border ${touched.city && errors.city
+                    {...register("city")}
+                    className={`w-full px-3 py-2 border ${errors.city
                       ? 'border-red-500 focus:ring-red-500'
                       : 'border-gray-300 focus:ring-blue-500'
                       } rounded-md focus:outline-none focus:ring-2`}
                   />
-                  {touched.city && errors.city && (
-                    <p className="text-red-500 text-sm mt-1">{errors.city}</p>
+                  {errors.city && (
+                    <p className="text-red-500 text-sm mt-1">{errors.city.message}</p>
                   )}
                 </div>
 
@@ -335,17 +324,14 @@ const Addresses = () => {
                   </label>
                   <input
                     type="text"
-                    name="state"
-                    value={values.state}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    className={`w-full px-3 py-2 border ${touched.state && errors.state
+                    {...register("state")}
+                    className={`w-full px-3 py-2 border ${errors.state
                       ? 'border-red-500 focus:ring-red-500'
                       : 'border-gray-300 focus:ring-blue-500'
                       } rounded-md focus:outline-none focus:ring-2`}
                   />
-                  {touched.state && errors.state && (
-                    <p className="text-red-500 text-sm mt-1">{errors.state}</p>
+                  {errors.state && (
+                    <p className="text-red-500 text-sm mt-1">{errors.state.message}</p>
                   )}
                 </div>
               </div>
@@ -357,17 +343,14 @@ const Addresses = () => {
                   </label>
                   <input
                     type="text"
-                    name="zipCode"
-                    value={values.zipCode}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    className={`w-full px-3 py-2 border ${touched.zipCode && errors.zipCode
+                    {...register("zipCode")}
+                    className={`w-full px-3 py-2 border ${errors.zipCode
                       ? 'border-red-500 focus:ring-red-500'
                       : 'border-gray-300 focus:ring-blue-500'
                       } rounded-md focus:outline-none focus:ring-2`}
                   />
-                  {touched.zipCode && errors.zipCode && (
-                    <p className="text-red-500 text-sm mt-1">{errors.zipCode}</p>
+                  {errors.zipCode && (
+                    <p className="text-red-500 text-sm mt-1">{errors.zipCode.message}</p>
                   )}
                 </div>
 
@@ -377,12 +360,15 @@ const Addresses = () => {
                   </label>
                   <input
                     type="text"
-                    name="country"
-                    value={values.country}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    {...register("country")}
+                    className={`w-full px-3 py-2 border ${errors.country
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-gray-300 focus:ring-blue-500'
+                      } rounded-md focus:outline-none focus:ring-2`}
                   />
+                  {errors.country && (
+                    <p className="text-red-500 text-sm mt-1">{errors.country.message}</p>
+                  )}
                 </div>
               </div>
 
@@ -390,9 +376,7 @@ const Addresses = () => {
                 <input
                   type="checkbox"
                   id="isDefault"
-                  name="isDefault"
-                  checked={values.isDefault}
-                  onChange={handleChange}
+                  {...register("isDefault")}
                   className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <label htmlFor="isDefault" className="ml-2 text-sm text-gray-700">
