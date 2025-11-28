@@ -162,6 +162,9 @@ const UploadBook = () => {
 
   const formats = ['paperback', 'hardcover', 'ebook', 'audiobook'];
   const conditions = ['new', 'used'];
+  const LANGUAGES = ['English', 'Hindi', 'Punjabi', 'French', 'Spanish', 'German', 'Marathi', 'Telugu'];
+
+  const [languageMode, setLanguageMode] = useState('select'); // 'select' | 'manual'
 
   // React Hook Form setup
   const {
@@ -260,13 +263,28 @@ const UploadBook = () => {
       ? `${bookData.title}: ${bookData.subtitle}`
       : bookData.title;
 
+    // Format date for date input (YYYY-MM-DD)
+    let formattedDate = '';
+    if (bookData.publishedDate) {
+      const dateParts = bookData.publishedDate.split('-');
+      if (dateParts.length === 1) {
+        // YYYY -> YYYY-01-01
+        formattedDate = `${dateParts[0]}-01-01`;
+      } else if (dateParts.length === 2) {
+        // YYYY-MM -> YYYY-MM-01
+        formattedDate = `${dateParts[0]}-${dateParts[1]}-01`;
+      } else {
+        formattedDate = bookData.publishedDate;
+      }
+    }
+
     reset({
       title: fullTitle || '',
       author: bookData.author || '',
       description: bookData.description || '',
       isbn: bookData.isbn || '',
       publisher: bookData.publisher || '',
-      publishedDate: bookData.publishedDate || '',
+      publishedDate: formattedDate,
       pageCount: bookData.pageCount || '',
       language: bookData.language || 'English',
       genre: bookData.genres && bookData.genres.length > 0 ? bookData.genres[0] : '',
@@ -278,6 +296,14 @@ const UploadBook = () => {
       condition: 'new',
       format: ''
     });
+
+    // Set language mode based on whether the fetched language is in our list
+    const fetchedLang = bookData.language || 'English';
+    if (LANGUAGES.includes(fetchedLang)) {
+      setLanguageMode('select');
+    } else {
+      setLanguageMode('manual');
+    }
   };
 
   // Handle mode switch
@@ -600,11 +626,12 @@ const UploadBook = () => {
                   />
 
                   <Input
+                    type="date"
                     id="publishedDate"
                     label="Published Date"
                     {...register("publishedDate")}
                     error={errors.publishedDate?.message}
-                    placeholder="YYYY or YYYY-MM-DD"
+                    placeholder="Select date"
                   />
 
                   <Input
@@ -617,13 +644,46 @@ const UploadBook = () => {
                     placeholder="Number of pages"
                   />
 
-                  <Input
-                    id="language"
-                    label="Language"
-                    {...register("language")}
-                    error={errors.language?.message}
-                    placeholder="e.g., English"
-                  />
+                  <div className="relative">
+                    {languageMode === 'select' ? (
+                      <Input.Select
+                        id="language"
+                        label="Language"
+                        {...register("language")}
+                        error={errors.language?.message}
+                      >
+                        {LANGUAGES.map(lang => (
+                          <option key={lang} value={lang}>{lang}</option>
+                        ))}
+                      </Input.Select>
+                    ) : (
+                      <Input
+                        id="language"
+                        label="Language"
+                        {...register("language")}
+                        error={errors.language?.message}
+                        placeholder="e.g., English"
+                      />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newMode = languageMode === 'select' ? 'manual' : 'select';
+                        setLanguageMode(newMode);
+                        // Reset value when switching to default 'English' if going to select, or empty if manual?
+                        // Actually, let's just keep the value if it matches, or reset if not.
+                        // For simplicity, let's just switch mode. The user can select/type.
+                        if (newMode === 'select') {
+                          setValue('language', 'English');
+                        } else {
+                          setValue('language', '');
+                        }
+                      }}
+                      className="absolute top-0 right-0 -mt-6 text-xs text-brown hover:underline focus:outline-none"
+                    >
+                      {languageMode === 'select' ? 'Type manually' : 'Select from list'}
+                    </button>
+                  </div>
                 </div>
               </Card.Body>
             </Card>

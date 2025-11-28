@@ -117,7 +117,7 @@ const BookDetails = () => {
     <div className="min-h-screen bg-cream py-12">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <motion.div 
+        <motion.div
           className="mb-8"
           variants={fadeInUp}
           initial="hidden"
@@ -135,7 +135,7 @@ const BookDetails = () => {
         </motion.div>
 
         {error && (
-          <motion.div 
+          <motion.div
             className="mb-6"
             variants={fadeInUp}
             initial="hidden"
@@ -157,8 +157,8 @@ const BookDetails = () => {
                 {/* Book Cover */}
                 <div className="aspect-[3/4] bg-taupe/10 rounded-lg overflow-hidden mb-6">
                   {book.coverImage ? (
-                    <img 
-                      src={book.coverImage} 
+                    <img
+                      src={book.coverImage}
                       alt={book.title}
                       className="w-full h-full object-cover"
                     />
@@ -174,9 +174,9 @@ const BookDetails = () => {
                 {/* Approval Status */}
                 <div className="mb-6">
                   <p className="body-sm text-charcoal/60 mb-2">Approval Status</p>
-                  <Badge 
-                    variant={book.isApproved ? 'success' : book.rejectionReason ? 'error' : 'warning'} 
-                    size="lg" 
+                  <Badge
+                    variant={book.isApproved ? 'success' : book.rejectionReason ? 'error' : 'warning'}
+                    size="lg"
                     className="w-full justify-center"
                   >
                     {book.isApproved ? 'Approved' : book.rejectionReason ? 'Rejected' : 'Pending Review'}
