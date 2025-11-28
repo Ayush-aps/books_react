@@ -136,6 +136,7 @@ const ComplaintDetails = () => {
       });
 
       setComplaint(response.data.data.complaint);
+      setNewStatus(response.data.data.complaint.status);
       setShowResolutionForm(false);
       resetResolution();
       setToastMessage('Complaint resolved successfully');
@@ -353,8 +354,8 @@ const ComplaintDetails = () => {
                         <div
                           key={index}
                           className={`p-4 rounded-lg ${comment.userRole === 'admin'
-                              ? 'bg-blue-50 border border-blue-200'
-                              : 'bg-gray-50 border border-gray-200'
+                            ? 'bg-blue-50 border border-blue-200'
+                            : 'bg-gray-50 border border-gray-200'
                             }`}
                         >
                           <div className="flex items-center justify-between mb-2">

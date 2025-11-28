@@ -18,13 +18,13 @@ const Complaints = () => {
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // Filters
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [roleFilter, setRoleFilter] = useState('all');
-  
+
   // Pagination
   const [page, setPage] = useState(1);
   const [limit] = useState(20);
@@ -42,15 +42,15 @@ const Complaints = () => {
         page: page.toString(),
         limit: limit.toString()
       });
-      
+
       if (statusFilter !== 'all') params.append('status', statusFilter);
       if (priorityFilter !== 'all') params.append('priority', priorityFilter);
       if (categoryFilter !== 'all') params.append('category', categoryFilter);
-      if (roleFilter !== 'all') params.append('userRole', roleFilter);
+      if (roleFilter !== 'all') params.append('role', roleFilter);
 
       const response = await api.get(`/admin/complaints?${params.toString()}`);
       const data = response.data.data;
-      
+
       setComplaints(data.complaints || []);
       setTotalPages(data.pagination?.totalPages || 1);
       setTotalComplaints(data.pagination?.total || 0);
@@ -92,8 +92,15 @@ const Complaints = () => {
   };
 
   const getUniqueCategories = () => {
-    const buyerCategories = ['Product Quality', 'Delivery Issue', 'Refund Request', 'Damaged Item', 'Wrong Item', 'Other'];
-    const sellerCategories = ['Payment Issue', 'Platform Fee Dispute', 'Buyer Issue', 'Account Issue', 'Technical Problem', 'Policy Clarification', 'Book Upload Issue', 'Other'];
+    // Must match backend Complaint model enum
+    const buyerCategories = [
+      'Product Quality', 'Delivery Issue', 'Wrong Item', 'Damaged Item',
+      'Missing Item', 'Seller Communication', 'Refund Issue', 'Other'
+    ];
+    const sellerCategories = [
+      'Payment Issue', 'Platform Fee Dispute', 'Buyer Issue',
+      'Technical Problem', 'Account Issue', 'Policy Violation Report'
+    ];
     return [...new Set([...buyerCategories, ...sellerCategories])];
   };
 
@@ -252,7 +259,7 @@ const Complaints = () => {
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                 </svg>
-                                {complaint.user?.name || 'Unknown'} 
+                                {complaint.user?.name || 'Unknown'}
                                 <Badge variant="secondary" className="ml-1">{complaint.userRole}</Badge>
                               </span>
                               <span className="flex items-center gap-1">
