@@ -6,11 +6,12 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { bookListingSchema } from '../../schemas/allFormSchemas';
 import { sellerService } from '../../services/sellerService';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
-import useFormValidation from '../../hooks/useFormValidation';
-import { validateRequired, validateNumber, validateURL, validateISBN, validateYear } from '../../utils/validation';
 
 const EditBook = () => {
   const { id } = useParams();
@@ -19,7 +20,7 @@ const EditBook = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [bookData, setBookData] = useState(null);
-  
+
   // Check if this is a resubmission
   const isResubmitMode = searchParams.get('resubmit') === 'true';
 
@@ -29,49 +30,25 @@ const EditBook = () => {
     'Horror', 'Adventure', 'Young Adult', 'Children', 'Comics', 'Other'
   ];
 
-  // Validation schema
-  const validationSchema = {
-    title: (value) => validateRequired(value, 'Book Title'),
-    author: (value) => validateRequired(value, 'Author'),
-    genre: (value) => validateRequired(value, 'Genre'),
-    price: (value) => validateNumber(value, 0.01, undefined, 'Price'),
-    discountPercentage: (value) => {
-      if (!value) return { isValid: true, error: '' };
-      return validateNumber(value, 0, 100, 'Discount Percentage');
-    },
-    stock: (value) => validateNumber(value, 0, undefined, 'Stock Quantity'),
-    isbn: (value) => validateISBN(value, false),
-    publicationYear: (value) => validateYear(value, false),
-    coverImage: (value) => validateURL(value, false),
-  };
-
-  // Form validation hook
-  const {
-    values,
-    errors,
-    touched,
-    isSubmitting,
-    handleChange,
-    handleBlur,
-    handleSubmit,
-    setFieldValue,
-    isValid
-  } = useFormValidation(
-    {
+  // React Hook Form setup
+  const { register, handleSubmit, formState: { errors, isSubmitting }, reset, setValue } = useForm({
+    resolver: zodResolver(bookListingSchema),
+    defaultValues: {
       title: '',
-      author: '',
-      genre: '',
       price: '',
-      discountPercentage: '',
-      stock: '',
-      condition: 'new',
-      description: '',
       isbn: '',
       publicationYear: '',
-      coverImage: ''
-    },
-    validationSchema
-  );
+      description: ''
+    }
+  });
+
+  // Additional form state not in schema
+  const [author, setAuthor] = useState('');
+  const [genre, setGenre] = useState('');
+  const [stock, setStock] = useState('');
+  const [condition, setCondition] = useState('new');
+  const [discountPercentage, setDiscountPercentage] = useState('');
+  const [coverImage, setCoverImage] = useState('');
 
   useEffect(() => {
     fetchBookDetails();
@@ -82,23 +59,26 @@ const EditBook = () => {
       setLoading(true);
       const response = await sellerService.getBook(id);
       const book = response.data?.book || response.data;
-      
+
       // Store full book data for rejection info
       setBookData(book);
 
-      // Update form values using setFieldValue
-      setFieldValue('title', book.title || '');
-      setFieldValue('author', book.author || '');
-      // Handle genre - it might be an array in the database
-      setFieldValue('genre', Array.isArray(book.genres) ? book.genres[0] : (book.genre || ''));
-      setFieldValue('price', book.price || '');
-      setFieldValue('discountPercentage', book.discountPercentage || '');
-      setFieldValue('stock', book.stock || '');
-      setFieldValue('condition', book.condition || 'new');
-      setFieldValue('description', book.description || '');
-      setFieldValue('isbn', book.isbn || '');
-      setFieldValue('publicationYear', book.publishedDate ? new Date(book.publishedDate).getFullYear() : (book.publicationYear || ''));
-      setFieldValue('coverImage', book.coverImage || '');
+      // Update form values using React Hook Form reset
+      reset({
+        title: book.title || '',
+        price: book.price || '',
+        isbn: book.isbn || '',
+        publicationYear: book.publishedDate ? new Date(book.publishedDate).getFullYear() : (book.publicationYear || ''),
+        description: book.description || ''
+      });
+
+      // Update additional state
+      setAuthor(book.author || '');
+      setGenre(Array.isArray(book.genres) ? book.genres[0] : (book.genre || ''));
+      setStock(book.stock || '');
+      setCondition(book.condition || 'new');
+      setDiscountPercentage(book.discountPercentage || '');
+      setCoverImage(book.coverImage || '');
 
       setError(null);
     } catch (err) {
@@ -112,22 +92,24 @@ const EditBook = () => {
     setError(null);
 
     try {
-      // Prepare data
+      // Prepare data with additional fields
       const updateData = {
         ...formData,
-        price: parseFloat(formData.price),
-        stock: parseInt(formData.stock),
-        discountPercentage: formData.discountPercentage ? parseFloat(formData.discountPercentage) : 0,
-        publicationYear: formData.publicationYear ? parseInt(formData.publicationYear) : undefined,
+        author,
+        genre,
+        stock: parseInt(stock),
+        condition,
+        discountPercentage: discountPercentage ? parseFloat(discountPercentage) : 0,
+        coverImage: coverImage || undefined,
         // Include resubmit flag if this is a rejected book being resubmitted
         resubmit: isResubmitMode || (bookData?.rejectionReason ? true : false)
       };
 
       const response = await sellerService.updateBook(id, updateData);
-      const successMessage = response.data?.isResubmission 
+      const successMessage = response.data?.isResubmission
         ? 'Book resubmitted successfully! It is now pending admin approval.'
         : 'Book updated successfully!';
-      
+
       navigate('/seller/inventory', { state: { success: successMessage } });
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update book');
@@ -151,7 +133,7 @@ const EditBook = () => {
             {bookData?.rejectionReason ? 'Edit & Resubmit Book' : 'Edit Book'}
           </h1>
           <p className="text-gray-600 mt-2">
-            {bookData?.rejectionReason 
+            {bookData?.rejectionReason
               ? 'Make the required changes and resubmit for approval'
               : 'Update book information'
             }
@@ -211,18 +193,15 @@ const EditBook = () => {
                 <input
                   type="text"
                   id="title"
-                  name="title"
-                  value={values.title}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  className={`w-full px-3 py-2 border ${touched.title && errors.title
-                      ? 'border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:ring-blue-500'
+                  {...register('title')}
+                  className={`w-full px-3 py-2 border ${errors.title
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300 focus:ring-blue-500'
                     } rounded-md focus:outline-none focus:ring-2`}
                   placeholder="Enter book title"
                 />
-                {touched.title && errors.title && (
-                  <p className="text-red-500 text-sm mt-1">{errors.title}</p>
+                {errors.title && (
+                  <p className="text-red-500 text-sm mt-1">{errors.title.message}</p>
                 )}
               </div>
 
@@ -233,18 +212,15 @@ const EditBook = () => {
                 <input
                   type="text"
                   id="author"
-                  name="author"
-                  value={values.author}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  className={`w-full px-3 py-2 border ${touched.author && errors.author
-                      ? 'border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:ring-blue-500'
+                  {...register('author')}
+                  className={`w-full px-3 py-2 border ${errors.author
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300 focus:ring-blue-500'
                     } rounded-md focus:outline-none focus:ring-2`}
                   placeholder="Author name"
                 />
-                {touched.author && errors.author && (
-                  <p className="text-red-500 text-sm mt-1">{errors.author}</p>
+                {errors.author && (
+                  <p className="text-red-500 text-sm mt-1">{errors.author.message}</p>
                 )}
               </div>
 
@@ -254,22 +230,19 @@ const EditBook = () => {
                 </label>
                 <select
                   id="genre"
-                  name="genre"
-                  value={values.genre}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  className={`w-full px-3 py-2 border ${touched.genre && errors.genre
-                      ? 'border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:ring-blue-500'
+                  {...register('genre')}
+                  className={`w-full px-3 py-2 border ${errors.genre
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300 focus:ring-blue-500'
                     } rounded-md focus:outline-none focus:ring-2`}
                 >
                   <option value="">Select genre</option>
-                  {genres.map(genre => (
-                    <option key={genre} value={genre}>{genre}</option>
+                  {genres.map(g => (
+                    <option key={g} value={g}>{g}</option>
                   ))}
                 </select>
-                {touched.genre && errors.genre && (
-                  <p className="text-red-500 text-sm mt-1">{errors.genre}</p>
+                {errors.genre && (
+                  <p className="text-red-500 text-sm mt-1">{errors.genre.message}</p>
                 )}
               </div>
 
@@ -280,18 +253,15 @@ const EditBook = () => {
                 <input
                   type="text"
                   id="isbn"
-                  name="isbn"
-                  value={values.isbn}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  className={`w-full px-3 py-2 border ${touched.isbn && errors.isbn
-                      ? 'border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:ring-blue-500'
+                  {...register('isbn')}
+                  className={`w-full px-3 py-2 border ${errors.isbn
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300 focus:ring-blue-500'
                     } rounded-md focus:outline-none focus:ring-2`}
                   placeholder="10 or 13 digit ISBN"
                 />
-                {touched.isbn && errors.isbn && (
-                  <p className="text-red-500 text-sm mt-1">{errors.isbn}</p>
+                {errors.isbn && (
+                  <p className="text-red-500 text-sm mt-1">{errors.isbn.message}</p>
                 )}
               </div>
 
@@ -302,20 +272,17 @@ const EditBook = () => {
                 <input
                   type="number"
                   id="publicationYear"
-                  name="publicationYear"
-                  value={values.publicationYear}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
+                  {...register('publicationYear')}
                   min="1800"
                   max={new Date().getFullYear()}
-                  className={`w-full px-3 py-2 border ${touched.publicationYear && errors.publicationYear
-                      ? 'border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:ring-blue-500'
+                  className={`w-full px-3 py-2 border ${errors.publicationYear
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300 focus:ring-blue-500'
                     } rounded-md focus:outline-none focus:ring-2`}
                   placeholder="YYYY"
                 />
-                {touched.publicationYear && errors.publicationYear && (
-                  <p className="text-red-500 text-sm mt-1">{errors.publicationYear}</p>
+                {errors.publicationYear && (
+                  <p className="text-red-500 text-sm mt-1">{errors.publicationYear.message}</p>
                 )}
               </div>
             </div>
@@ -332,20 +299,17 @@ const EditBook = () => {
                 <input
                   type="number"
                   id="price"
-                  name="price"
-                  value={values.price}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
+                  {...register('price')}
                   min="0"
                   step="0.01"
-                  className={`w-full px-3 py-2 border ${touched.price && errors.price
-                      ? 'border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:ring-blue-500'
+                  className={`w-full px-3 py-2 border ${errors.price
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300 focus:ring-blue-500'
                     } rounded-md focus:outline-none focus:ring-2`}
                   placeholder="0.00"
                 />
-                {touched.price && errors.price && (
-                  <p className="text-red-500 text-sm mt-1">{errors.price}</p>
+                {errors.price && (
+                  <p className="text-red-500 text-sm mt-1">{errors.price.message}</p>
                 )}
               </div>
 
@@ -356,20 +320,17 @@ const EditBook = () => {
                 <input
                   type="number"
                   id="discountPercentage"
-                  name="discountPercentage"
-                  value={values.discountPercentage}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
+                  {...register('discountPercentage')}
                   min="0"
                   max="100"
-                  className={`w-full px-3 py-2 border ${touched.discountPercentage && errors.discountPercentage
-                      ? 'border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:ring-blue-500'
+                  className={`w-full px-3 py-2 border ${errors.discountPercentage
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300 focus:ring-blue-500'
                     } rounded-md focus:outline-none focus:ring-2`}
                   placeholder="0"
                 />
-                {touched.discountPercentage && errors.discountPercentage && (
-                  <p className="text-red-500 text-sm mt-1">{errors.discountPercentage}</p>
+                {errors.discountPercentage && (
+                  <p className="text-red-500 text-sm mt-1">{errors.discountPercentage.message}</p>
                 )}
               </div>
 
@@ -380,19 +341,16 @@ const EditBook = () => {
                 <input
                   type="number"
                   id="stock"
-                  name="stock"
-                  value={values.stock}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
+                  {...register('stock')}
                   min="0"
-                  className={`w-full px-3 py-2 border ${touched.stock && errors.stock
-                      ? 'border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:ring-blue-500'
+                  className={`w-full px-3 py-2 border ${errors.stock
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300 focus:ring-blue-500'
                     } rounded-md focus:outline-none focus:ring-2`}
                   placeholder="0"
                 />
-                {touched.stock && errors.stock && (
-                  <p className="text-red-500 text-sm mt-1">{errors.stock}</p>
+                {errors.stock && (
+                  <p className="text-red-500 text-sm mt-1">{errors.stock.message}</p>
                 )}
               </div>
             </div>
@@ -405,16 +363,18 @@ const EditBook = () => {
             </label>
             <select
               id="condition"
-              name="condition"
-              value={values.condition}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              {...register('condition')}
+              className={`w-full px-3 py-2 border ${errors.condition
+                ? 'border-red-500 focus:ring-red-500'
+                : 'border-gray-300 focus:ring-blue-500'
+                } rounded-md focus:outline-none focus:ring-2`}
             >
               <option value="new">New</option>
               <option value="used">Used</option>
             </select>
+            {errors.condition && (
+              <p className="text-red-500 text-sm mt-1">{errors.condition.message}</p>
+            )}
           </div>
 
           {/* Description */}
@@ -424,14 +384,14 @@ const EditBook = () => {
             </label>
             <textarea
               id="description"
-              name="description"
-              value={values.description}
-              onChange={handleChange}
-              onBlur={handleBlur}
+              {...register('description')}
               rows="5"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className={`w-full px-3 py-2 border ${errors.description ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none`}
               placeholder="Provide a detailed description of the book..."
             />
+            {errors.description && (
+              <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>
+            )}
           </div>
 
           {/* Cover Image URL */}
@@ -442,18 +402,15 @@ const EditBook = () => {
             <input
               type="url"
               id="coverImage"
-              name="coverImage"
-              value={values.coverImage}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              className={`w-full px-3 py-2 border ${touched.coverImage && errors.coverImage
-                  ? 'border-red-500 focus:ring-red-500'
-                  : 'border-gray-300 focus:ring-blue-500'
+              {...register('coverImage')}
+              className={`w-full px-3 py-2 border ${errors.coverImage
+                ? 'border-red-500 focus:ring-red-500'
+                : 'border-gray-300 focus:ring-blue-500'
                 } rounded-md focus:outline-none focus:ring-2`}
               placeholder="https://example.com/cover.jpg"
             />
-            {touched.coverImage && errors.coverImage && (
-              <p className="text-red-500 text-sm mt-1">{errors.coverImage}</p>
+            {errors.coverImage && (
+              <p className="text-red-500 text-sm mt-1">{errors.coverImage.message}</p>
             )}
             <p className="text-sm text-gray-500 mt-1">
               Enter a direct URL to the book cover image
@@ -473,11 +430,10 @@ const EditBook = () => {
             <button
               type="submit"
               disabled={isSubmitting || !isValid}
-              className={`flex-1 py-3 px-6 rounded-lg font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors shadow-md ${
-                bookData?.rejectionReason
+              className={`flex-1 py-3 px-6 rounded-lg font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors shadow-md ${bookData?.rejectionReason
                   ? 'bg-emerald-600 text-white hover:bg-emerald-700 border-2 border-emerald-700'
                   : 'bg-blue-600 text-white hover:bg-blue-700 border-2 border-blue-700'
-              }`}
+                }`}
             >
               {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">

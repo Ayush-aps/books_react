@@ -1,71 +1,95 @@
 // src/pages/Register.jsx
 /**
- * Register Page
+ * Register Page - Refactored with React Hook Form and Zod
  */
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate, Link } from 'react-router-dom';
-import { register as registerAction } from '../redux/actions/authActions'; // Renamed import to avoid conflict
-import Button from '../components/Button';
-import Card from '../components/Card';
-import Input from '../components/Input';
-import ErrorMessage from '../components/ErrorMessage';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { register as registerAction } from '../../redux/actions/authActions';
+// Removed: useFormValidation
+// Removed: validation utilities
+import Button from '../../components/Button';
+import Card from '../../components/Card';
+import Input from '../../components/Input';
+import ErrorMessage from '../../components/ErrorMessage';
 import { motion } from 'framer-motion';
-import { fadeInUp } from '../utils/animations';
+import { fadeInUp } from '../../utils/animations';
+import SuccessToast from '../../components/SuccessToast';
 
 // RHF and Zod Imports
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { registerSchema } from '../schemas/authSchemas'; // Import the Zod schema
+import { registerSchema } from '../../schemas/allFormSchemas'; // Import Zod schema
 
 const Register = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const { loading, registerErrors, isAuthenticated, user } = useSelector(state => state.auth);
 
-  // RHF Setup
-  const { 
-    register, 
-    handleSubmit, 
-    formState: { errors, isValid, isSubmitting } 
+  // Get message and email from location state (from login redirect)
+  const redirectMessage = location.state?.message;
+  const prefillEmail = location.state?.email || '';
+
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState('success');
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isValid, isSubmitting }
   } = useForm({
-    resolver: zodResolver(registerSchema), // Connects Zod validation
+    resolver: zodResolver(registerSchema),
     mode: 'onTouched',
-    defaultValues: { name: '', email: '', password: '', password2: '', role: 'buyer' }
+    defaultValues: { name: '', email: prefillEmail, password: '', password2: '', role: 'buyer' }
   });
 
-  // Scroll to top when component mounts
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
+  // Scroll and Redirect effects remain the same
+  useEffect(() => { window.scrollTo(0, 0); }, []);
 
-  // Redirect if already logged in
   useEffect(() => {
     if (isAuthenticated && user) {
       const role = user.role;
-      navigate(role === 'admin' ? '/admin/dashboard' : role === 'seller' ? '/seller/dashboard' : '/buyer/dashboard');
+      navigate(role === 'admin' ? '/admin/dashboard' : '/');
     }
   }, [isAuthenticated, user, navigate]);
 
+  // Show toast if redirected with a message
+  useEffect(() => {
+    if (redirectMessage) {
+      setToastMessage(redirectMessage);
+      setToastType('info');
+      setShowToast(true);
+      // Clear state to prevent showing again on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [redirectMessage]);
+
   const onSubmit = async (data) => {
     // RHF guarantees data is valid based on registerSchema
+    // Note: RHF is role-agnostic; it just passes the form data.
     const result = await dispatch(registerAction(data));
 
     if (result.success) {
-      navigate('/login');
+      navigate('/login', {
+        state: {
+          message: 'Registration successful! Please login to continue.',
+          email: data.email
+        }
+      });
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-cream py-12 px-4 sm:px-6 lg:px-8">
-      <motion.div 
+      <motion.div
         className="max-w-md w-full"
         variants={fadeInUp}
         initial="hidden"
         animate="visible"
       >
-        {/* Header structure remains the same */}
         <div className="text-center mb-8">
           <h2 className="heading-1 text-charcoal mb-2">Join Our Community</h2>
           <p className="body text-charcoal/70">Create your account to start exploring</p>
@@ -85,8 +109,6 @@ const Register = () => {
               <div className="space-y-4">
                 <Input
                   id="name"
-                  name="name"
-                  type="text"
                   label="Full Name"
                   placeholder="Enter your full name"
                   required
@@ -96,9 +118,8 @@ const Register = () => {
 
                 <Input
                   id="email"
-                  name="email"
-                  type="email"
                   label="Email Address"
+                  type="email"
                   placeholder="Enter your email"
                   required
                   {...register("email")}
@@ -107,35 +128,36 @@ const Register = () => {
 
                 <Input
                   id="password"
-                  name="password"
-                  type="password"
                   label="Password"
+                  type="password"
                   placeholder="Create a password"
                   required
                   {...register("password")}
                   error={errors.password?.message}
-                  helpText="Min 8 characters, with Uppercase, Lowercase, Number, and Special Character."
+                  // Password complexity note is now based on Zod's strict regex
+                  helpText="Min 8 chars, with Uppercase, Lowercase, Number, and Special Character."
                 />
 
                 <Input
                   id="password2"
-                  name="password2"
-                  type="password"
                   label="Confirm Password"
+                  type="password"
                   placeholder="Confirm your password"
                   required
                   {...register("password2")}
+                  // Error shows "Passwords do not match" if the refine() check fails
                   error={errors.password2?.message}
                 />
 
                 <Input.Select
                   id="role"
-                  name="role"
                   label="Register As"
                   required
                   {...register("role")}
                   error={errors.role?.message}
                 >
+                  {/* Keep the initial blank/default option */}
+                  <option value="">Select your role</option>
                   <option value="buyer">Buyer - Browse and purchase books</option>
                   <option value="seller">Seller - List and sell books</option>
                 </Input.Select>
@@ -147,24 +169,34 @@ const Register = () => {
                 size="lg"
                 fullWidth
                 disabled={loading || isSubmitting || !isValid}
-                loading={loading || isSubmitting}
+                isLoading={loading || isSubmitting}
               >
                 {loading || isSubmitting ? 'Creating account...' : 'Create Account'}
               </Button>
             </form>
 
             <div className="mt-6 text-center">
-              <p className="body-sm text-charcoal/70">
+              <p className="body-sm text-charcoal/60">
                 Already have an account?{' '}
-                <Link to="/login" className="text-brown hover:text-brown/80 font-semibold transition-colors">
+                <Link to="/login" className="text-brown font-semibold hover:text-accent-brown transition-colors">
                   Sign in
                 </Link>
               </p>
             </div>
           </Card.Body>
         </Card>
-        {/* Help Links remain the same */}
       </motion.div>
+
+      {/* Toast Notification */}
+      {showToast && (
+        <SuccessToast
+          message={toastMessage}
+          type={toastType}
+          onClose={() => setShowToast(false)}
+          duration={5000}
+          position="top-center"
+        />
+      )}
     </div>
   );
 };

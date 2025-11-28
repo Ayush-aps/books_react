@@ -6,22 +6,18 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import api from '../../services/api';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import ErrorMessage from '../../components/ErrorMessage';
 import SuccessToast from '../../components/SuccessToast';
 import { fadeInUp } from '../../utils/animations';
+import { complaintSchema } from '../../schemas/allFormSchemas';
 
 const RegisterComplaint = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    subject: '',
-    category: '',
-    description: ''
-  });
-  const [errors, setErrors] = useState({});
-  const [submitting, setSubmitting] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [error, setError] = useState(null);
 
@@ -46,58 +42,31 @@ const RegisterComplaint = () => {
     'Other': 'medium'
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value
-    }));
-    // Clear error for this field
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: null
-      }));
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors, isSubmitting }
+  } = useForm({
+    resolver: zodResolver(complaintSchema),
+    mode: 'onTouched',
+    defaultValues: {
+      subject: '',
+      category: '',
+      description: ''
     }
-  };
+  });
 
-  const validateForm = () => {
-    const newErrors = {};
+  const descriptionValue = watch('description', '');
+  const categoryValue = watch('category', '');
 
-    if (!formData.subject.trim()) {
-      newErrors.subject = 'Subject is required';
-    } else if (formData.subject.length < 10) {
-      newErrors.subject = 'Subject must be at least 10 characters';
-    }
-
-    if (!formData.category) {
-      newErrors.category = 'Please select a category';
-    }
-
-    if (!formData.description.trim()) {
-      newErrors.description = 'Description is required';
-    } else if (formData.description.length < 20) {
-      newErrors.description = 'Please provide more details (minimum 20 characters)';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
+  const onSubmit = async (data) => {
     try {
-      setSubmitting(true);
       setError(null);
 
       const complaintData = {
-        ...formData,
-        priority: priorityLevels[formData.category] || 'medium'
+        ...data,
+        priority: priorityLevels[data.category] || 'medium'
       };
 
       await api.post('/seller/complaints', complaintData);
@@ -108,8 +77,6 @@ const RegisterComplaint = () => {
       }, 2000);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to submit complaint');
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -167,7 +134,7 @@ const RegisterComplaint = () => {
           {/* Form */}
           <Card>
             <Card.Body>
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 {/* Subject */}
                 <div>
                   <label htmlFor="subject" className="form-label">
@@ -176,15 +143,13 @@ const RegisterComplaint = () => {
                   <input
                     type="text"
                     id="subject"
-                    name="subject"
-                    value={formData.subject}
-                    onChange={handleChange}
+                    {...register("subject")}
                     className={`form-control ${errors.subject ? 'border-red-500' : ''}`}
                     placeholder="Brief summary of your issue"
-                    disabled={submitting}
+                    disabled={isSubmitting}
                   />
                   {errors.subject && (
-                    <p className="form-error">{errors.subject}</p>
+                    <p className="form-error">{errors.subject.message}</p>
                   )}
                 </div>
 
@@ -195,11 +160,9 @@ const RegisterComplaint = () => {
                   </label>
                   <select
                     id="category"
-                    name="category"
-                    value={formData.category}
-                    onChange={handleChange}
+                    {...register("category")}
                     className={`form-control ${errors.category ? 'border-red-500' : ''}`}
-                    disabled={submitting}
+                    disabled={isSubmitting}
                   >
                     <option value="">Select a category</option>
                     {categories.map((category) => (
@@ -212,11 +175,11 @@ const RegisterComplaint = () => {
                     ))}
                   </select>
                   {errors.category && (
-                    <p className="form-error">{errors.category}</p>
+                    <p className="form-error">{errors.category.message}</p>
                   )}
-                  {formData.category && (
+                  {categoryValue && (
                     <p className="form-help text-blue-600 mt-1">
-                      This will be marked as <strong>{priorityLevels[formData.category]}</strong> priority
+                      This will be marked as <strong>{priorityLevels[categoryValue]}</strong> priority
                     </p>
                   )}
                 </div>
@@ -228,25 +191,22 @@ const RegisterComplaint = () => {
                   </label>
                   <textarea
                     id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleChange}
+                    {...register("description")}
                     rows="8"
-                    className={`form-control resize-none ${
-                      errors.description ? 'border-red-500' : ''
-                    }`}
+                    className={`form-control resize-none ${errors.description ? 'border-red-500' : ''
+                      }`}
                     placeholder="Provide detailed information about your issue:
 - What happened?
 - When did it occur?
 - What were you trying to do?
 - Any relevant transaction IDs or book details?"
-                    disabled={submitting}
+                    disabled={isSubmitting}
                   />
                   {errors.description && (
-                    <p className="form-error">{errors.description}</p>
+                    <p className="form-error">{errors.description.message}</p>
                   )}
                   <p className="form-help mt-1">
-                    {formData.description.length} / minimum 20 characters
+                    {descriptionValue.length} / minimum 20 characters
                   </p>
                 </div>
 
@@ -256,7 +216,7 @@ const RegisterComplaint = () => {
                     type="button"
                     variant="outline"
                     onClick={() => navigate('/seller/complaints')}
-                    disabled={submitting}
+                    disabled={isSubmitting}
                     className="flex-1"
                   >
                     Cancel
@@ -264,11 +224,11 @@ const RegisterComplaint = () => {
                   <Button
                     type="submit"
                     variant="primary"
-                    disabled={submitting}
-                    isLoading={submitting}
+                    disabled={isSubmitting}
+                    isLoading={isSubmitting}
                     className="flex-1"
                   >
-                    {submitting ? 'Submitting...' : 'Submit Complaint'}
+                    {isSubmitting ? 'Submitting...' : 'Submit Complaint'}
                   </Button>
                 </div>
               </form>

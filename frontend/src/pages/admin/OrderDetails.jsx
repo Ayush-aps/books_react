@@ -5,6 +5,9 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { orderUpdateSchema } from '../../schemas/allFormSchemas';
 import api from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
@@ -26,13 +29,18 @@ const OrderDetails = () => {
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Form state for updates
-  const [orderStatus, setOrderStatus] = useState('');
-  const [trackingNumber, setTrackingNumber] = useState('');
-  const [carrier, setCarrier] = useState('');
-  const [trackingUrl, setTrackingUrl] = useState('');
-  const [adminNotes, setAdminNotes] = useState('');
-  const [expectedDelivery, setExpectedDelivery] = useState('');
+  // React Hook Form setup
+  const { register, handleSubmit, formState: { errors }, reset } = useForm({
+    resolver: zodResolver(orderUpdateSchema),
+    defaultValues: {
+      orderStatus: 'ordered',
+      expectedDelivery: '',
+      carrier: '',
+      trackingNumber: '',
+      trackingUrl: '',
+      adminNotes: ''
+    }
+  });
 
   useEffect(() => {
     fetchOrderDetails();
@@ -44,15 +52,17 @@ const OrderDetails = () => {
       const response = await api.get(`/orders/${id}`);
       const orderData = response.data.data || response.data;
       setOrder(orderData);
-      
-      // Initialize form fields
-      setOrderStatus(orderData.orderStatus || orderData.status || 'ordered');
-      setTrackingNumber(orderData.trackingInfo?.trackingNumber || '');
-      setCarrier(orderData.trackingInfo?.carrier || '');
-      setTrackingUrl(orderData.trackingInfo?.trackingUrl || '');
-      setAdminNotes(orderData.adminNotes || '');
-      setExpectedDelivery(orderData.expectedDelivery ? new Date(orderData.expectedDelivery).toISOString().split('T')[0] : '');
-      
+
+      // Initialize form fields with React Hook Form
+      reset({
+        orderStatus: orderData.orderStatus || orderData.status || 'ordered',
+        trackingNumber: orderData.trackingInfo?.trackingNumber || '',
+        carrier: orderData.trackingInfo?.carrier || '',
+        trackingUrl: orderData.trackingInfo?.trackingUrl || '',
+        adminNotes: orderData.adminNotes || '',
+        expectedDelivery: orderData.expectedDelivery ? new Date(orderData.expectedDelivery).toISOString().split('T')[0] : ''
+      });
+
       setError(null);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load order details');
@@ -61,23 +71,22 @@ const OrderDetails = () => {
     }
   };
 
-  const handleUpdateOrder = async (e) => {
-    e.preventDefault();
+  const handleUpdateOrder = async (data) => {
     try {
       setUpdating(true);
       await api.put(`/admin/orders/${id}`, {
-        orderStatus,
-        trackingNumber: trackingNumber || undefined,
-        carrier: carrier || undefined,
-        trackingUrl: trackingUrl || undefined,
-        adminNotes: adminNotes || undefined,
-        expectedDelivery: expectedDelivery || undefined
+        orderStatus: data.orderStatus,
+        trackingNumber: data.trackingNumber || undefined,
+        carrier: data.carrier || undefined,
+        trackingUrl: data.trackingUrl || undefined,
+        adminNotes: data.adminNotes || undefined,
+        expectedDelivery: data.expectedDelivery || undefined
       });
-      
+
       setSuccessMessage('Order updated successfully');
       setShowSuccessToast(true);
       setTimeout(() => setShowSuccessToast(false), 3000);
-      
+
       // Refresh order details
       fetchOrderDetails();
     } catch (err) {
@@ -135,7 +144,7 @@ const OrderDetails = () => {
     <div className="min-h-screen bg-cream py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <motion.div 
+        <motion.div
           className="mb-8"
           variants={fadeInUp}
           initial="hidden"
@@ -157,9 +166,9 @@ const OrderDetails = () => {
             <div>
               <h1 className="heading-1 text-charcoal mb-2">Order #{order.orderId || order._id.slice(-8)}</h1>
               <p className="body text-charcoal/70">
-                Placed on {new Date(order.createdAt).toLocaleDateString('en-US', { 
-                  year: 'numeric', 
-                  month: 'long', 
+                Placed on {new Date(order.createdAt).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
                   day: 'numeric',
                   hour: '2-digit',
                   minute: '2-digit'
@@ -168,8 +177,8 @@ const OrderDetails = () => {
             </div>
             <div className="flex gap-3">
               <Badge variant={getStatusVariant(order.orderStatus || order.status)} size="lg">
-                {(order.orderStatus || order.status || 'ordered').charAt(0).toUpperCase() + 
-                 (order.orderStatus || order.status || 'ordered').slice(1)}
+                {(order.orderStatus || order.status || 'ordered').charAt(0).toUpperCase() +
+                  (order.orderStatus || order.status || 'ordered').slice(1)}
               </Badge>
               <Badge variant={getPaymentStatusVariant(order.paymentStatus)} size="lg">
                 Payment: {order.paymentStatus?.charAt(0).toUpperCase() + order.paymentStatus?.slice(1)}
@@ -179,7 +188,7 @@ const OrderDetails = () => {
         </motion.div>
 
         {error && (
-          <motion.div 
+          <motion.div
             className="mb-6"
             variants={fadeInUp}
             initial="hidden"
@@ -231,7 +240,7 @@ const OrderDetails = () => {
                       </div>
                     ))}
                   </div>
-                  
+
                   {/* Order Summary */}
                   <div className="mt-6 pt-6 border-t-2 border-surface space-y-2">
                     <div className="flex justify-between body text-charcoal/70">
@@ -334,60 +343,61 @@ const OrderDetails = () => {
                   <h2 className="heading-3 text-charcoal">Update Order</h2>
                 </Card.Header>
                 <Card.Body>
-                  <form onSubmit={handleUpdateOrder} className="space-y-4">
-                    <Input.Select
-                      id="orderStatus"
-                      label="Order Status"
-                      value={orderStatus}
-                      onChange={(e) => setOrderStatus(e.target.value)}
-                      required
-                    >
-                      <option value="ordered">Ordered</option>
-                      <option value="processing">Processing</option>
-                      <option value="shipped">Shipped</option>
-                      <option value="delivered">Delivered</option>
-                      <option value="cancelled">Cancelled</option>
-                    </Input.Select>
+                  <form onSubmit={handleSubmit(handleUpdateOrder)} className="space-y-4">
+                    <div>
+                      <Input.Select
+                        id="orderStatus"
+                        label="Order Status"
+                        {...register('orderStatus')}
+                        error={errors.orderStatus?.message}
+                      >
+                        <option value="ordered">Ordered</option>
+                        <option value="processing">Processing</option>
+                        <option value="shipped">Shipped</option>
+                        <option value="delivered">Delivered</option>
+                        <option value="cancelled">Cancelled</option>
+                      </Input.Select>
+                    </div>
 
                     <Input
                       id="expectedDelivery"
                       type="date"
                       label="Expected Delivery Date"
-                      value={expectedDelivery}
-                      onChange={(e) => setExpectedDelivery(e.target.value)}
+                      {...register('expectedDelivery')}
+                      error={errors.expectedDelivery?.message}
                     />
 
                     <Input
                       id="carrier"
                       label="Shipping Carrier"
-                      value={carrier}
-                      onChange={(e) => setCarrier(e.target.value)}
+                      {...register('carrier')}
                       placeholder="e.g., FedEx, UPS, USPS"
+                      error={errors.carrier?.message}
                     />
 
                     <Input
                       id="trackingNumber"
                       label="Tracking Number"
-                      value={trackingNumber}
-                      onChange={(e) => setTrackingNumber(e.target.value)}
+                      {...register('trackingNumber')}
                       placeholder="Enter tracking number"
+                      error={errors.trackingNumber?.message}
                     />
 
                     <Input
                       id="trackingUrl"
                       label="Tracking URL"
-                      value={trackingUrl}
-                      onChange={(e) => setTrackingUrl(e.target.value)}
+                      {...register('trackingUrl')}
                       placeholder="https://..."
+                      error={errors.trackingUrl?.message}
                     />
 
                     <Input.Textarea
                       id="adminNotes"
                       label="Admin Notes"
-                      value={adminNotes}
-                      onChange={(e) => setAdminNotes(e.target.value)}
+                      {...register('adminNotes')}
                       placeholder="Internal notes about this order..."
                       rows={4}
+                      error={errors.adminNotes?.message}
                     />
 
                     <Button

@@ -8,8 +8,12 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
-import useFormValidation from '../../hooks/useFormValidation';
-import { validateRequired, validateLength } from '../../utils/validation';
+// Removed: useFormValidation and manual validation utils
+
+// RHF Imports
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { videoUploadSchema } from '../../schemas/allFormSchemas';
 
 const UploadVideo = () => {
   const navigate = useNavigate();
@@ -18,44 +22,27 @@ const UploadVideo = () => {
   const [error, setError] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  // Validation schema
-  const validationSchema = {
-    bookId: (value) => validateRequired(value, 'Book'),
-    title: (value) => validateRequired(value, 'Title'),
-    description: (value) => {
-      const requiredCheck = validateRequired(value, 'Description');
-      if (!requiredCheck.isValid) return requiredCheck;
-      return validateLength(value, 10, 500, 'Description');
-    },
-    videoFile: (value) => {
-      if (!value) {
-        return { isValid: false, error: 'Please select a video file' };
-      }
-      return { isValid: true, error: '' };
-    }
-  };
-
-  // Form validation hook
+  // React Hook Form setup
   const {
-    values,
-    errors,
-    touched,
-    isSubmitting,
-    handleChange,
-    handleBlur,
+    register,
     handleSubmit,
-    setFieldValue,
-    isValid
-  } = useFormValidation(
-    {
+    watch,
+    setValue,
+    formState: { errors, isSubmitting, isValid }
+  } = useForm({
+    resolver: zodResolver(videoUploadSchema),
+    mode: 'onTouched',
+    defaultValues: {
       bookId: '',
       title: '',
       description: '',
       tags: '',
       videoFile: null
-    },
-    validationSchema
-  );
+    }
+  });
+
+  const descriptionValue = watch('description', '');
+  const videoFileValue = watch('videoFile');
 
   useEffect(() => {
     fetchOwnedBooks();
@@ -80,39 +67,26 @@ const UploadVideo = () => {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Check file type
-      if (!file.type.startsWith('video/')) {
-        setError('Please select a valid video file');
-        return;
-      }
-      
-      // Check file size (max 50MB)
-      if (file.size > 50 * 1024 * 1024) {
-        setError('Video file size must be less than 50MB');
-        return;
-      }
-
-      setFieldValue('videoFile', file);
-      setError(null);
+      setValue('videoFile', file, { shouldValidate: true });
     }
   };
 
-  const onSubmit = async (formData) => {
+  const onSubmit = async (data) => {
     setError(null);
     setUploadProgress(0);
 
     try {
       const formDataToSend = new FormData();
-      formDataToSend.append('bookId', formData.bookId);
-      formDataToSend.append('title', formData.title);
-      formDataToSend.append('description', formData.description);
-      if (formData.tags) {
-        formDataToSend.append('tags', formData.tags);
+      formDataToSend.append('bookId', data.bookId);
+      formDataToSend.append('title', data.title);
+      formDataToSend.append('description', data.description);
+      if (data.tags) {
+        formDataToSend.append('tags', data.tags);
       }
-      formDataToSend.append('video', formData.videoFile);
+      formDataToSend.append('video', data.videoFile);
 
       console.log('Uploading video to Cloudinary...');
-      
+
       await api.post('/videos/upload', formDataToSend, {
         headers: {
           'Content-Type': 'multipart/form-data'
@@ -125,8 +99,8 @@ const UploadVideo = () => {
       });
 
       console.log('Video uploaded successfully!');
-      navigate('/buyer/video-feed', { 
-        state: { success: 'Video uploaded successfully and is now available for all buyers to watch!' } 
+      navigate('/buyer/video-feed', {
+        state: { success: 'Video uploaded successfully and is now available for all buyers to watch!' }
       });
     } catch (err) {
       console.error('Upload error:', err);
@@ -195,15 +169,11 @@ const UploadVideo = () => {
               </label>
               <select
                 id="bookId"
-                name="bookId"
-                value={values.bookId}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={`w-full px-3 py-2 border ${
-                  touched.bookId && errors.bookId
-                    ? 'border-red-500 focus:ring-red-500'
-                    : 'border-primary focus:ring-brown'
-                } rounded-md focus:outline-none focus:ring-2`}
+                {...register("bookId")}
+                className={`w-full px-3 py-2 border ${errors.bookId
+                  ? 'border-red-500 focus:ring-red-500'
+                  : 'border-primary focus:ring-brown'
+                  } rounded-md focus:outline-none focus:ring-2`}
               >
                 <option value="">Choose a book from your library...</option>
                 {ownedBooks.map((item) => (
@@ -212,8 +182,8 @@ const UploadVideo = () => {
                   </option>
                 ))}
               </select>
-              {touched.bookId && errors.bookId && (
-                <p className="text-red-500 text-sm mt-1">{errors.bookId}</p>
+              {errors.bookId && (
+                <p className="text-red-500 text-sm mt-1">{errors.bookId.message}</p>
               )}
             </div>
 
@@ -225,19 +195,15 @@ const UploadVideo = () => {
               <input
                 type="text"
                 id="title"
-                name="title"
-                value={values.title}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={`w-full px-3 py-2 border ${
-                  touched.title && errors.title
-                    ? 'border-red-500 focus:ring-red-500'
-                    : 'border-primary focus:ring-brown'
-                } rounded-md focus:outline-none focus:ring-2`}
+                {...register("title")}
+                className={`w-full px-3 py-2 border ${errors.title
+                  ? 'border-red-500 focus:ring-red-500'
+                  : 'border-primary focus:ring-brown'
+                  } rounded-md focus:outline-none focus:ring-2`}
                 placeholder="Give your video a catchy title"
               />
-              {touched.title && errors.title && (
-                <p className="text-red-500 text-sm mt-1">{errors.title}</p>
+              {errors.title && (
+                <p className="text-red-500 text-sm mt-1">{errors.title.message}</p>
               )}
             </div>
 
@@ -248,23 +214,19 @@ const UploadVideo = () => {
               </label>
               <textarea
                 id="description"
-                name="description"
-                value={values.description}
-                onChange={handleChange}
-                onBlur={handleBlur}
+                {...register("description")}
                 rows="4"
-                className={`w-full px-3 py-2 border ${
-                  touched.description && errors.description
-                    ? 'border-red-500 focus:ring-red-500'
-                    : 'border-primary focus:ring-brown'
-                } rounded-md focus:outline-none focus:ring-2 resize-none`}
+                className={`w-full px-3 py-2 border ${errors.description
+                  ? 'border-red-500 focus:ring-red-500'
+                  : 'border-primary focus:ring-brown'
+                  } rounded-md focus:outline-none focus:ring-2 resize-none`}
                 placeholder="Describe what viewers will learn from your video review (minimum 10 characters)"
               />
-              {touched.description && errors.description && (
-                <p className="text-red-500 text-sm mt-1">{errors.description}</p>
+              {errors.description && (
+                <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>
               )}
               <p className="text-tertiary text-sm mt-1">
-                {values.description.length}/500 characters
+                {descriptionValue.length}/500 characters
               </p>
             </div>
 
@@ -276,10 +238,7 @@ const UploadVideo = () => {
               <input
                 type="text"
                 id="tags"
-                name="tags"
-                value={values.tags}
-                onChange={handleChange}
-                onBlur={handleBlur}
+                {...register("tags")}
                 className="w-full px-3 py-2 border border-primary rounded-md focus:outline-none focus:ring-2 focus:ring-brown"
                 placeholder="fiction, mystery, thriller (comma-separated)"
               />
@@ -316,25 +275,25 @@ const UploadVideo = () => {
                       <span>Upload a video</span>
                       <input
                         id="videoFile"
-                        name="videoFile"
                         type="file"
                         accept="video/*"
                         className="sr-only"
+                        {...register("videoFile")}
                         onChange={handleFileChange}
                       />
                     </label>
                     <p className="pl-1">or drag and drop</p>
                   </div>
                   <p className="text-xs text-tertiary">MP4, MOV, AVI up to 50MB</p>
-                  {values.videoFile && (
+                  {videoFileValue && (
                     <p className="text-sm text-green-600 font-semibold mt-2">
-                      Selected: {values.videoFile.name}
+                      Selected: {videoFileValue.name}
                     </p>
                   )}
                 </div>
               </div>
-              {touched.videoFile && errors.videoFile && (
-                <p className="text-red-500 text-sm mt-1">{errors.videoFile}</p>
+              {errors.videoFile && (
+                <p className="text-red-500 text-sm mt-1">{errors.videoFile.message}</p>
               )}
             </div>
 

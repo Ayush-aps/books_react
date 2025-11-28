@@ -40,8 +40,8 @@ api.interceptors.response.use(
     if (error.response) {
       // Server responded with error status
       if (error.response.status === 401) {
-        // Unauthorized - redirect to login
-        window.location.href = '/login';
+        // Unauthorized - let the component handle it
+        // window.location.href = '/login'; // Removed to prevent loop
       }
       return Promise.reject(error.response.data);
     } else if (error.request) {
@@ -82,35 +82,35 @@ export const publicAPI = {
 export const buyerAPI = {
   // Dashboard
   getDashboard: () => api.get('/buyer/dashboard'),
-  
+
   // Browse & Books
   browse: (params) => api.get('/buyer/browse', { params }),
   getBook: (id) => api.get(`/buyer/book/${id}`),
-  
+
   // Cart
   getCart: () => api.get('/buyer/cart'),
   addToCart: (bookId, quantity = 1) => api.post(`/buyer/cart/add/${bookId}`, { quantity }),
   updateCartItem: (itemId, quantity) => api.put(`/buyer/cart/update/${itemId}`, { quantity }),
   removeFromCart: (itemId) => api.delete(`/buyer/cart/remove/${itemId}`),
   clearCart: () => api.delete('/buyer/cart/clear'),
-  
+
   // Checkout & Orders
   getCheckout: () => api.get('/buyer/checkout'),
   getMyOrders: () => api.get('/orders/my-orders'),
   getBuyerOrders: () => api.get('/orders/buyer/orders'),
   getOrder: (id) => api.get(`/orders/${id}`),
   getBuyerOrder: (id) => api.get(`/orders/buyer/order/${id}`),
-  
+
   // Addresses
   getAddresses: () => api.get('/buyer/addresses'),
   createAddress: (data) => api.post('/buyer/addresses', data),
   updateAddress: (id, data) => api.put(`/buyer/addresses/${id}`, data),
   deleteAddress: (id) => api.delete(`/buyer/addresses/${id}`),
-  
+
   // Profile
   getProfile: () => api.get('/buyer/profile'),
   updateProfile: (data) => api.put('/buyer/profile', data),
-  
+
   // Complaints
   getComplaints: () => api.get('/buyer/complaints'),
   createComplaint: (data) => api.post('/buyer/complaints', data),
@@ -123,7 +123,7 @@ export const buyerAPI = {
 export const sellerAPI = {
   // Dashboard
   getDashboard: () => api.get('/seller/dashboard'),
-  
+
   // Inventory & Books
   getInventory: (params) => api.get('/seller/inventory', { params }),
   getBooks: (params) => api.get('/seller/books', { params }),
@@ -131,13 +131,13 @@ export const sellerAPI = {
   uploadBook: (data) => api.post('/seller/upload', data),
   updateBook: (id, data) => api.put(`/seller/book/${id}`, data),
   deleteBook: (id) => api.delete(`/seller/book/${id}`),
-  
+
   // Orders
   getOrders: (params) => api.get('/seller/orders', { params }),
   getSellerOrders: () => api.get('/orders/seller-orders'),
   getOrder: (id) => api.get(`/seller/orders/${id}`),
   updateOrderStatus: (id, status) => api.put(`/seller/order/${id}/status`, { status }),
-  
+
   // Complaints
   getComplaints: () => api.get('/seller/complaints'),
   createComplaint: (data) => api.post('/seller/complaints', data),
@@ -152,22 +152,22 @@ export const adminAPI = {
   updateUserRole: (id, role) => api.put(`/admin/user/${id}/role`, { role }),
   updateUserStatus: (id, status) => api.put(`/admin/user/${id}/status`, { status }),
   deleteUser: (id) => api.delete(`/admin/user/${id}`),
-  
+
   // Books & Content
   getBooks: (params) => api.get('/admin/books', { params }),
   getContent: (params) => api.get('/admin/content', { params }),
   getContentItem: (id) => api.get(`/admin/content/${id}`),
   approveContent: (id) => api.post(`/admin/content/${id}/approve`),
   rejectContent: (id, reason) => api.post(`/admin/content/${id}/reject`, { reason }),
-  
+
   // Orders
   getOrders: (params) => api.get('/admin/orders', { params }),
   getAdminOrders: () => api.get('/orders/admin/orders'),
   updateOrder: (id, data) => api.put(`/admin/order/${id}`, data),
-  
+
   // Reports
   getReports: (params) => api.get('/admin/reports', { params }),
-  
+
   // Complaints
   getComplaints: (params) => api.get('/admin/complaints', { params }),
   getComplaint: (id) => api.get(`/admin/complaints/${id}`),

@@ -8,13 +8,17 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
-import useFormValidation from '../../hooks/useFormValidation';
-import { validateRequired, validateLength } from '../../utils/validation';
+// Removed: useFormValidation and manual validation utils
+
+// RHF Imports
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { buyerComplaintSchema } from '../../schemas/allFormSchemas';
 
 const RegisterComplaint = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const orderId = searchParams.get('orderId');
+  const initialOrderId = searchParams.get('orderId');
 
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
@@ -31,49 +35,24 @@ const RegisterComplaint = () => {
     'Other'
   ];
 
-  const priorityLevels = {
-    'Damaged Item': 'high',
-    'Wrong Item': 'high',
-    'Missing Item': 'high',
-    'Delivery Issue': 'medium',
-    'Refund Issue': 'medium',
-    'Product Quality': 'medium',
-    'Seller Communication': 'low',
-    'Other': 'low'
-  };
-
-  // Validation schema
-  const validationSchema = {
-    orderId: (value) => validateRequired(value, 'Order'),
-    category: (value) => validateRequired(value, 'Category'),
-    subject: (value) => validateRequired(value, 'Subject'),
-    description: (value) => {
-      const requiredCheck = validateRequired(value, 'Description');
-      if (!requiredCheck.isValid) return requiredCheck;
-      return validateLength(value, 20, 1000, 'Description');
-    }
-  };
-
-  // Form validation hook
+  // React Hook Form setup
   const {
-    values,
-    errors,
-    touched,
-    isSubmitting,
-    handleChange,
-    handleBlur,
+    register,
     handleSubmit,
-    setFieldValue,
-    isValid
-  } = useFormValidation(
-    {
-      orderId: orderId || '',
+    watch,
+    formState: { errors, isSubmitting, isValid }
+  } = useForm({
+    resolver: zodResolver(buyerComplaintSchema),
+    mode: 'onTouched',
+    defaultValues: {
+      orderId: initialOrderId || '',
       category: '',
       subject: '',
       description: ''
-    },
-    validationSchema
-  );
+    }
+  });
+
+  const descriptionValue = watch('description', '');
 
   useEffect(() => {
     fetchOrders();
@@ -91,11 +70,11 @@ const RegisterComplaint = () => {
     }
   };
 
-  const onSubmit = async (formData) => {
+  const onSubmit = async (data) => {
     setError(null);
 
     try {
-      await api.post('/buyer/complaints', formData);
+      await api.post('/buyer/complaints', data);
       navigate('/buyer/profile', {
         state: { success: 'Complaint registered successfully. We will review it and get back to you soon.' }
       });
@@ -138,11 +117,8 @@ const RegisterComplaint = () => {
             </label>
             <select
               id="orderId"
-              name="orderId"
-              value={values.orderId}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              className={`w-full px-3 py-2 border ${touched.orderId && errors.orderId
+              {...register("orderId")}
+              className={`w-full px-3 py-2 border ${errors.orderId
                 ? 'border-red-500 focus:ring-red-500'
                 : 'border-gray-300 focus:ring-blue-500'
                 } rounded-md focus:outline-none focus:ring-2`}
@@ -154,8 +130,8 @@ const RegisterComplaint = () => {
                 </option>
               ))}
             </select>
-            {touched.orderId && errors.orderId && (
-              <p className="text-red-500 text-sm mt-1">{errors.orderId}</p>
+            {errors.orderId && (
+              <p className="text-red-500 text-sm mt-1">{errors.orderId.message}</p>
             )}
             {orders.length === 0 && (
               <p className="text-gray-500 text-sm mt-1">
@@ -171,11 +147,8 @@ const RegisterComplaint = () => {
             </label>
             <select
               id="category"
-              name="category"
-              value={values.category}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              className={`w-full px-3 py-2 border ${touched.category && errors.category
+              {...register("category")}
+              className={`w-full px-3 py-2 border ${errors.category
                 ? 'border-red-500 focus:ring-red-500'
                 : 'border-gray-300 focus:ring-blue-500'
                 } rounded-md focus:outline-none focus:ring-2`}
@@ -185,8 +158,8 @@ const RegisterComplaint = () => {
                 <option key={cat} value={cat}>{cat}</option>
               ))}
             </select>
-            {touched.category && errors.category && (
-              <p className="text-red-500 text-sm mt-1">{errors.category}</p>
+            {errors.category && (
+              <p className="text-red-500 text-sm mt-1">{errors.category.message}</p>
             )}
           </div>
 
@@ -198,18 +171,15 @@ const RegisterComplaint = () => {
             <input
               type="text"
               id="subject"
-              name="subject"
-              value={values.subject}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              className={`w-full px-3 py-2 border ${touched.subject && errors.subject
+              {...register("subject")}
+              className={`w-full px-3 py-2 border ${errors.subject
                 ? 'border-red-500 focus:ring-red-500'
                 : 'border-gray-300 focus:ring-blue-500'
                 } rounded-md focus:outline-none focus:ring-2`}
               placeholder="Brief summary of your issue"
             />
-            {touched.subject && errors.subject && (
-              <p className="text-red-500 text-sm mt-1">{errors.subject}</p>
+            {errors.subject && (
+              <p className="text-red-500 text-sm mt-1">{errors.subject.message}</p>
             )}
           </div>
 
@@ -220,22 +190,19 @@ const RegisterComplaint = () => {
             </label>
             <textarea
               id="description"
-              name="description"
-              value={values.description}
-              onChange={handleChange}
-              onBlur={handleBlur}
+              {...register("description")}
               rows="6"
-              className={`w-full px-3 py-2 border ${touched.description && errors.description
+              className={`w-full px-3 py-2 border ${errors.description
                 ? 'border-red-500 focus:ring-red-500'
                 : 'border-gray-300 focus:ring-blue-500'
                 } rounded-md focus:outline-none focus:ring-2 resize-none`}
               placeholder="Please provide detailed information about your complaint (minimum 20 characters)..."
             />
-            {touched.description && errors.description && (
-              <p className="text-red-500 text-sm mt-1">{errors.description}</p>
+            {errors.description && (
+              <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>
             )}
             <p className="text-gray-500 text-sm mt-1">
-              {values.description.length}/1000 characters
+              {descriptionValue.length}/2000 characters
             </p>
           </div>
 
