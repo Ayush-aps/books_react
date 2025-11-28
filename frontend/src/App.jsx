@@ -48,6 +48,7 @@ import SellerOrderDetails from './pages/seller/OrderDetails'
 import SellerComplaints from './pages/seller/Complaints'
 import SellerRegisterComplaint from './pages/seller/RegisterComplaint'
 import SellerComplaintDetails from './pages/seller/ComplaintDetails'
+import SellerViewBook from './pages/seller/ViewBook'
 
 // Admin Pages
 import AdminDashboard from './pages/admin/Dashboard'
@@ -59,6 +60,7 @@ import AdminOrderDetails from './pages/admin/OrderDetails'
 import AdminReports from './pages/admin/Reports'
 import AdminComplaints from './pages/admin/Complaints'
 import AdminComplaintDetails from './pages/admin/ComplaintDetails'
+import AdminViewBook from './pages/admin/ViewBook'
 
 // Subscription Pages
 import SubscriptionCheckout from './pages/subscription/SubscriptionCheckout'
@@ -71,6 +73,8 @@ import ServerError from './pages/errors/ServerError'
 // Protected Route Component
 import PrivateRoute from './components/PrivateRoute'
 import ErrorBoundary from './components/ErrorBoundary'
+
+import ScrollToTop from './components/ScrollToTop'
 
 function App() {
   const dispatch = useDispatch()
@@ -87,6 +91,7 @@ function App() {
   return (
     <ErrorBoundary>
       <div className="min-h-screen flex flex-col">
+        <ScrollToTop />
         <Header />
         <main className="flex-grow">
           <Routes>
@@ -132,6 +137,7 @@ function App() {
             <Route path="/seller/complaints" element={<PrivateRoute role="seller"><SellerComplaints /></PrivateRoute>} />
             <Route path="/seller/complaints/:id" element={<PrivateRoute role="seller"><SellerComplaintDetails /></PrivateRoute>} />
             <Route path="/seller/register-complaint" element={<PrivateRoute role="seller"><SellerRegisterComplaint /></PrivateRoute>} />
+            <Route path="/seller/view-book/:id" element={<PrivateRoute role="seller"><SellerViewBook /></PrivateRoute>} />
 
             {/* Admin Routes */}
             <Route path="/admin/dashboard" element={<PrivateRoute role="admin"><AdminDashboard /></PrivateRoute>} />
@@ -144,6 +150,7 @@ function App() {
             <Route path="/admin/reports" element={<PrivateRoute role="admin"><AdminReports /></PrivateRoute>} />
             <Route path="/admin/complaints" element={<PrivateRoute role="admin"><AdminComplaints /></PrivateRoute>} />
             <Route path="/admin/complaints/:id" element={<PrivateRoute role="admin"><AdminComplaintDetails /></PrivateRoute>} />
+            <Route path="/admin/view-book/:id" element={<PrivateRoute role="admin"><AdminViewBook /></PrivateRoute>} />
 
             {/* Subscription Routes */}
             <Route path="/subscription/checkout" element={<PrivateRoute role="buyer"><SubscriptionCheckout /></PrivateRoute>} />

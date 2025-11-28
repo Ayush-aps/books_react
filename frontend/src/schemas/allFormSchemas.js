@@ -66,11 +66,11 @@ const PINCODE_REGEX = /^\d{6}$/;
 // URL validation
 const URL_REGEX = /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$/;
 
-// Book title: Alphanumeric with common punctuation
-const BOOK_TITLE_REGEX = /^[a-zA-Z0-9\s:,.'!?&()-]{5,100}$/;
+// Book title: Alphanumeric with common punctuation, must contain at least one alphanumeric char
+const BOOK_TITLE_REGEX = /^(?=.*[a-zA-Z0-9])[a-zA-Z0-9\s:,.'!?&()-]+$/;
 
-// Author name: Letters, spaces, periods, hyphens
-const AUTHOR_REGEX = /^[a-zA-Z\s.'-]{2,50}$/;
+// Author name: Letters, spaces, periods, hyphens, must contain at least one letter
+const AUTHOR_REGEX = /^(?=.*[a-zA-Z])[a-zA-Z\s.'-]+$/;
 
 // --- Core Validation Schemas ---
 
@@ -157,32 +157,55 @@ export const bookListingSchema = z.object({
   title: z.string()
     .min(1, "Title is required")
     .max(100, "Title cannot exceed 100 characters")
+    .regex(BOOK_TITLE_REGEX, "Title must contain letters or numbers and avoid invalid characters")
     .trim(),
 
   author: z.string()
     .min(1, "Author is required")
     .max(100, "Author name cannot exceed 100 characters")
+    .regex(AUTHOR_REGEX, "Author name must contain letters and avoid invalid characters")
     .trim(),
 
   genre: z.string().min(1, "Genre is required"),
 
   price: z.preprocess(
-    (val) => (val === '' ? undefined : Number(val)),
+    (val) => {
+      if (val === '' || val === null || val === undefined) return undefined;
+      const parsed = Number(val);
+      return isNaN(parsed) ? undefined : parsed;
+    },
     z.number({ required_error: 'Price is required' })
-      .min(0.01, "Price must be greater than $0.00")
-      .max(999999, "Price is too high")
+      .min(0.01, "Price must be greater than 0")
+      .max(100000, "Price cannot exceed 100,000")
   ),
 
   discountPercentage: z.preprocess(
-    (val) => (val === '' ? undefined : Number(val)),
-    z.number().min(0).max(100, "Discount cannot exceed 100%").optional()
+    (val) => {
+      if (val === '' || val === null || val === undefined) return undefined;
+      const parsed = Number(val);
+      return isNaN(parsed) ? undefined : parsed;
+    },
+    z.number({ invalid_type_error: "Discount must be a number" })
+      .min(1, "Discount must be at least 1%")
+      .max(100, "Discount cannot exceed 100%")
+      .refine(val => {
+        const str = val.toString();
+        const parts = str.split('.');
+        return parts.length === 1 || parts[1].length <= 1;
+      }, "Discount cannot have more than 1 decimal place")
+      .optional()
   ),
 
   stock: z.preprocess(
-    (val) => (val === '' ? undefined : Number(val)),
+    (val) => {
+      if (val === '' || val === null || val === undefined) return undefined;
+      const parsed = Number(val);
+      return isNaN(parsed) ? undefined : parsed;
+    },
     z.number({ required_error: 'Stock is required' })
       .int("Stock must be a whole number")
       .min(0, "Stock cannot be negative")
+      .max(10000, "Stock cannot exceed 10,000")
   ),
 
   isbn: z.string().optional().or(z.literal(''))
@@ -194,11 +217,19 @@ export const bookListingSchema = z.object({
 
   publisher: z.string().optional(),
 
-  publishedDate: z.string().optional(), // Allow string for flexibility (YYYY or YYYY-MM-DD)
+  publishedDate: z.string().optional(),
 
   pageCount: z.preprocess(
-    (val) => (val === '' ? undefined : Number(val)),
-    z.number().int().positive().optional()
+    (val) => {
+      if (val === '' || val === null || val === undefined) return undefined;
+      const parsed = Number(val);
+      return isNaN(parsed) ? undefined : parsed;
+    },
+    z.number({ invalid_type_error: "Page count must be a number" })
+      .int("Page count must be a whole number")
+      .positive("Page count must be positive")
+      .max(15145, "Page count cannot exceed 15,145")
+      .optional()
   ),
 
   language: z.string().optional(),

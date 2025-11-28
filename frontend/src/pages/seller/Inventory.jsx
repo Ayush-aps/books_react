@@ -32,6 +32,9 @@ const Inventory = () => {
     page: parseInt(searchParams.get('page')) || 1
   };
 
+  const [searchTerm, setSearchTerm] = useState(filters.search);
+  const [genreTerm, setGenreTerm] = useState(filters.genre);
+
   // Handle success message from navigation state (e.g., after book update/resubmit)
   useEffect(() => {
     if (location.state?.success) {
@@ -45,6 +48,14 @@ const Inventory = () => {
   useEffect(() => {
     fetchInventory();
   }, [searchParams]);
+
+  useEffect(() => {
+    setSearchTerm(filters.search);
+  }, [filters.search]);
+
+  useEffect(() => {
+    setGenreTerm(filters.genre);
+  }, [filters.genre]);
 
   const fetchInventory = async () => {
     try {
@@ -69,6 +80,26 @@ const Inventory = () => {
     }
     params.set('page', '1');
     setSearchParams(params);
+  };
+
+  const handleSearch = () => {
+    handleFilterChange('search', searchTerm);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
+  const handleGenreSearch = () => {
+    handleFilterChange('genre', genreTerm);
+  };
+
+  const handleGenreKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleGenreSearch();
+    }
   };
 
   const handleDeleteBook = async () => {
@@ -164,8 +195,8 @@ const Inventory = () => {
                     key={tab.value}
                     onClick={() => handleFilterChange('status', tab.value)}
                     className={`px-6 py-3 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${filters.status === tab.value
-                        ? 'bg-brown text-white shadow-sm'
-                        : 'text-charcoal/70 hover:bg-taupe/10'
+                      ? 'bg-brown text-white shadow-sm'
+                      : 'text-charcoal/70 hover:bg-taupe/10'
                       }`}
                   >
                     {tab.label}
@@ -188,16 +219,32 @@ const Inventory = () => {
                 <Input
                   label="Search"
                   type="text"
-                  value={filters.search}
-                  onChange={(e) => handleFilterChange('search', e.target.value)}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={handleKeyDown}
                   placeholder="Title or Author..."
+                  icon={
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  }
+                  iconPosition="right"
+                  onIconClick={handleSearch}
                 />
                 <Input
                   label="Genre"
                   type="text"
-                  value={filters.genre}
-                  onChange={(e) => handleFilterChange('genre', e.target.value)}
+                  value={genreTerm}
+                  onChange={(e) => setGenreTerm(e.target.value)}
+                  onKeyDown={handleGenreKeyDown}
                   placeholder="Enter genre..."
+                  icon={
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  }
+                  iconPosition="right"
+                  onIconClick={handleGenreSearch}
                 />
               </div>
             </Card.Body>

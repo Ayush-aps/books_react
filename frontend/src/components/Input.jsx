@@ -25,6 +25,7 @@ const Input = forwardRef(({
   icon = null,
   iconPosition = 'left',
   helpText = '',
+  onIconClick,
   // RHF props (value, onChange, onBlur) are automatically spread into props
   ...props
 }, ref) => { // ⬅️ Receive ref
@@ -61,8 +62,9 @@ const Input = forwardRef(({
           {/* Icon */}
           {hasIcon && (
             <div
+              onClick={props.onIconClick}
               className={`absolute top-1/2 -translate-y-1/2 ${iconPosition === 'left' ? 'left-4' : 'right-4'
-                } text-text-tertiary pointer-events-none`}
+                } text-text-tertiary ${props.onIconClick ? 'cursor-pointer hover:text-text-primary z-10' : 'pointer-events-none'}`}
             >
               {icon}
             </div>
@@ -161,8 +163,9 @@ const Input = forwardRef(({
         {/* Icon */}
         {hasIcon && (
           <div
+            onClick={props.onIconClick}
             className={`absolute top-1/2 -translate-y-1/2 ${iconPosition === 'left' ? 'left-4' : 'right-4'
-              } text-text-tertiary pointer-events-none`}
+              } text-text-tertiary ${props.onIconClick ? 'cursor-pointer hover:text-text-primary z-10' : 'pointer-events-none'}`}
           >
             {icon}
           </div>

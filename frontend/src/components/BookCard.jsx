@@ -8,11 +8,34 @@ import { useSelector } from 'react-redux';
 
 const BookCard = ({ book, onAddToCart, compact = false }) => {
   const navigate = useNavigate();
-  const { isAuthenticated } = useSelector(state => state.auth);
+  const { isAuthenticated, user } = useSelector(state => state.auth);
   const effectivePrice = book.discountPrice || book.price;
   const hasDiscount = book.discountPrice && book.discountPrice < book.price;
+  const isBuyer = !isAuthenticated || (user && user.role === 'buyer');
+  const isSeller = user && user.role === 'seller';
+  const isAdmin = user && user.role === 'admin';
 
-  const handleAddToCartClick = () => {
+  // Determine the correct details path based on role
+  // Determine the correct details path based on role
+  let detailsPath = `/buyer/book/${book._id}`;
+  if (isSeller) {
+    // Check if the current user is the seller of this book
+    const isOwner = book.seller && (
+      (typeof book.seller === 'object' && book.seller._id === user?._id) ||
+      (typeof book.seller === 'string' && book.seller === user?._id)
+    );
+
+    if (isOwner) {
+      detailsPath = `/seller/books/${book._id}`; // Manage book
+    } else {
+      detailsPath = `/seller/view-book/${book._id}`; // View only
+    }
+  } else if (isAdmin) {
+    detailsPath = `/admin/view-book/${book._id}`;
+  }
+
+  const handleAddToCartClick = (e) => {
+    e.preventDefault(); // Prevent link navigation if wrapped in Link
     if (!isAuthenticated) {
       // Redirect to login if not authenticated
       navigate('/login', { state: { from: window.location.pathname } });
@@ -24,9 +47,15 @@ const BookCard = ({ book, onAddToCart, compact = false }) => {
     }
   };
 
+  const handleViewClick = (e) => {
+    // If wrapped in a Link, this might be redundant but safe
+    e.preventDefault();
+    navigate(detailsPath);
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-300 h-full flex flex-col">
-      <Link to={`/buyer/book/${book._id}`} className="block">
+      <Link to={detailsPath} className="block">
         <div className={`relative ${compact ? 'pb-[135%]' : 'pb-[140%]'} bg-gray-50`}>
           <img
             src={book.coverImage || 'https://via.placeholder.com/300x420?text=No+Cover'}
@@ -52,7 +81,7 @@ const BookCard = ({ book, onAddToCart, compact = false }) => {
       </Link>
 
       <div className={`flex flex-col flex-grow ${compact ? 'p-3' : 'p-4'}`}>
-        <Link to={`/buyer/book/${book._id}`} className="block mb-1">
+        <Link to={detailsPath} className="block mb-1">
           <h3 className={`font-semibold text-gray-900 hover:text-accent-brown line-clamp-2 transition-colors ${compact ? 'text-xs leading-tight min-h-[2rem]' : 'text-sm min-h-[2.5rem]'}`}>
             {book.title}
           </h3>
@@ -88,13 +117,22 @@ const BookCard = ({ book, onAddToCart, compact = false }) => {
             </div>
           )}
 
-          <button
-            onClick={handleAddToCartClick}
-            disabled={book.stock === 0 || book.approvalStatus === 'pending' || book.approvalStatus === 'rejected'}
-            className={`w-full bg-accent-brown text-white rounded font-medium hover:bg-accent-brown/90 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 shadow-sm ${compact ? 'py-1.5 text-xs' : 'py-2 text-sm'}`}
-          >
-            {book.stock === 0 ? 'Out of Stock' : (book.approvalStatus === 'pending' || book.approvalStatus === 'rejected') ? 'Pending' : 'Add to Cart'}
-          </button>
+          {isBuyer ? (
+            <button
+              onClick={handleAddToCartClick}
+              disabled={book.stock === 0 || book.approvalStatus === 'pending' || book.approvalStatus === 'rejected'}
+              className={`w-full bg-accent-brown text-white rounded font-medium hover:bg-accent-brown/90 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 shadow-sm ${compact ? 'py-1.5 text-xs' : 'py-2 text-sm'}`}
+            >
+              {book.stock === 0 ? 'Out of Stock' : (book.approvalStatus === 'pending' || book.approvalStatus === 'rejected') ? 'Pending' : 'Add to Cart'}
+            </button>
+          ) : (
+            <button
+              onClick={handleViewClick}
+              className={`w-full bg-gray-100 text-gray-700 border border-gray-300 rounded font-medium hover:bg-gray-200 transition-colors duration-200 shadow-sm ${compact ? 'py-1.5 text-xs' : 'py-2 text-sm'}`}
+            >
+              View Details
+            </button>
+          )}
         </div>
       </div>
     </div>

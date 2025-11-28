@@ -31,6 +31,7 @@ const libraryRouter = require('./routes/library');
 const videosRouter = require('./routes/videos');
 const ordersRoutes = require("./routes/orders");
 const reviewsRoutes = require("./routes/reviews");
+const booksRoutes = require("./routes/books");
 
 // Import database connection
 const connectDB = require("./config/db");
@@ -113,6 +114,7 @@ app.use((req, res, next) => {
 
 // API Routes
 app.use("/api/public", publicRoutes);
+app.use("/api/books", booksRoutes); // Mount books routes
 app.use("/api/subscription", subscriptionRouter);
 app.use("/api/library", libraryRouter);
 app.use("/api/videos", videosRouter);
