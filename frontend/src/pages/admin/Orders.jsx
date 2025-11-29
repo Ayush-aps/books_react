@@ -8,7 +8,8 @@ import { Link } from 'react-router-dom';
 import { adminService } from '../../services/adminService';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
-import SuccessToast from '../../components/SuccessToast';
+import { useToast } from '../../components/Toast';
+import Pagination from '../../components/Pagination';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
 import Badge from '../../components/Badge';
@@ -17,23 +18,31 @@ import { motion } from 'framer-motion';
 import { fadeInUp, staggerContainer, staggerItem } from '../../utils/animations';
 
 const Orders = () => {
+  const toast = useToast();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [statusFilter, setStatusFilter] = useState('all');
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
   const [updatingOrderId, setUpdatingOrderId] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalOrders, setTotalOrders] = useState(0);
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [currentPage, statusFilter]);
 
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const response = await adminService.getOrders();
+      const response = await adminService.getOrders({
+        page: currentPage,
+        limit: 10,
+        status: statusFilter !== 'all' ? statusFilter : undefined
+      });
       setOrders(response.data?.orders || []);
+      setTotalPages(response.data?.pagination?.totalPages || 1);
+      setTotalOrders(response.data?.pagination?.totalOrders || 0);
       setError(null);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load orders');
@@ -49,11 +58,11 @@ const Orders = () => {
       setOrders(orders.map(order => 
         order._id === orderId ? { ...order, orderStatus: newStatus, status: newStatus } : order
       ));
-      setSuccessMessage(`Order status updated to ${newStatus}`);
-      setShowSuccessToast(true);
-      setTimeout(() => setShowSuccessToast(false), 3000);
+      toast.success(`Order status updated to ${newStatus}`, 3000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update order status');
+      const errorMessage = err.response?.data?.message || 'Failed to update order status';
+      setError(errorMessage);
+      toast.error(errorMessage, 3000);
     } finally {
       setUpdatingOrderId(null);
     }
@@ -73,17 +82,23 @@ const Orders = () => {
 
   const getOrderStatus = (order) => order.orderStatus || order.status || 'ordered';
 
-  const filteredOrders = statusFilter === 'all' 
-    ? orders 
-    : orders.filter(order => getOrderStatus(order) === statusFilter);
+  const handleFilterChange = (newFilter) => {
+    setStatusFilter(newFilter);
+    setCurrentPage(1); // Reset to page 1 when filter changes
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const filterTabs = [
-    { value: 'all', label: 'All Orders', count: orders.length },
-    { value: 'ordered', label: 'Ordered', count: orders.filter(o => getOrderStatus(o) === 'ordered').length },
-    { value: 'processing', label: 'Processing', count: orders.filter(o => getOrderStatus(o) === 'processing').length },
-    { value: 'shipped', label: 'Shipped', count: orders.filter(o => getOrderStatus(o) === 'shipped').length },
-    { value: 'delivered', label: 'Delivered', count: orders.filter(o => getOrderStatus(o) === 'delivered').length },
-    { value: 'cancelled', label: 'Cancelled', count: orders.filter(o => getOrderStatus(o) === 'cancelled').length }
+    { value: 'all', label: 'All Orders', count: statusFilter === 'all' ? totalOrders : null },
+    { value: 'ordered', label: 'Ordered', count: statusFilter === 'ordered' ? totalOrders : null },
+    { value: 'processing', label: 'Processing', count: statusFilter === 'processing' ? totalOrders : null },
+    { value: 'shipped', label: 'Shipped', count: statusFilter === 'shipped' ? totalOrders : null },
+    { value: 'delivered', label: 'Delivered', count: statusFilter === 'delivered' ? totalOrders : null },
+    { value: 'cancelled', label: 'Cancelled', count: statusFilter === 'cancelled' ? totalOrders : null }
   ];
 
   if (loading) {
@@ -132,7 +147,7 @@ const Orders = () => {
                 {filterTabs.map(tab => (
                   <button
                     key={tab.value}
-                    onClick={() => setStatusFilter(tab.value)}
+                    onClick={() => handleFilterChange(tab.value)}
                     className={`px-6 py-3 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
                       statusFilter === tab.value
                         ? 'bg-brown text-white shadow-sm'
@@ -140,13 +155,15 @@ const Orders = () => {
                     }`}
                   >
                     {tab.label}
-                    <Badge 
-                      variant={statusFilter === tab.value ? 'light' : 'default'} 
-                      size="sm" 
-                      className="ml-2"
-                    >
-                      {tab.count}
-                    </Badge>
+                    {tab.count !== null && (
+                      <Badge 
+                        variant={statusFilter === tab.value ? 'light' : 'default'} 
+                        size="sm" 
+                        className="ml-2"
+                      >
+                        {tab.count}
+                      </Badge>
+                    )}
                   </button>
                 ))}
               </nav>
@@ -155,7 +172,7 @@ const Orders = () => {
         </motion.div>
 
         {/* Orders List */}
-        {filteredOrders.length === 0 ? (
+        {orders.length === 0 ? (
           <motion.div
             variants={fadeInUp}
             initial="hidden"
@@ -183,7 +200,7 @@ const Orders = () => {
             initial="hidden"
             animate="visible"
           >
-            {filteredOrders.map(order => (
+            {orders.map(order => (
               <motion.div key={order._id} variants={staggerItem}>
                 <Card hoverable>
                   <Card.Body>
@@ -252,12 +269,20 @@ const Orders = () => {
           </motion.div>
         )}
 
-        {/* Success Toast */}
-        {showSuccessToast && (
-          <SuccessToast
-            message={successMessage}
-            onClose={() => setShowSuccessToast(false)}
-          />
+        {/* Pagination */}
+        {totalPages > 1 && orders.length > 0 && (
+          <motion.div
+            className="mt-8"
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+          >
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          </motion.div>
         )}
       </div>
     </div>

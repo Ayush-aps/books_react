@@ -237,97 +237,83 @@ const Books = () => {
           </motion.div>
         ) : (
           <motion.div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-5"
             variants={staggerContainer}
             initial="hidden"
             animate="visible"
           >
             {filteredBooks.map(book => (
               <motion.div key={book._id} variants={staggerItem}>
-                <Card hoverable className="h-full flex flex-col">
-                  {/* Book Cover */}
-                  <div className="aspect-[3/4] bg-taupe/10 relative overflow-hidden">
-                    {book.coverImage ? (
+                <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-300 h-full flex flex-col">
+                  <Link to={`/admin/content/${book._id}`} className="block">
+                    <div className="relative pb-[135%] bg-gray-50">
                       <img
-                        src={book.coverImage}
+                        src={book.coverImage || 'https://via.placeholder.com/300x420?text=No+Cover'}
                         alt={book.title}
-                        className="w-full h-full object-cover"
+                        className="absolute inset-0 w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                       />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <svg className="w-16 h-16 text-taupe" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                        </svg>
+                      <div className="absolute top-2 right-2">
+                        <Badge variant={getStatusVariant(book)} className="text-xs px-2 py-1">
+                          {getStatusText(book)}
+                        </Badge>
                       </div>
-                    )}
-                    <div className="absolute top-3 right-3">
-                      <Badge variant={getStatusVariant(book)}>
-                        {getStatusText(book)}
-                      </Badge>
+                      {book.stock === 0 && (
+                        <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center">
+                          <span className="text-white font-bold text-xs">Out of Stock</span>
+                        </div>
+                      )}
                     </div>
-                  </div>
+                  </Link>
 
-                  {/* Book Info */}
-                  <Card.Body className="flex-1 flex flex-col">
-                    <h3 className="heading-5 text-charcoal line-clamp-2 mb-2">{book.title || 'Untitled'}</h3>
-                    <p className="body-sm text-charcoal/60 mb-3">by {book.author || 'Unknown'}</p>
+                  <div className="flex flex-col flex-grow p-3">
+                    <Link to={`/admin/content/${book._id}`} className="block mb-1">
+                      <h3 className="font-semibold text-sm text-gray-900 hover:text-accent-brown line-clamp-2 transition-colors leading-tight min-h-[2rem]">
+                        {book.title || 'Untitled'}
+                      </h3>
+                    </Link>
+                    <p className="text-gray-500 line-clamp-1 text-[11px] mb-2">{book.author || 'Unknown'}</p>
 
-                    <div className="flex items-center gap-2 mb-4">
-                      <Badge variant="default" size="sm">{book.genres?.[0] || 'N/A'}</Badge>
-                      <Badge variant="default" size="sm">{book.condition || 'N/A'}</Badge>
-                    </div>
-
-                    <div className="flex items-center justify-between mb-4 pb-4 border-b border-charcoal/10">
-                      <div>
-                        <p className="heading-5 text-brown">₹{book.price ? book.price.toFixed(2) : '0.00'}</p>
-                        <p className="body-sm text-charcoal/60">Stock: {book.stock || 0}</p>
+                    <div className="mt-auto">
+                      <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                        <span className="font-bold text-gray-900 text-sm">₹{book.price ? book.price.toFixed(2) : '0.00'}</span>
+                        {book.condition && (
+                          <span className="text-[10px] text-gray-500 capitalize bg-gray-50 px-1.5 py-0.5 rounded">{book.condition}</span>
+                        )}
                       </div>
-                      <div className="text-right">
-                        <p className="body-sm text-charcoal/60">Seller</p>
-                        <p className="body-sm font-medium text-charcoal">{book.seller?.name || 'N/A'}</p>
-                      </div>
-                    </div>
 
-                    {book.description && (
-                      <p className="body-sm text-charcoal/70 line-clamp-2 mb-4">{book.description}</p>
-                    )}
+                      {book.seller?.name && (
+                        <p className="text-[10px] text-gray-500 mb-2 line-clamp-1">
+                          By: {book.seller.name}
+                        </p>
+                      )}
 
-                    {/* Actions */}
-                    <div className="flex gap-2 mt-auto">
-                      {!book.isApproved && !book.rejectionReason && (
-                        <>
-                          <Button
-                            variant="success"
-                            size="sm"
-                            fullWidth
+                      {!book.isApproved && !book.rejectionReason ? (
+                        <div className="flex gap-1">
+                          <button
                             onClick={() => handleApprove(book._id)}
                             disabled={processing}
+                            className="flex-1 bg-green-600 text-white rounded font-medium py-1.5 text-xs hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 shadow-sm"
                           >
                             Approve
-                          </Button>
-                          <Button
-                            variant="error"
-                            size="sm"
-                            fullWidth
+                          </button>
+                          <button
                             onClick={() => handleRejectClick(book)}
                             disabled={processing}
+                            className="flex-1 bg-red-600 text-white rounded font-medium py-1.5 text-xs hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 shadow-sm"
                           >
                             Reject
-                          </Button>
-                        </>
+                          </button>
+                        </div>
+                      ) : (
+                        <Link to={`/admin/content/${book._id}`} className="block">
+                          <button className="w-full bg-gray-100 text-gray-700 border border-gray-300 rounded font-medium py-1.5 text-xs hover:bg-gray-200 transition-colors duration-200 shadow-sm">
+                            View Details
+                          </button>
+                        </Link>
                       )}
-                      <Link to={`/admin/content/${book._id}`} className="flex-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          fullWidth
-                        >
-                          View Details
-                        </Button>
-                      </Link>
                     </div>
-                  </Card.Body>
-                </Card>
+                  </div>
+                </div>
               </motion.div>
             ))}
           </motion.div>

@@ -270,43 +270,81 @@ exports.getReports = async (req, res) => {
       },
     ]);
 
-    // Top selling books
-    const topSellingBooks = await Book.find({ isAvailable: true })
-      .sort({ reviewCount: -1, sold: -1 })
-      .limit(5)
-      .select("title author coverImage price discountPrice reviewCount sold");
-
-    // Top sellers
-    const topSellers = await Book.aggregate([
-      { $match: { isAvailable: true } },
+    // Top selling books - based on actual order data
+    const topSellingBooks = await Order.aggregate([
+      { $match: { orderStatus: { $in: ["delivered", "shipped", "processing"] } } },
+      { $unwind: "$items" },
       {
         $group: {
-          _id: "$seller",
-          totalBooks: { $sum: 1 },
-          totalSold: { $sum: { $ifNull: ["$sold", 0] } },
-        },
+          _id: "$items.book",
+          soldCount: { $sum: "$items.quantity" },
+          revenue: { $sum: { $multiply: ["$items.price", "$items.quantity"] } }
+        }
       },
-      { $sort: { totalSold: -1 } },
+      { $sort: { soldCount: -1 } },
+      { $limit: 5 },
+      {
+        $lookup: {
+          from: "books",
+          localField: "_id",
+          foreignField: "_id",
+          as: "bookDetails"
+        }
+      },
+      { $unwind: "$bookDetails" },
+      {
+        $project: {
+          _id: 0,
+          title: "$bookDetails.title",
+          author: "$bookDetails.author",
+          coverImage: "$bookDetails.coverImage",
+          soldCount: 1,
+          revenue: 1
+        }
+      }
+    ]);
+
+    // Top sellers - based on actual order data
+    const topSellers = await Order.aggregate([
+      { $match: { orderStatus: { $in: ["delivered", "shipped", "processing"] } } },
+      { $unwind: "$items" },
+      {
+        $group: {
+          _id: "$items.seller",
+          totalSales: { $sum: "$items.quantity" },
+          revenue: { $sum: { $multiply: ["$items.price", "$items.quantity"] } }
+        }
+      },
+      { $sort: { totalSales: -1 } },
       { $limit: 5 },
       {
         $lookup: {
           from: "users",
           localField: "_id",
           foreignField: "_id",
-          as: "seller",
-        },
+          as: "sellerDetails"
+        }
       },
-      { $unwind: "$seller" },
+      { $unwind: "$sellerDetails" },
+      {
+        $lookup: {
+          from: "books",
+          localField: "_id",
+          foreignField: "seller",
+          as: "books"
+        }
+      },
       {
         $project: {
           _id: 0,
           sellerId: "$_id",
-          name: "$seller.name",
-          email: "$seller.email",
-          totalBooks: 1,
-          totalSold: 1,
-        },
-      },
+          name: "$sellerDetails.name",
+          email: "$sellerDetails.email",
+          totalSales: 1,
+          revenue: 1,
+          booksListed: { $size: "$books" }
+        }
+      }
     ]);
 
     // Revenue by month (last 12 months)
@@ -349,8 +387,11 @@ exports.getReports = async (req, res) => {
     const newUsersThisMonth = await User.countDocuments({
       createdAt: { $gte: firstDayOfMonth },
     });
+    
+    // Count active users based on isVerified status (includes buyers and sellers)
     const activeUsers = await User.countDocuments({
-      lastLogin: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+      isVerified: true,
+      role: { $in: ["buyer", "seller"] }
     });
 
     const systemHealth = {
@@ -417,8 +458,7 @@ exports.getContent = async (req, res) => {
 
     const approvedBooks = await Book.find({ isApproved: true })
       .populate("seller", "name email")
-      .sort({ approvalDate: -1 })
-      .limit(10);
+      .sort({ approvalDate: -1 });
 
     // Rejected books for admin reference
     const rejectedBooks = await Book.find({
@@ -426,8 +466,7 @@ exports.getContent = async (req, res) => {
       rejectionReason: { $exists: true, $ne: null }
     })
       .populate("seller", "name email")
-      .sort({ rejectionDate: -1 })
-      .limit(10);
+      .sort({ rejectionDate: -1 });
 
     res.json({
       success: true,

@@ -124,12 +124,23 @@ const Complaints = () => {
                 Manage and resolve user complaints ({totalComplaints} total)
               </p>
             </div>
-            <Button variant="outline" onClick={resetFilters}>
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button
+              onClick={resetFilters}
+              className="inline-flex items-center gap-2 text-white rounded-lg transition-all duration-300 hover:scale-105 hover:brightness-110 focus:outline-none shadow-sm hover:shadow-md whitespace-nowrap"
+              style={{ 
+                backgroundColor: '#8B7355',
+                padding: '0.625rem 1.5rem',
+                border: '1px solid transparent',
+                lineHeight: '1.5',
+                height: '42px',
+                fontWeight: '500'
+              }}
+            >
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
-              Reset Filters
-            </Button>
+              <span className="flex-shrink-0">Reset Filters</span>
+            </button>
           </div>
         </motion.div>
 
@@ -301,12 +312,23 @@ const Complaints = () => {
                             )}
                           </div>
 
-                          <Button variant="outline" size="sm">
-                            Manage
-                            <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <button
+                            className="inline-flex items-center gap-2 text-white rounded-lg transition-all duration-300 hover:scale-105 hover:brightness-110 focus:outline-none shadow-sm hover:shadow-md whitespace-nowrap"
+                            style={{ 
+                              backgroundColor: '#8B7355',
+                              padding: '0.5rem 1.25rem',
+                              border: '1px solid transparent',
+                              lineHeight: '1.5',
+                              height: '36px',
+                              fontWeight: '500',
+                              fontSize: '0.875rem'
+                            }}
+                          >
+                            <span className="flex-shrink-0">Manage</span>
+                            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                             </svg>
-                          </Button>
+                          </button>
                         </div>
                       </Card.Body>
                     </Card>
@@ -325,28 +347,44 @@ const Complaints = () => {
                         Page {page} of {totalPages}
                       </p>
                       <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
+                        <button
                           onClick={() => setPage(p => Math.max(1, p - 1))}
                           disabled={page === 1 || loading}
+                          className="inline-flex items-center gap-2 text-white rounded-lg transition-all duration-300 hover:scale-105 hover:brightness-110 focus:outline-none shadow-sm hover:shadow-md whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                          style={{ 
+                            backgroundColor: '#8B7355',
+                            padding: '0.5rem 1.25rem',
+                            border: '1px solid transparent',
+                            lineHeight: '1.5',
+                            height: '36px',
+                            fontWeight: '500',
+                            fontSize: '0.875rem'
+                          }}
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                           </svg>
-                          Previous
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
+                          <span className="flex-shrink-0">Previous</span>
+                        </button>
+                        <button
                           onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                           disabled={page === totalPages || loading}
+                          className="inline-flex items-center gap-2 text-white rounded-lg transition-all duration-300 hover:scale-105 hover:brightness-110 focus:outline-none shadow-sm hover:shadow-md whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                          style={{ 
+                            backgroundColor: '#8B7355',
+                            padding: '0.5rem 1.25rem',
+                            border: '1px solid transparent',
+                            lineHeight: '1.5',
+                            height: '36px',
+                            fontWeight: '500',
+                            fontSize: '0.875rem'
+                          }}
                         >
-                          Next
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <span className="flex-shrink-0">Next</span>
+                          <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                           </svg>
-                        </Button>
+                        </button>
                       </div>
                     </div>
                   </Card.Body>
