@@ -46,7 +46,14 @@ const Register = () => {
     defaultValues: { name: '', email: prefillEmail, password: '', password2: '', role: 'buyer' }
   });
 
-  // Scroll and Redirect effects remain the same
+  // useEffect(() => {
+  //   if (isAuthenticated) {
+  //     const role = user.role;
+  //     navigate(role === 'admin' ? '/dashboard' : '/');
+  //   }
+  // }, [isAuthenticated, user]);
+
+  // Scroll and Redirect effects remain the same leavinng for reference if new one fails
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   useEffect(() => {
