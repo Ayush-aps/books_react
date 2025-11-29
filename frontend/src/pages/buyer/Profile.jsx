@@ -291,9 +291,17 @@ const Profile = () => {
                       <Badge variant="info">{user?.role || 'N/A'}</Badge>
                     </div>
                     <div>
-                      <label className="body-sm font-medium text-charcoal/60 mb-2 block">Member Since</label>
+                      <label className="body-sm font-medium text-charcoal/60 mb-2 block">
+                        {currentSubscription?.startDate ? 'Subscribed Since' : 'Member Since'}
+                      </label>
                       <p className="body text-charcoal">
-                        {user?.createdAt
+                        {currentSubscription?.startDate
+                          ? new Date(currentSubscription.startDate).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })
+                          : user?.createdAt
                           ? new Date(user.createdAt).toLocaleDateString('en-US', {
                             year: 'numeric',
                             month: 'long',
@@ -401,8 +409,8 @@ const Profile = () => {
                   {currentSubscription && currentSubscription.isActive && new Date(currentSubscription.endDate) > new Date() ? (
                     <div>
                       <div className="bg-gradient-to-r from-brown to-brown/80 text-white rounded-lg p-5 mb-4">
-                        <p className="body-sm opacity-90 mb-1">Active Plan</p>
-                        <p className="heading-3">
+                        <p className="body-sm text-white opacity-90 mb-1">Active Plan</p>
+                        <p className="heading-3 text-white">
                           {currentSubscription.plan === 'premium' ? 'Premium' : 
                            currentSubscription.plan === 'premium_plus' ? 'Premium Plus' : 
                            currentSubscription.plan}

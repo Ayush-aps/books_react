@@ -162,6 +162,7 @@ router.post("/contact", async (req, res) => {
       newComplaint = new Complaint({
         subject: subject,
         description: message,
+        category: type || "General Inquiry",
         user: req.user._id,
         userRole: req.user.role,
         status: "pending",
@@ -179,6 +180,7 @@ router.post("/contact", async (req, res) => {
       newComplaint = new Complaint({
         subject: subject,
         description: message,
+        category: type || "General Inquiry",
         guestInfo: {
           name: name,
           email: email,

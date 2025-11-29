@@ -12,13 +12,13 @@ import api from '../../services/api';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import ErrorMessage from '../../components/ErrorMessage';
-import SuccessToast from '../../components/SuccessToast';
+import { useToast } from '../../components/Toast';
 import { fadeInUp } from '../../utils/animations';
 import { complaintSchema } from '../../schemas/allFormSchemas';
 
 const RegisterComplaint = () => {
   const navigate = useNavigate();
-  const [showToast, setShowToast] = useState(false);
+  const toast = useToast();
   const [error, setError] = useState(null);
 
   const categories = [
@@ -71,12 +71,15 @@ const RegisterComplaint = () => {
 
       await api.post('/seller/complaints', complaintData);
 
-      setShowToast(true);
-      setTimeout(() => {
-        navigate('/seller/complaints');
-      }, 2000);
+      // Show success toast
+      toast.success('Complaint registered successfully! We will review it and get back to you soon.', 5000);
+      
+      // Redirect to complaints page
+      navigate('/seller/complaints');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to submit complaint');
+      const errorMessage = err.response?.data?.message || 'Failed to submit complaint';
+      setError(errorMessage);
+      toast.error(errorMessage, 5000);
     }
   };
 
@@ -271,14 +274,6 @@ const RegisterComplaint = () => {
             </Card.Body>
           </Card>
         </motion.div>
-
-        {/* Success Toast */}
-        {showToast && (
-          <SuccessToast
-            message="Complaint submitted successfully! Redirecting..."
-            onClose={() => setShowToast(false)}
-          />
-        )}
       </div>
     </div>
   );

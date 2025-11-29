@@ -21,19 +21,30 @@ const ComplaintSchema = new mongoose.Schema({
       'Payment Issue', 'Platform Fee Dispute', 'Buyer Issue', 
       'Technical Problem', 'Account Issue', 'Policy Violation Report',
       // Common
-      'Other'
+      'Other', 'General Inquiry'
     ],
-    required: true
+    default: 'General Inquiry'
   },
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    default: null
   },
   userRole: {
     type: String,
-    enum: ['buyer', 'seller'],
+    enum: ['buyer', 'seller', 'guest'],
     required: true
+  },
+  // Guest user information (for non-authenticated users)
+  guestInfo: {
+    name: String,
+    email: String
+  },
+  // Source tracking
+  source: {
+    type: String,
+    enum: ['complaint_form', 'contact_form'],
+    default: 'complaint_form'
   },
   // Reference fields for context
   order: {
@@ -73,11 +84,11 @@ const ComplaintSchema = new mongoose.Schema({
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true
+      default: null
     },
     userRole: {
       type: String,
-      enum: ['buyer', 'seller', 'admin'],
+      enum: ['buyer', 'seller', 'admin', 'guest'],
       required: true
     },
     message: {

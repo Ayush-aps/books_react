@@ -8,6 +8,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
+import { useToast } from '../../components/Toast';
 // Removed: useFormValidation and manual validation utils
 
 // RHF Imports
@@ -17,6 +18,7 @@ import { buyerComplaintSchema } from '../../schemas/allFormSchemas';
 
 const RegisterComplaint = () => {
   const navigate = useNavigate();
+  const toast = useToast();
   const [searchParams] = useSearchParams();
   const initialOrderId = searchParams.get('orderId');
 
@@ -75,11 +77,15 @@ const RegisterComplaint = () => {
 
     try {
       await api.post('/buyer/complaints', data);
-      navigate('/buyer/profile', {
-        state: { success: 'Complaint registered successfully. We will review it and get back to you soon.' }
-      });
+      
+      // Show success toast
+      toast.success('Complaint registered successfully! We will review it and get back to you soon.', 5000);
+      
+      // Redirect to complaints page
+      navigate('/buyer/complaints');
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to submit complaint');
+      toast.error(err.response?.data?.message || 'Failed to submit complaint', 5000);
     }
   };
 

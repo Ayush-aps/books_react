@@ -903,7 +903,14 @@ exports.getAllBooks = async (req, res) => {
     const query = {};
 
     if (search) {
-      query.$or = [{ title: { $regex: search, $options: "i" } }, { author: { $regex: search, $options: "i" } }];
+      // Production-grade search - split terms for better matching
+      const searchTerms = search.trim().split(/\s+/);
+      const searchRegex = new RegExp(searchTerms.join('|'), 'i');
+      query.$or = [
+        { title: searchRegex },
+        { author: searchRegex },
+        { description: searchRegex }
+      ];
     }
 
     if (genre) query.genres = genre;

@@ -7,6 +7,9 @@ import { checkAuth } from './redux/actions/authActions'
 import Header from './components/layout/Header'
 import Footer from './components/layout/Footer'
 
+// Toast Provider
+import { ToastProvider } from './components/Toast'
+
 // Public Pages
 import Home from './pages/Home'
 import About from './pages/About'
@@ -90,11 +93,12 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen flex flex-col">
-        <ScrollToTop />
-        <Header />
-        <main className="flex-grow">
-          <Routes>
+      <ToastProvider>
+        <div className="min-h-screen flex flex-col">
+          <ScrollToTop />
+          <Header />
+          <main className="flex-grow">
+            <Routes>
             {/* Public Routes */}
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />
@@ -161,10 +165,11 @@ function App() {
 
             {/* Catch all - 404 */}
             <Route path="*" element={<NotFound />} />
-          </Routes>
-        </main>
-        <Footer />
-      </div>
+            </Routes>
+          </main>
+          <Footer />
+        </div>
+      </ToastProvider>
     </ErrorBoundary>
   )
 }

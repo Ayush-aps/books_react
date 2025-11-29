@@ -1065,9 +1065,20 @@ exports.browseBooks = async (req, res) => {
     const { search, genre, condition, minPrice, maxPrice, sort } = req.query;
 
     const query = { isApproved: true, isAvailable: true };
+    const andConditions = [];
 
+    // Production-grade search with regex for flexible matching
     if (search) {
-      query.$text = { $search: search };
+      const searchTerms = search.trim().split(/\s+/);
+      const searchRegex = new RegExp(searchTerms.join('|'), 'i');
+      
+      andConditions.push({
+        $or: [
+          { title: searchRegex },
+          { author: searchRegex },
+          { description: searchRegex }
+        ]
+      });
     }
 
     if (genre) {
@@ -1090,7 +1101,12 @@ exports.browseBooks = async (req, res) => {
       if (maxPrice) discountPriceQuery.discountPrice = { ...discountPriceQuery.discountPrice, $lte: Number(maxPrice) };
 
       priceQuery.push(regularPriceQuery, discountPriceQuery);
-      query.$or = priceQuery;
+      andConditions.push({ $or: priceQuery });
+    }
+
+    // Combine all $and conditions
+    if (andConditions.length > 0) {
+      query.$and = andConditions;
     }
 
     const genres = await Book.distinct("genres");

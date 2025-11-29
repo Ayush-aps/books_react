@@ -3,7 +3,7 @@
  * Book browsing with filters, search, and pagination
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
 import { fetchBooks, setFilters, clearFilters } from '../../redux/actions/bookActions';
@@ -15,17 +15,44 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
 import Button from '../../components/Button';
 import Badge from '../../components/Badge';
+import { useToast } from '../../components/Toast';
 import { fadeInUp, staggerContainer, staggerItem } from '../../utils/animations';
 
 const Browse = () => {
   const dispatch = useDispatch();
+  const toast = useToast();
   const { books, loading, error, filters, pagination, genres } = useSelector(state => state.books);
   const [localFilters, setLocalFilters] = useState(filters);
+  const searchTimeoutRef = useRef(null);
+
+  // Debounced fetch function for search
+  const debouncedFetch = useCallback((filters) => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    searchTimeoutRef.current = setTimeout(() => {
+      dispatch(fetchBooks(filters));
+    }, 500); // 500ms debounce delay
+  }, [dispatch]);
 
   useEffect(() => {
-    // Fetch books on mount and when filters change
-    dispatch(fetchBooks(localFilters));
-  }, [dispatch, localFilters]);
+    // Use debounced fetch for search, immediate fetch for other filters
+    const hasSearch = localFilters.search !== undefined && localFilters.search !== '';
+    
+    if (hasSearch) {
+      debouncedFetch(localFilters);
+    } else {
+      dispatch(fetchBooks(localFilters));
+    }
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [dispatch, localFilters, debouncedFetch]);
 
   const handleFilterChange = (newFilters) => {
     setLocalFilters({
@@ -49,10 +76,18 @@ const Browse = () => {
   };
 
   const handleAddToCart = async (bookId) => {
-    const result = await dispatch(addToCart(bookId, 1));
-    if (result.success) {
-      // Show success feedback (could add a toast notification here)
-      console.log('Added to cart successfully');
+    try {
+      const result = await dispatch(addToCart(bookId, 1));
+      if (result.success) {
+        // Find the book that was added to show its title in the toast
+        const addedBook = books.find(book => book._id === bookId);
+        const bookTitle = addedBook?.title || 'Book';
+        toast.success(`"${bookTitle}" added to cart!`, 3000);
+      } else {
+        toast.error(result.message || 'Failed to add to cart', 3000);
+      }
+    } catch (error) {
+      toast.error('An error occurred while adding to cart', 3000);
     }
   };
 
@@ -132,11 +167,11 @@ const Browse = () => {
                   variants={staggerContainer}
                   initial="hidden"
                   animate="visible"
-                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                  className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-5"
                 >
                   {books.map((book) => (
                     <motion.div key={book._id} variants={staggerItem}>
-                      <BookCard book={book} onAddToCart={handleAddToCart} />
+                      <BookCard book={book} compact={true} onAddToCart={handleAddToCart} />
                     </motion.div>
                   ))}
                 </motion.div>

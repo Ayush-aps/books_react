@@ -10,6 +10,7 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
 import Modal from '../../components/Modal';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import { useToast } from '../../components/Toast';
 // Removed: useFormValidation and manual validation utils
 
 // RHF Imports
@@ -19,6 +20,7 @@ import { addressSchema } from '../../schemas/allFormSchemas';
 
 const Addresses = () => {
   const navigate = useNavigate();
+  const toast = useToast();
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -114,9 +116,12 @@ const Addresses = () => {
   const handleSetDefault = async (addressId) => {
     try {
       await api.put(`/buyer/addresses/${addressId}`, { isDefault: true });
+      toast.success('Default address updated successfully!', 3000);
       fetchAddresses();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to set default address');
+      const errorMessage = err.response?.data?.message || 'Failed to set default address';
+      setError(errorMessage);
+      toast.error(errorMessage, 3000);
     }
   };
 
@@ -197,43 +202,76 @@ const Addresses = () => {
             {addresses.map((address) => (
               <div
                 key={address._id}
-                className={`bg-white rounded-lg shadow-sm p-6 border-2 ${address.isDefault ? 'border-blue-500' : 'border-transparent'
-                  } hover:shadow-md transition-shadow`}
+                className={`bg-white rounded-xl shadow-sm p-6 border ${
+                  address.isDefault ? 'border-blue-500 ring-2 ring-blue-100' : 'border-gray-200'
+                } hover:shadow-lg hover:scale-[1.02] transition-all duration-300 ease-in-out flex flex-col h-full`}
               >
                 {address.isDefault && (
-                  <span className="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded mb-3">
-                    DEFAULT
-                  </span>
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="inline-flex items-center gap-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-sm">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      DEFAULT
+                    </span>
+                  </div>
                 )}
 
-                <h3 className="font-semibold text-gray-900 mb-2">{address.name || address.fullName}</h3>
-                <p className="text-gray-600 text-sm mb-1">{address.phone}</p>
-                <p className="text-gray-600 text-sm">{address.street}</p>
-                <p className="text-gray-600 text-sm">
-                  {address.city}, {address.state} {address.zipCode}
-                </p>
-                <p className="text-gray-600 text-sm mb-4">{address.country}</p>
+                <div className="flex-grow">
+                  <div className="space-y-2 mb-5">
+                    <h3 className="font-semibold text-gray-900">{address.name || address.fullName}</h3>
+                    <div className="space-y-1 text-sm text-gray-600">
+                      <p className="flex items-center gap-2">
+                        <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                        </svg>
+                        {address.phone}
+                      </p>
+                      <p className="flex items-start gap-2">
+                        <svg className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span>
+                          {address.street}<br />
+                          {address.city}, {address.state} {address.zipCode}<br />
+                          {address.country}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
 
-                <div className="flex gap-2">
+                <div className="flex gap-2 pt-4 border-t border-gray-100 mt-auto">
                   <button
                     onClick={() => handleEditAddress(address)}
-                    className="flex-1 text-blue-600 hover:text-blue-700 font-semibold text-sm py-2 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-1.5 font-medium text-sm py-2.5 px-3 rounded-lg transition-all duration-200 shadow-sm text-blue-600 bg-blue-50 hover:text-white hover:bg-blue-600 hover:shadow-md"
                   >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
                     Edit
                   </button>
-                  {!address.isDefault && (
+                  {!address.isDefault ? (
                     <button
                       onClick={() => handleSetDefault(address._id)}
-                      className="flex-1 text-gray-600 hover:text-gray-700 font-semibold text-sm py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                      className="flex-1 flex items-center justify-center gap-1.5 font-medium text-sm py-2.5 px-3 rounded-lg transition-all duration-200 shadow-sm text-gray-700 bg-gray-50 hover:bg-gray-200 hover:shadow-md"
                     >
-                      Set Default
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Default
                     </button>
+                  ) : (
+                    <div className="flex-1"></div>
                   )}
                   <button
                     onClick={() => setDeleteConfirm(address)}
-                    className="text-red-600 hover:text-red-700 font-semibold text-sm py-2 px-3 border border-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                    className="flex items-center justify-center gap-1.5 font-medium text-sm py-2.5 px-3 rounded-lg transition-all duration-200 shadow-sm text-red-600 bg-red-50 hover:text-white hover:bg-red-600 hover:shadow-md"
                   >
-                    Delete
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
                   </button>
                 </div>
               </div>

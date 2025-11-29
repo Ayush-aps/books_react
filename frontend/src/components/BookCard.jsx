@@ -82,7 +82,7 @@ const BookCard = ({ book, onAddToCart, compact = false }) => {
 
       <div className={`flex flex-col flex-grow ${compact ? 'p-3' : 'p-4'}`}>
         <Link to={detailsPath} className="block mb-1">
-          <h3 className={`font-semibold text-gray-900 hover:text-accent-brown line-clamp-2 transition-colors ${compact ? 'text-xs leading-tight min-h-[2rem]' : 'text-sm min-h-[2.5rem]'}`}>
+          <h3 className={`font-semibold text-gray-900 hover:text-accent-brown line-clamp-2 transition-colors ${compact ? 'text-sm leading-tight min-h-[2rem]' : 'text-base min-h-[2.5rem]'}`}>
             {book.title}
           </h3>
         </Link>

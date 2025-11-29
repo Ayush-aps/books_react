@@ -15,11 +15,13 @@ import ErrorMessage from '../components/ErrorMessage';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
+import { useToast } from '../components/Toast';
 import { fadeInUp, staggerContainer, staggerItem, imageZoom } from '../utils/animations';
 
 const Home = () => {
   const { isAuthenticated, user } = useSelector(state => state.auth);
   const dispatch = useDispatch();
+  const toast = useToast();
   const [data, setData] = useState({
     featuredBooks: [],
     newBooks: [],
@@ -86,19 +88,23 @@ const Home = () => {
 
   const handleAddToCart = async (bookId) => {
     if (!isAuthenticated) {
+      toast.warning('Please login to add items to cart', 3000);
       return;
     }
     
     try {
       const result = await dispatch(addToCart(bookId, 1));
       if (result.success) {
-        // Success feedback - you can add a toast notification here if needed
-        console.log('Added to cart successfully');
+        // Find the book that was added to show its title in the toast
+        const addedBook = [...data.featuredBooks, ...data.newBooks, ...data.trendingBooks]
+          .find(book => book._id === bookId);
+        const bookTitle = addedBook?.title || 'Book';
+        toast.success(`"${bookTitle}" added to cart!`, 3000);
       } else {
-        console.error('Failed to add to cart:', result.message);
+        toast.error(result.message || 'Failed to add to cart', 3000);
       }
     } catch (error) {
-      console.error('Error adding to cart:', error);
+      toast.error('An error occurred while adding to cart', 3000);
     }
   };
 

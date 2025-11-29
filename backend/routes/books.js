@@ -18,9 +18,21 @@ router.get('/browse', async (req, res) => {
 
         // Build query
         const query = { isApproved: true, isAvailable: true };
+        const andConditions = [];
 
+        // Search filter - case-insensitive regex for flexible matching
         if (search) {
-            query.$text = { $search: search };
+            // Split search terms and create regex pattern for each word
+            const searchTerms = search.trim().split(/\s+/);
+            const searchRegex = new RegExp(searchTerms.join('|'), 'i');
+            
+            andConditions.push({
+                $or: [
+                    { title: searchRegex },
+                    { author: searchRegex },
+                    { description: searchRegex }
+                ]
+            });
         }
 
         if (genre) {
@@ -46,7 +58,12 @@ router.get('/browse', async (req, res) => {
             if (maxPrice) discountPriceQuery.discountPrice = { ...discountPriceQuery.discountPrice, $lte: Number(maxPrice) };
 
             priceQuery.push(regularPriceQuery, discountPriceQuery);
-            query.$or = priceQuery;
+            andConditions.push({ $or: priceQuery });
+        }
+
+        // Combine all $and conditions
+        if (andConditions.length > 0) {
+            query.$and = andConditions;
         }
 
         // Sort options

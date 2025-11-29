@@ -5,7 +5,8 @@
 
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { logout } from '../redux/actions/authActions';
 import { motion } from 'framer-motion';
 import { fadeInUp, staggerContainer, staggerItem } from '../utils/animations';
 import api from '../services/api';
@@ -18,12 +19,14 @@ import SuccessToast from '../components/SuccessToast';
 
 const Pricing = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { user } = useSelector(state => state.auth);
   const [plans, setPlans] = useState([]);
   const [sellerRates, setSellerRates] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showRestrictedMessage, setShowRestrictedMessage] = useState(false);
+  const [showBuyerSellerModal, setShowBuyerSellerModal] = useState(false);
 
   useEffect(() => {
     // Check if user is seller or admin
@@ -61,6 +64,34 @@ const Pricing = () => {
       return;
     }
     navigate(`/subscription/checkout?plan=${planType}`);
+  };
+
+  const handleStartSelling = () => {
+    if (user && user.role === 'buyer') {
+      // Show modal explaining they need a separate seller account
+      setShowBuyerSellerModal(true);
+      return;
+    }
+    
+    if (user) {
+      // If already logged in as another role, redirect to home
+      navigate('/');
+      return;
+    }
+    
+    // Not logged in - redirect to registration
+    navigate('/register');
+  };
+
+  const handleCreateSellerAccount = async () => {
+    // Close modal first
+    setShowBuyerSellerModal(false);
+    
+    // Logout the current user
+    await dispatch(logout());
+    
+    // Redirect to registration page
+    navigate('/register');
   };
 
   const features = {
@@ -468,10 +499,13 @@ const Pricing = () => {
                 className="text-center"
                 variants={staggerItem}
               >
-                <Button variant="primary" size="lg" asChild>
-                  <Link to="/auth/register">
-                    Start Selling Today
-                  </Link>
+                <Button 
+                  variant="primary" 
+                  size="lg"
+                  onClick={handleStartSelling}
+                  className="text-white"
+                >
+                  Start Selling Today
                 </Button>
               </motion.div>
             </motion.div>
@@ -551,6 +585,57 @@ const Pricing = () => {
           </div>
         </div>
       </motion.div>
+
+      {/* Buyer to Seller Modal */}
+      {showBuyerSellerModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="max-w-md w-full"
+          >
+            <Card elevated>
+              <Card.Body className="p-8">
+                <div className="w-16 h-16 bg-warning/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="heading-3 text-center mb-4">Already a Buyer?</h3>
+                <p className="body text-text-secondary text-center mb-6">
+                  You're currently logged in as a buyer. To become a seller, you'll need to create a separate seller account for security and account management purposes.
+                </p>
+                <div className="space-y-4 mb-6 bg-cream p-4 rounded-lg">
+                  <p className="body-sm font-medium">To create a seller account:</p>
+                  <ol className="list-decimal list-inside space-y-2 body-sm text-text-secondary">
+                    <li>Logout from your current buyer account</li>
+                    <li>Register a new account with the seller role</li>
+                    <li>Complete the seller verification process</li>
+                  </ol>
+                </div>
+                <div className="flex flex-col gap-3">
+                  <Button 
+                    variant="primary"
+                    size="lg"
+                    onClick={handleCreateSellerAccount}
+                    fullWidth
+                  >
+                    Create One Now
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    size="lg"
+                    onClick={() => setShowBuyerSellerModal(false)}
+                    fullWidth
+                  >
+                    Got It
+                  </Button>
+                </div>
+              </Card.Body>
+            </Card>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };
