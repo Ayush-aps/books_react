@@ -112,6 +112,14 @@ const Contact = () => {
       answer: 'Sign up for an account and select "Seller" as your account type. Once approved, you can start listing your books immediately.'
     },
     {
+      question: 'Do buyer converted to seller get a guide?',
+      answer: 'You can email us directly on the complaint page and receive the guide.'
+    },
+    {
+      question: 'As a seller can I also buy books?',
+      answer: 'Yes if you have a buyers account.'
+    },
+    {
       question: 'What are the seller fees?',
       answer: (
         <>

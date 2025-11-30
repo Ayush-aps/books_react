@@ -141,6 +141,14 @@ const About = () => {
             >
               About Bookish
             </motion.h1>
+
+            <motion.p 
+              variants={staggerItem}
+              className="text-lg md:text-xl max-w-3xl mx-auto"
+              style={{ color: '#C4B5A0' }}
+            >
+              Bookish - the website you'll want to think about when buying books
+            </motion.p>
             
             <motion.p 
               variants={staggerItem}
