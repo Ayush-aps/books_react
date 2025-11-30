@@ -362,6 +362,24 @@ exports.createBook = async (req, res) => {
           ? coverImage.trim()
           : "https://nnpdev.wustl.edu/img/BookCovers/genericBookCover.jpg";
 
+    // Handle ePub file upload if provided
+    let epubFile = null;
+    if (req.file) {
+      console.log('📚 ePub file received:', req.file.originalname);
+      console.log('📤 Uploading ePub to Cloudinary...');
+      const { uploadEpub } = require('../config/cloudinary');
+      const uploadResult = await uploadEpub(req.file.path, {
+        original_filename: req.file.originalname
+      });
+      epubFile = uploadResult.url;
+      console.log('✅ ePub uploaded successfully!');
+      console.log('   URL:', epubFile);
+      
+      // Clean up local file
+      const fs = require('fs');
+      fs.unlinkSync(req.file.path);
+    }
+
     const newBook = new Book({
       title,
       author,
@@ -380,6 +398,7 @@ exports.createBook = async (req, res) => {
       format,
       originalOwner: condition === "used" ? req.user._id : null,
       coverImage: finalCoverImage,
+      epubFile: epubFile,
     });
 
     await newBook.save();
@@ -477,6 +496,23 @@ exports.updateBook = async (req, res) => {
     // Check if this is a resubmission of a rejected book
     const wasRejected = book.rejectionReason !== null && book.rejectionReason !== undefined;
     const isResubmission = resubmit === true || (wasRejected && !book.isApproved);
+
+    // Handle ePub file upload if provided
+    if (req.file) {
+      console.log('📚 ePub file received:', req.file.originalname);
+      console.log('📤 Uploading ePub to Cloudinary...');
+      const { uploadEpub } = require('../config/cloudinary');
+      const uploadResult = await uploadEpub(req.file.path, {
+        original_filename: req.file.originalname
+      });
+      book.epubFile = uploadResult.url;
+      console.log('✅ ePub uploaded successfully!');
+      console.log('   URL:', book.epubFile);
+      
+      // Clean up local file
+      const fs = require('fs');
+      fs.unlinkSync(req.file.path);
+    }
 
     // Update book fields
     book.title = title || book.title;

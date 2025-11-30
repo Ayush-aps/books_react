@@ -33,22 +33,25 @@ const EditBook = () => {
   // React Hook Form setup
   const { register, handleSubmit, formState: { errors, isSubmitting }, reset, setValue } = useForm({
     resolver: zodResolver(bookListingSchema),
+    mode: 'onSubmit',
     defaultValues: {
       title: '',
+      author: '',
+      genre: '',
       price: '',
+      stock: '',
+      condition: 'new',
+      discountPercentage: '',
       isbn: '',
       publicationYear: '',
-      description: ''
+      description: '',
+      format: 'paperback'
     }
   });
 
-  // Additional form state not in schema
-  const [author, setAuthor] = useState('');
-  const [genre, setGenre] = useState('');
-  const [stock, setStock] = useState('');
-  const [condition, setCondition] = useState('new');
-  const [discountPercentage, setDiscountPercentage] = useState('');
+  // Additional form state
   const [coverImage, setCoverImage] = useState('');
+  const [epubFile, setEpubFile] = useState(null);
 
   useEffect(() => {
     fetchBookDetails();
@@ -63,21 +66,22 @@ const EditBook = () => {
       // Store full book data for rejection info
       setBookData(book);
 
-      // Update form values using React Hook Form reset
+      // Update form values using React Hook Form reset - include ALL fields
       reset({
         title: book.title || '',
+        author: book.author || '',
+        genre: Array.isArray(book.genres) ? book.genres[0] : (book.genre || ''),
         price: book.price || '',
+        stock: book.stock || '',
+        condition: book.condition || 'new',
+        discountPercentage: book.discountPercentage || '',
         isbn: book.isbn || '',
         publicationYear: book.publishedDate ? new Date(book.publishedDate).getFullYear() : (book.publicationYear || ''),
-        description: book.description || ''
+        description: book.description || '',
+        format: book.format || 'paperback'
       });
 
-      // Update additional state
-      setAuthor(book.author || '');
-      setGenre(Array.isArray(book.genres) ? book.genres[0] : (book.genre || ''));
-      setStock(book.stock || '');
-      setCondition(book.condition || 'new');
-      setDiscountPercentage(book.discountPercentage || '');
+      // Update additional state for non-form fields
       setCoverImage(book.coverImage || '');
 
       setError(null);
@@ -89,29 +93,34 @@ const EditBook = () => {
   };
 
   const onSubmit = async (formData) => {
+    console.log('📝 Form submitted with data:', formData);
     setError(null);
 
     try {
-      // Prepare data with additional fields
+      // Prepare data - formData now includes author, genre, stock from React Hook Form
       const updateData = {
         ...formData,
-        author,
-        genre,
-        stock: parseInt(stock),
-        condition,
-        discountPercentage: discountPercentage ? parseFloat(discountPercentage) : 0,
+        stock: parseInt(formData.stock) || 0,
+        condition: formData.condition || condition,
+        discountPercentage: formData.discountPercentage ? parseFloat(formData.discountPercentage) : 0,
         coverImage: coverImage || undefined,
         // Include resubmit flag if this is a rejected book being resubmitted
         resubmit: isResubmitMode || (bookData?.rejectionReason ? true : false)
       };
 
-      const response = await sellerService.updateBook(id, updateData);
+      console.log('📤 Sending update data:', updateData);
+      console.log('📎 ePub file:', epubFile);
+
+      const response = await sellerService.updateBook(id, updateData, epubFile);
+      console.log('✅ Update response:', response);
+      
       const successMessage = response.data?.isResubmission
         ? 'Book resubmitted successfully! It is now pending admin approval.'
         : 'Book updated successfully!';
 
       navigate('/seller/inventory', { state: { success: successMessage } });
     } catch (err) {
+      console.error('❌ Update error:', err);
       setError(err.response?.data?.message || 'Failed to update book');
     }
   };
@@ -181,7 +190,13 @@ const EditBook = () => {
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-lg shadow-md p-6 space-y-6">
+        <form 
+          onSubmit={(e) => {
+            console.log('🔍 Form submit event triggered');
+            handleSubmit(onSubmit)(e);
+          }} 
+          className="bg-white rounded-lg shadow-md p-6 space-y-6"
+        >
           {/* Basic Information */}
           <div>
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h2>
@@ -417,6 +432,39 @@ const EditBook = () => {
             </p>
           </div>
 
+          {/* ePub File Upload */}
+          <div>
+            <label htmlFor="epubFile" className="block text-sm font-medium text-gray-700 mb-2">
+              ePub File (Optional)
+            </label>
+            <input
+              type="file"
+              id="epubFile"
+              accept=".epub,application/epub+zip"
+              onChange={(e) => setEpubFile(e.target.files[0])}
+              className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+            />
+            <p className="text-sm text-gray-500 mt-1">
+              Upload an ePub file to enable interactive reading with annotations
+            </p>
+            {bookData?.epubFile && !epubFile && (
+              <p className="text-sm text-green-600 mt-2 flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Current ePub file is available
+              </p>
+            )}
+            {epubFile && (
+              <p className="text-sm text-green-600 mt-2 flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                {epubFile.name}
+              </p>
+            )}
+          </div>
+
           {/* Submit Buttons */}
           <div className="flex gap-4 pt-6 border-t border-gray-200 bg-gray-50 -mx-6 px-6 -mb-6 pb-6 rounded-b-lg">
             <button
@@ -429,7 +477,12 @@ const EditBook = () => {
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || !isValid}
+              disabled={isSubmitting}
+              onClick={(e) => {
+                console.log('🖱️ Update button clicked');
+                console.log('   isSubmitting:', isSubmitting);
+                console.log('   Button disabled:', isSubmitting);
+              }}
               className={`flex-1 py-3 px-6 rounded-lg font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors shadow-md ${bookData?.rejectionReason
                   ? 'bg-emerald-600 text-white hover:bg-emerald-700 border-2 border-emerald-700'
                   : 'bg-blue-600 text-white hover:bg-blue-700 border-2 border-blue-700'

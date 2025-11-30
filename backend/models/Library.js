@@ -1,5 +1,32 @@
 const mongoose = require("mongoose");
 
+const AnnotationSchema = new mongoose.Schema({
+  cfi: {
+    type: String,
+    required: true
+  },
+  text: {
+    type: String,
+    required: true
+  },
+  note: {
+    type: String,
+    default: ''
+  },
+  color: {
+    type: String,
+    default: '#FFD700'
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
 const LibraryItemSchema = new mongoose.Schema({
   book: {
     type: mongoose.Schema.Types.ObjectId,
@@ -16,6 +43,11 @@ const LibraryItemSchema = new mongoose.Schema({
     type: Number,
     default: 1
   },
+  cfi: {
+    type: String,
+    default: null
+  },
+  annotations: [AnnotationSchema],
   isBookmarked: {
     type: Boolean,
     default: false

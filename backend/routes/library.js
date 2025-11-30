@@ -255,6 +255,8 @@ router.get("/book/:bookId", ensureAuthenticated, requireActiveSubscription, asyn
         isBookmarked: bookItem.isBookmarked || false,
         bookmarkPage: bookItem.bookmarkPage,
         pageCount: 10, // Default page count
+        cfi: bookItem.cfi || null,
+        annotations: bookItem.annotations || [],
       },
     });
   } catch (err) {
@@ -274,7 +276,7 @@ router.get("/book/:bookId", ensureAuthenticated, requireActiveSubscription, asyn
  */
 router.put("/update-progress", ensureAuthenticated, requireActiveSubscription, async (req, res) => {
   try {
-    const { bookId, progress, currentPage } = req.body;
+    const { bookId, progress, currentPage, cfi } = req.body;
     const userId = req.user._id;
 
     if (!bookId) {
@@ -299,14 +301,21 @@ router.put("/update-progress", ensureAuthenticated, requireActiveSubscription, a
 
     // Update progress and currentPage if provided
     if (progress !== undefined) {
-      bookItem.progress = progress;
+      // Cap progress between 0 and 100
+      bookItem.progress = Math.min(Math.max(progress, 0), 100);
     } else if (currentPage !== undefined) {
       // Calculate progress based on 10 pages if only currentPage is provided
-      bookItem.progress = Math.round((currentPage / 10) * 100);
+      const calculatedProgress = Math.round((currentPage / 10) * 100);
+      bookItem.progress = Math.min(Math.max(calculatedProgress, 0), 100);
     }
 
     if (currentPage !== undefined) {
       bookItem.currentPage = currentPage;
+    }
+
+    // Update CFI (Canonical Fragment Identifier) for ePub position
+    if (cfi !== undefined) {
+      bookItem.cfi = cfi;
     }
 
     bookItem.lastAccessed = Date.now();
@@ -320,6 +329,7 @@ router.put("/update-progress", ensureAuthenticated, requireActiveSubscription, a
       data: {
         progress: bookItem.progress,
         currentPage: bookItem.currentPage,
+        cfi: bookItem.cfi,
       },
     });
   } catch (err) {
@@ -487,6 +497,143 @@ router.get("/bookmark/:bookId", ensureAuthenticated, requireActiveSubscription, 
         isBookmarked: !!bookItem.isBookmarked,
         bookmarkPage: bookItem.bookmarkPage,
       },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error", error: err.message });
+  }
+});
+
+/**
+ * @route   POST /api/library/annotations
+ * @desc    Add or update an annotation for a book (Requires active subscription)
+ * @access  Private + Active Subscription
+ */
+router.post("/annotations", ensureAuthenticated, requireActiveSubscription, async (req, res) => {
+  try {
+    const { bookId, cfi, text, note, color } = req.body;
+    const userId = req.user._id;
+
+    if (!bookId || !cfi || !text) {
+      return res.status(400).json({
+        success: false,
+        message: "Book ID, CFI, and text are required",
+      });
+    }
+
+    // Find user's library
+    const library = await Library.findOne({ user: userId });
+    if (!library) {
+      return res.status(404).json({ success: false, message: "Library not found" });
+    }
+
+    // Find the book item in the library
+    const bookItem = library.items.find((item) => item.book && item.book.toString() === bookId);
+
+    if (!bookItem) {
+      return res.status(404).json({ success: false, message: "Book not found in library" });
+    }
+
+    // Check if annotation with same CFI already exists
+    const existingAnnotation = bookItem.annotations.find((ann) => ann.cfi === cfi);
+
+    if (existingAnnotation) {
+      // Update existing annotation
+      existingAnnotation.text = text;
+      existingAnnotation.note = note || '';
+      existingAnnotation.color = color || '#FFD700';
+      existingAnnotation.updatedAt = Date.now();
+    } else {
+      // Add new annotation
+      bookItem.annotations.push({
+        cfi,
+        text,
+        note: note || '',
+        color: color || '#FFD700',
+      });
+    }
+
+    library.updatedAt = Date.now();
+    await library.save();
+
+    res.json({
+      success: true,
+      message: existingAnnotation ? "Annotation updated successfully" : "Annotation added successfully",
+      data: { annotations: bookItem.annotations },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error", error: err.message });
+  }
+});
+
+/**
+ * @route   GET /api/library/annotations/:bookId
+ * @desc    Get all annotations for a book (Requires active subscription)
+ * @access  Private + Active Subscription
+ */
+router.get("/annotations/:bookId", ensureAuthenticated, requireActiveSubscription, async (req, res) => {
+  try {
+    const bookId = req.params.bookId;
+    const userId = req.user._id;
+
+    // Find user's library
+    const library = await Library.findOne({ user: userId });
+    if (!library) {
+      return res.json({ success: true, data: { annotations: [] } });
+    }
+
+    // Find the book item in the library
+    const bookItem = library.items.find((item) => item.book && item.book.toString() === bookId);
+
+    if (!bookItem) {
+      return res.json({ success: true, data: { annotations: [] } });
+    }
+
+    res.json({
+      success: true,
+      data: { annotations: bookItem.annotations || [] },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error", error: err.message });
+  }
+});
+
+/**
+ * @route   DELETE /api/library/annotations/:bookId/:annotationId
+ * @desc    Delete an annotation (Requires active subscription)
+ * @access  Private + Active Subscription
+ */
+router.delete("/annotations/:bookId/:annotationId", ensureAuthenticated, requireActiveSubscription, async (req, res) => {
+  try {
+    const { bookId, annotationId } = req.params;
+    const userId = req.user._id;
+
+    // Find user's library
+    const library = await Library.findOne({ user: userId });
+    if (!library) {
+      return res.status(404).json({ success: false, message: "Library not found" });
+    }
+
+    // Find the book item in the library
+    const bookItem = library.items.find((item) => item.book && item.book.toString() === bookId);
+
+    if (!bookItem) {
+      return res.status(404).json({ success: false, message: "Book not found in library" });
+    }
+
+    // Remove the annotation
+    bookItem.annotations = bookItem.annotations.filter(
+      (ann) => ann._id.toString() !== annotationId
+    );
+
+    library.updatedAt = Date.now();
+    await library.save();
+
+    res.json({
+      success: true,
+      message: "Annotation deleted successfully",
     });
   } catch (err) {
     console.error(err);

@@ -39,8 +39,26 @@ const sellerService = {
   },
 
   // Upload a new book
-  uploadBook: async (bookData) => {
-    const response = await api.post('/seller/books', bookData);
+  uploadBook: async (bookData, epubFile = null) => {
+    const formData = new FormData();
+    
+    // Append all book data
+    Object.keys(bookData).forEach(key => {
+      if (bookData[key] !== null && bookData[key] !== undefined) {
+        formData.append(key, bookData[key]);
+      }
+    });
+    
+    // Append ePub file if provided
+    if (epubFile) {
+      formData.append('epubFile', epubFile);
+    }
+    
+    const response = await api.post('/seller/books', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
     return response.data;
   },
 
@@ -57,8 +75,26 @@ const sellerService = {
   },
 
   // Update book
-  updateBook: async (bookId, bookData) => {
-    const response = await api.put(`/seller/books/${bookId}`, bookData);
+  updateBook: async (bookId, bookData, epubFile = null) => {
+    const formData = new FormData();
+    
+    // Append all book data
+    Object.keys(bookData).forEach(key => {
+      if (bookData[key] !== null && bookData[key] !== undefined) {
+        formData.append(key, bookData[key]);
+      }
+    });
+    
+    // Append ePub file if provided
+    if (epubFile) {
+      formData.append('epubFile', epubFile);
+    }
+    
+    const response = await api.put(`/seller/books/${bookId}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
     return response.data;
   },
 

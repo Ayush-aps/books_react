@@ -109,10 +109,66 @@ const deleteImage = async (publicId) => {
   }
 };
 
+/**
+ * Upload ePub file to Cloudinary
+ * @param {string} filePath - Local file path
+ * @param {object} options - Upload options (can include original_filename)
+ * @returns {Promise<object>} Upload result with URL
+ */
+const uploadEpub = async (filePath, options = {}) => {
+  try {
+    const path = require('path');
+    const filename = options.original_filename || path.basename(filePath);
+    
+    // Ensure .epub extension is included in public_id
+    const filenameWithoutExt = filename.replace(/\.epub$/i, '');
+    
+    const result = await cloudinary.uploader.upload(filePath, {
+      resource_type: 'raw',
+      folder: 'book-epubs',
+      public_id: filenameWithoutExt,
+      use_filename: true,
+      unique_filename: true,
+      format: 'epub',
+      ...options
+    });
+
+    return {
+      success: true,
+      url: result.secure_url,
+      publicId: result.public_id,
+      format: result.format,
+      bytes: result.bytes
+    };
+  } catch (error) {
+    console.error('Cloudinary ePub upload error:', error);
+    throw new Error(`Failed to upload ePub: ${error.message}`);
+  }
+};
+
+/**
+ * Delete ePub from Cloudinary
+ * @param {string} publicId - Cloudinary public ID
+ * @returns {Promise<object>} Deletion result
+ */
+const deleteEpub = async (publicId) => {
+  try {
+    const result = await cloudinary.uploader.destroy(publicId, {
+      resource_type: 'raw'
+    });
+    return { success: true, result };
+  } catch (error) {
+    console.error('Cloudinary ePub delete error:', error);
+    throw new Error(`Failed to delete ePub: ${error.message}`);
+  }
+};
+
 module.exports = {
   cloudinary,
   uploadVideo,
   deleteVideo,
   uploadImage,
-  deleteImage
+  deleteImage,
+  uploadEpub,
+  deleteEpub
 };

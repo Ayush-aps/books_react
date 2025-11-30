@@ -5,7 +5,21 @@
 
 const express = require("express");
 const router = express.Router();
+const multer = require('multer');
 const { ensureAuthenticated, ensureSeller } = require("../middleware/auth");
+
+// Multer config for file uploads (ePub files)
+const upload = multer({
+  dest: 'uploads/',
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'application/epub+zip' || file.originalname.endsWith('.epub')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only .epub files are allowed'), false);
+    }
+  }
+});
 const {
   // Dashboard
   getDashboard,
@@ -46,9 +60,9 @@ router.get("/inventory", ensureAuthenticated, ensureSeller, getInventory);
 router.get("/books", ensureAuthenticated, ensureSeller, getAllBooks);
 router.get("/books/search", ensureAuthenticated, ensureSeller, searchBooks);
 router.get("/books/lookup/:isbn", ensureAuthenticated, ensureSeller, lookupBookByISBN);
-router.post("/books", ensureAuthenticated, ensureSeller, createBook);
+router.post("/books", ensureAuthenticated, ensureSeller, upload.single('epubFile'), createBook);
 router.get("/books/:id", ensureAuthenticated, ensureSeller, getBookDetails);
-router.put("/books/:id", ensureAuthenticated, ensureSeller, updateBook);
+router.put("/books/:id", ensureAuthenticated, ensureSeller, upload.single('epubFile'), updateBook);
 router.delete("/books/:id", ensureAuthenticated, ensureSeller, deleteBook);
 
 // ============================================

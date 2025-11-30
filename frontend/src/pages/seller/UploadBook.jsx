@@ -153,6 +153,7 @@ const UploadBook = () => {
   const [searchError, setSearchError] = useState(null);
   const [searchResults, setSearchResults] = useState([]);
   const [selectedBook, setSelectedBook] = useState(null);
+  const [epubFile, setEpubFile] = useState(null);
 
   const genres = [
     'Fiction', 'Non-Fiction', 'Mystery', 'Thriller', 'Romance', 'Science Fiction',
@@ -343,7 +344,7 @@ const UploadBook = () => {
         coverImageUrl: data.coverImage,
       };
 
-      await sellerService.uploadBook(bookData);
+      await sellerService.uploadBook(bookData, epubFile);
       navigate('/seller/inventory', { state: { success: 'Book uploaded successfully!' } });
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to upload book');
@@ -812,6 +813,30 @@ const UploadBook = () => {
                     {/* Cover Image Preview */}
                     {coverImageValue && (
                       <CoverImagePreview imageUrl={coverImageValue} />
+                    )}
+                  </div>
+
+                  {/* ePub File Upload */}
+                  <div className="space-y-2">
+                    <label className="body-sm font-semibold text-charcoal mb-2 block">
+                      ePub File (Optional)
+                    </label>
+                    <input
+                      type="file"
+                      accept=".epub,application/epub+zip"
+                      onChange={(e) => setEpubFile(e.target.files[0])}
+                      className="block w-full text-sm text-charcoal file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brown/10 file:text-brown hover:file:bg-brown/20 cursor-pointer"
+                    />
+                    <p className="text-xs text-charcoal/60">
+                      Upload an ePub file to enable interactive reading with annotations
+                    </p>
+                    {epubFile && (
+                      <p className="text-sm text-green flex items-center gap-2">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        {epubFile.name}
+                      </p>
                     )}
                   </div>
                 </div>

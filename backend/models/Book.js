@@ -80,6 +80,10 @@ const BookSchema = new mongoose.Schema({
     enum: ["paperback", "hardcover", "ebook", "audiobook"],
     required: true,
   },
+  epubFile: {
+    type: String,
+    default: null,
+  },
   isApproved: {
     type: Boolean,
     default: false,
