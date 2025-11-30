@@ -22,6 +22,14 @@ const UploadBook = () => {
     'Horror', 'Adventure', 'Young Adult', 'Children', 'Comics', 'Other'
   ];
 
+  // if (loading) {
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center">
+  //       <LoadingSpinner size="lg" message="Loading complaint details..." />
+  //     </div>
+  //   );
+  // }
+
   const {
     register,
     handleSubmit,

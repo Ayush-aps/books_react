@@ -297,7 +297,7 @@ const Dashboard = () => {
                 </svg>
                 Stock Alerts
               </h2>
-              
+
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Out of Stock */}
                 {stats.stockAlerts.outOfStock?.length > 0 && (
@@ -402,6 +402,11 @@ const Dashboard = () => {
                   <p className="text-sm text-text-secondary font-medium">Rejected Books</p>
                 </div>
               </div>
+              {stats.stockAlerts.lowStock.length > 3 && (
+                <Link to="/seller/inventory" className="block text-center text-sm text-accent-brown hover:underline mt-2">
+                  View all {stats.stockAlerts.lowStock.length} low stock items
+                </Link>
+              )}
             </Card>
           </motion.div>
         )}
