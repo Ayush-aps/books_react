@@ -52,6 +52,7 @@ import SellerComplaints from './pages/seller/Complaints'
 import SellerRegisterComplaint from './pages/seller/RegisterComplaint'
 import SellerComplaintDetails from './pages/seller/ComplaintDetails'
 import SellerViewBook from './pages/seller/ViewBook'
+import SellerRevenue from './pages/seller/Revenue'
 
 // Admin Pages
 import AdminDashboard from './pages/admin/Dashboard'
@@ -64,6 +65,7 @@ import AdminReports from './pages/admin/Reports'
 import AdminComplaints from './pages/admin/Complaints'
 import AdminComplaintDetails from './pages/admin/ComplaintDetails'
 import AdminViewBook from './pages/admin/ViewBook'
+import Revenue from './pages/admin/Revenue'
 
 // Subscription Pages
 import SubscriptionCheckout from './pages/subscription/SubscriptionCheckout'
@@ -132,6 +134,7 @@ function App() {
 
             {/* Seller Routes */}
             <Route path="/seller/dashboard" element={<PrivateRoute role="seller"><SellerDashboard /></PrivateRoute>} />
+            <Route path="/seller/revenue" element={<PrivateRoute role="seller"><SellerRevenue /></PrivateRoute>} />
             <Route path="/seller/inventory" element={<PrivateRoute role="seller"><Inventory /></PrivateRoute>} />
             <Route path="/seller/upload" element={<PrivateRoute role="seller"><UploadBook /></PrivateRoute>} />
             <Route path="/seller/books/:id" element={<PrivateRoute role="seller"><SellerBookDetails /></PrivateRoute>} />
@@ -145,6 +148,7 @@ function App() {
 
             {/* Admin Routes */}
             <Route path="/admin/dashboard" element={<PrivateRoute role="admin"><AdminDashboard /></PrivateRoute>} />
+            <Route path="/admin/revenue" element={<PrivateRoute role="admin"><Revenue /></PrivateRoute>} />
             <Route path="/admin/users" element={<PrivateRoute role="admin"><AdminUsers /></PrivateRoute>} />
             <Route path="/admin/books" element={<PrivateRoute role="admin"><AdminBooks /></PrivateRoute>} />
             <Route path="/admin/content" element={<PrivateRoute role="admin"><AdminBooks /></PrivateRoute>} />

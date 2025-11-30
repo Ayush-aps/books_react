@@ -178,7 +178,8 @@ const Dashboard = () => {
         </svg>
       ),
       details: 'From delivered orders',
-      color: 'bg-success/10 text-success'
+      color: 'bg-success/10 text-success',
+      showButton: true
     }
   ];
 
@@ -239,29 +240,40 @@ const Dashboard = () => {
         >
           {statsCards.map((stat, index) => (
             <motion.div key={index} variants={staggerItem}>
-              <Link to={stat.link || '#'}>
-                <Card elevated hoverable padding="lg" className="h-full">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${stat.color}`}>
-                      {stat.icon}
-                    </div>
+              <Card elevated hoverable={!stat.showButton} padding="lg" className="h-full">
+                <div className="flex items-start justify-between mb-4">
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${stat.color}`}>
+                    {stat.icon}
                   </div>
-                  <p className="text-sm text-text-secondary mb-1">{stat.label}</p>
-                  <h3 className="heading-2 mb-3">{stat.value}</h3>
-                  {stat.details && (
-                    <p className="text-xs text-text-tertiary">{stat.details}</p>
-                  )}
-                  {stat.badges && (
-                    <div className="flex gap-2 mt-3">
-                      {stat.badges.map((badge, idx) => (
-                        <Badge key={idx} variant={badge.variant} size="sm">
-                          {badge.label}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </Card>
-              </Link>
+                </div>
+                <p className="text-sm text-text-secondary mb-1">{stat.label}</p>
+                <h3 className="heading-2 mb-3">{stat.value}</h3>
+                {stat.details && (
+                  <p className="text-xs text-text-tertiary mb-3">{stat.details}</p>
+                )}
+                {stat.badges && (
+                  <div className="flex gap-2 mt-3">
+                    {stat.badges.map((badge, idx) => (
+                      <Badge key={idx} variant={badge.variant} size="sm">
+                        {badge.label}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                {stat.showButton && (
+                  <Link to="/admin/revenue">
+                    <button className="mt-4 w-full px-4 py-2 bg-success hover:bg-success/90 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2 relative z-10">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                      View Details
+                    </button>
+                  </Link>
+                )}
+                {stat.link && !stat.showButton && (
+                  <Link to={stat.link} className="absolute inset-0" aria-label={`Go to ${stat.label}`} />
+                )}
+              </Card>
             </motion.div>
           ))}
         </motion.div>
