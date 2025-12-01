@@ -38,7 +38,7 @@ const Users = () => {
       // Map isVerified to status for frontend display
       const usersWithStatus = (response.data?.users || []).map(user => ({
         ...user,
-        status: user.isVerified ? 'active' : 'inactive'
+        status: user.isVerified ? 'verified' : 'not verified'
       }));
       setUsers(usersWithStatus);
       setError(null);
@@ -69,11 +69,11 @@ const Users = () => {
     try {
       setUpdatingUserId(userId);
       await adminService.toggleUserStatus(userId);
-      const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+      const newStatus = currentStatus === 'verified' ? 'not verified' : 'verified';
       setUsers(users.map(user =>
-        user._id === userId ? { ...user, status: newStatus, isVerified: newStatus === 'active' } : user
+        user._id === userId ? { ...user, status: newStatus, isVerified: newStatus === 'verified' } : user
       ));
-      setSuccessMessage(`User ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully`);
+      setSuccessMessage(`User ${newStatus === 'verified' ? 'verified' : 'unverified'} successfully`);
       setShowSuccessToast(true);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to toggle user status');
@@ -169,8 +169,8 @@ const Users = () => {
                     key={tab.value}
                     onClick={() => setRoleFilter(tab.value)}
                     className={`px-6 py-3 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${roleFilter === tab.value
-                        ? 'bg-brown text-white shadow-sm'
-                        : 'text-charcoal/70 hover:bg-taupe/10'
+                      ? 'bg-brown text-white shadow-sm'
+                      : 'text-charcoal/70 hover:bg-taupe/10'
                       }`}
                   >
                     {tab.label}
@@ -257,12 +257,12 @@ const Users = () => {
                         <div className="flex flex-col items-center gap-2">
                           <p className="body-sm text-charcoal/60">Status</p>
                           <Button
-                            variant={user.status === 'active' ? 'success' : 'error'}
+                            variant={user.status === 'verified' ? 'success' : 'secondary'}
                             size="sm"
                             onClick={() => handleToggleStatus(user._id, user.status)}
                             disabled={updatingUserId === user._id}
                           >
-                            {user.status === 'active' ? 'Active' : 'Inactive'}
+                            {user.status === 'verified' ? 'Verified' : 'Not Verified'}
                           </Button>
                         </div>
 
