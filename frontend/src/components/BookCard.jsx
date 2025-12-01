@@ -77,6 +77,11 @@ const BookCard = ({ book, onAddToCart, compact = false }) => {
               <span className={`text-white font-bold ${compact ? 'text-xs' : 'text-sm'}`}>Out of Stock</span>
             </div>
           )}
+          {book.stock > 0 && book.stock <= 5 && (
+            <div className="absolute top-2 left-2 bg-warning text-white px-2 py-1 rounded text-xs font-bold shadow-sm">
+              Only {book.stock} left
+            </div>
+          )}
         </div>
       </Link>
 

@@ -292,7 +292,7 @@ const Books = () => {
                           <button
                             onClick={() => handleApprove(book._id)}
                             disabled={processing}
-                            className="flex-1 bg-green-600 text-white rounded font-medium py-1.5 text-xs hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 shadow-sm"
+                            className="flex-1 bg-accent-green text-white rounded font-medium py-1.5 text-xs hover:bg-accent-green/90 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 shadow-md relative z-10"
                           >
                             Approve
                           </button>

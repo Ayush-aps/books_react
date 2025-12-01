@@ -29,14 +29,14 @@ const OrderDetails = () => {
 
   const getStatusColor = (status) => {
     const colors = {
-      ordered: 'bg-blue-100 text-blue-800',
-      pending: 'bg-yellow-100 text-yellow-800',
-      processing: 'bg-blue-100 text-blue-800',
-      shipped: 'bg-purple-100 text-purple-800',
-      delivered: 'bg-green-100 text-green-800',
-      cancelled: 'bg-red-100 text-red-800'
+      ordered: 'bg-accent-brown/10 text-accent-brown',
+      pending: 'bg-warning/10 text-warning',
+      processing: 'bg-info/10 text-info',
+      shipped: 'bg-accent-gold/10 text-accent-gold',
+      delivered: 'bg-success/10 text-success',
+      cancelled: 'bg-error/10 text-error'
     };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+    return colors[status] || 'bg-text-tertiary/10 text-text-tertiary';
   };
 
   const getStatusSteps = (currentStatus) => {
@@ -79,18 +79,21 @@ const OrderDetails = () => {
   const statusSteps = getStatusSteps(orderStatus);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-background-primary py-8">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-6">
-          <Link to="/buyer/orders" className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-            ← Back to Orders
+          <Link to="/buyer/orders" className="text-accent-brown hover:text-accent-brown/80 text-sm font-medium inline-flex items-center gap-2">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to Orders
           </Link>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="bg-background-secondary rounded-lg shadow-md overflow-hidden">
           {/* Order Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-8 text-white">
+          <div className="bg-gradient-to-r from-accent-brown to-accent-brown/90 px-6 py-8 text-white">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <h1 className="text-2xl font-bold mb-2">Order Details</h1>
@@ -113,33 +116,33 @@ const OrderDetails = () => {
 
           {/* Order Status Timeline */}
           {orderStatus !== 'cancelled' && (
-            <div className="px-6 py-8 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900 mb-6">Order Status</h2>
-              <div className="flex items-center justify-between">
+            <div className="px-6 py-8 border-b border-border-primary">
+              <h2 className="text-lg font-semibold text-text-primary mb-6">Order Status</h2>
+              <div className="relative flex items-center justify-between">
                 {statusSteps.map((step, index) => (
-                  <div key={step.name} className="flex-1 flex items-center">
-                    <div className="flex flex-col items-center flex-1">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        step.completed ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'
+                  <div key={step.name} className="flex-1 flex items-center relative">
+                    <div className="flex flex-col items-center flex-1 relative z-10">
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center border-4 border-background-secondary shadow-lg ${
+                        step.completed ? 'bg-accent-green text-white' : 'bg-background-secondary text-text-tertiary border-border-primary'
                       }`}>
                         {step.completed ? (
                           <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                           </svg>
                         ) : (
-                          <span>{index + 1}</span>
+                          <span className="font-semibold">{index + 1}</span>
                         )}
                       </div>
-                      <p className={`mt-2 text-sm font-medium ${
-                        step.completed ? 'text-gray-900' : 'text-gray-500'
+                      <p className={`mt-3 text-sm font-medium text-center ${
+                        step.completed ? 'text-accent-green' : 'text-text-tertiary'
                       }`}>
                         {step.name.charAt(0).toUpperCase() + step.name.slice(1)}
                       </p>
                     </div>
                     {index < statusSteps.length - 1 && (
-                      <div className={`h-1 flex-1 ${
-                        step.completed ? 'bg-green-500' : 'bg-gray-200'
-                      }`} />
+                      <div className={`absolute top-6 left-1/2 right-0 h-1 -z-0 ${
+                        step.completed && statusSteps[index + 1]?.completed ? 'bg-accent-green' : 'bg-border-primary'
+                      }`} style={{ width: 'calc(100% - 24px)', marginLeft: '12px' }} />
                     )}
                   </div>
                 ))}
@@ -148,8 +151,8 @@ const OrderDetails = () => {
           )}
 
           {/* Order Items */}
-          <div className="px-6 py-8 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Items</h2>
+          <div className="px-6 py-8 border-b border-border-primary">
+            <h2 className="text-lg font-semibold text-text-primary mb-4">Order Items</h2>
             <div className="space-y-4">
               {order.items.map((item) => (
                 <div key={item._id} className="flex gap-4">
@@ -161,31 +164,31 @@ const OrderDetails = () => {
                   <div className="flex-1">
                     <Link
                       to={`/buyer/book/${item.book?._id}`}
-                      className="font-semibold text-gray-900 hover:text-blue-600"
+                      className="font-semibold text-text-primary hover:text-accent-brown transition-colors"
                     >
                       {item.book?.title || 'Book Title'}
                     </Link>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-text-secondary mt-1">
                       by {item.book?.author || 'Unknown'}
                     </p>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-text-secondary mt-1">
                       Quantity: {item.quantity}
                     </p>
-                    <p className="text-sm text-gray-600 mt-1 capitalize">
+                    <p className="text-sm text-text-secondary mt-1 capitalize">
                       Condition: {item.book?.condition}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-gray-900">
+                    <p className="font-semibold text-text-primary">
                       ₹{(item.price * item.quantity).toFixed(2)}
                     </p>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-text-secondary mt-1">
                       ₹{item.price.toFixed(2)} each
                     </p>
                     {orderStatus === 'delivered' && item.book?._id && (
                       <Link
                         to={`/buyer/book/${item.book._id}?review=true`}
-                        className="mt-3 inline-block px-4 py-2 bg-brown text-white text-sm rounded hover:bg-brown/90 transition-colors"
+                        className="mt-3 inline-block px-4 py-2 bg-accent-brown text-white text-sm rounded-lg hover:bg-accent-brown/90 transition-colors"
                       >
                         Write Review
                       </Link>
@@ -197,17 +200,17 @@ const OrderDetails = () => {
           </div>
 
           {/* Shipping Address */}
-          <div className="px-6 py-8 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Shipping Address</h2>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <p className="font-medium text-gray-900">{order.shippingAddress?.fullName}</p>
-              <p className="text-gray-700 mt-2">
+          <div className="px-6 py-8 border-b border-border-primary">
+            <h2 className="text-lg font-semibold text-text-primary mb-4">Shipping Address</h2>
+            <div className="bg-background-primary rounded-lg p-4 border border-border-primary">
+              <p className="font-medium text-text-primary">{order.shippingAddress?.fullName}</p>
+              <p className="text-text-secondary mt-2">
                 {order.shippingAddress?.street}
               </p>
-              <p className="text-gray-700">
+              <p className="text-text-secondary">
                 {order.shippingAddress?.city}, {order.shippingAddress?.state} {order.shippingAddress?.zipCode}
               </p>
-              <p className="text-gray-700 mt-2">
+              <p className="text-text-secondary mt-2">
                 Phone: {order.shippingAddress?.phone}
               </p>
             </div>
@@ -215,32 +218,32 @@ const OrderDetails = () => {
 
           {/* Payment Summary */}
           <div className="px-6 py-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Payment Summary</h2>
+            <h2 className="text-lg font-semibold text-text-primary mb-4">Payment Summary</h2>
             <div className="space-y-2">
-              <div className="flex justify-between text-gray-700">
+              <div className="flex justify-between text-text-secondary">
                 <span>Subtotal</span>
                 <span>₹{(order.totalAmount / 1.08).toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-gray-700">
+              <div className="flex justify-between text-text-secondary">
                 <span>Tax (8%)</span>
                 <span>₹{(order.totalAmount - (order.totalAmount / 1.08)).toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-gray-700">
+              <div className="flex justify-between text-text-secondary">
                 <span>Shipping</span>
                 <span>FREE</span>
               </div>
-              <div className="border-t border-gray-200 pt-2 flex justify-between text-lg font-bold text-gray-900">
+              <div className="border-t border-border-primary pt-2 flex justify-between text-lg font-bold text-text-primary">
                 <span>Total</span>
-                <span>₹{order.totalAmount.toFixed(2)}</span>
+                <span className="text-accent-brown">₹{order.totalAmount.toFixed(2)}</span>
               </div>
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <p className="text-sm text-gray-600">
-                  Payment Method: <span className="font-medium text-gray-900 capitalize">
+              <div className="mt-4 pt-4 border-t border-border-primary">
+                <p className="text-sm text-text-secondary">
+                  Payment Method: <span className="font-medium text-text-primary capitalize">
                     {order.paymentMethod || 'Card'}
                   </span>
                 </p>
-                <p className="text-sm text-gray-600 mt-1">
-                  Payment Status: <span className="font-medium text-green-600">Paid</span>
+                <p className="text-sm text-text-secondary mt-1">
+                  Payment Status: <span className="font-medium text-success">Paid</span>
                 </p>
               </div>
             </div>
@@ -248,16 +251,19 @@ const OrderDetails = () => {
         </div>
 
         {/* Help Section */}
-        <div className="mt-6 bg-blue-50 rounded-lg p-6">
-          <h3 className="font-semibold text-gray-900 mb-2">Need Help?</h3>
-          <p className="text-sm text-gray-700 mb-3">
+        <div className="mt-6 bg-accent-brown/5 border border-accent-brown/20 rounded-lg p-6">
+          <h3 className="font-semibold text-text-primary mb-2">Need Help?</h3>
+          <p className="text-sm text-text-secondary mb-3">
             If you have any questions about your order, please contact our support team.
           </p>
           <Link
             to="/contact"
-            className="text-blue-600 hover:text-blue-800 font-medium text-sm"
+            className="text-accent-brown hover:text-accent-brown/80 font-medium text-sm inline-flex items-center gap-1"
           >
-            Contact Support →
+            Contact Support
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
           </Link>
         </div>
       </div>

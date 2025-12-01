@@ -10,6 +10,10 @@ import Footer from './components/layout/Footer'
 // Toast Provider
 import { ToastProvider } from './components/Toast'
 
+// Theme Provider (Context API)
+import { ThemeProvider } from './context/ThemeContext'
+import ThemeToggle from './components/ThemeToggle'
+
 // Public Pages
 import Home from './pages/Home'
 import About from './pages/About'
@@ -95,11 +99,13 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <ToastProvider>
-        <div className="min-h-screen flex flex-col">
-          <ScrollToTop />
-          <Header />
-          <main className="flex-grow">
+      <ThemeProvider>
+        <ToastProvider>
+          <div className="min-h-screen flex flex-col">
+            <ScrollToTop />
+            <Header />
+            <ThemeToggle />
+            <main className="flex-grow">
             <Routes>
             {/* Public Routes */}
             <Route path="/" element={<Home />} />
@@ -172,8 +178,9 @@ function App() {
             </Routes>
           </main>
           <Footer />
-        </div>
-      </ToastProvider>
+          </div>
+        </ToastProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   )
 }

@@ -357,6 +357,37 @@ const BookDetails = () => {
                   </div>
                 </div>
               )}
+
+              {/* Out of Stock Message */}
+              {isOutOfStock && (
+                <div className="bg-error/10 border border-error/20 rounded-lg p-6 text-center">
+                  <svg className="w-16 h-16 text-error mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <h3 className="text-xl font-semibold text-error mb-2">Out of Stock</h3>
+                  <p className="text-text-secondary mb-4">
+                    This book is currently unavailable. The seller and admin have been notified to restock.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <Button
+                      variant="outline"
+                      size="md"
+                      onClick={handleSaveForLater}
+                      className="border-accent-brown text-accent-brown hover:bg-accent-brown hover:text-white"
+                    >
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                      </svg>
+                      Save for Later
+                    </Button>
+                    <Link to="/buyer/browse">
+                      <Button variant="outline" size="md">
+                        Browse Similar Books
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              )}
             </Card>
 
             {/* Tabs Section */}
@@ -407,7 +438,7 @@ const BookDetails = () => {
                 >
                   <div>
                     <h4 className="text-sm font-medium text-text-tertiary mb-1">Genre</h4>
-                    <p className="text-text-primary">{book.genre}</p>
+                    <p className="text-text-primary">{book.genres?.join(', ') || 'N/A'}</p>
                   </div>
                   <div>
                     <h4 className="text-sm font-medium text-text-tertiary mb-1">Condition</h4>

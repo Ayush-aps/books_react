@@ -282,12 +282,103 @@ const Dashboard = () => {
           </motion.div>
         </div>
 
+        {/* Stock Alerts */}
+        {stats.stockAlerts && (stats.stockAlerts.outOfStock?.length > 0 || stats.stockAlerts.lowStock?.length > 0) && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="mb-12"
+          >
+            <Card elevated padding="lg">
+              <h2 className="heading-3 mb-6 flex items-center gap-2">
+                <svg className="w-6 h-6 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                Stock Alerts
+              </h2>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Out of Stock */}
+                {stats.stockAlerts.outOfStock?.length > 0 && (
+                  <div className="bg-error/10 border border-error/20 rounded-lg p-4">
+                    <h3 className="font-semibold text-error mb-3 flex items-center gap-2">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      Out of Stock ({stats.stockAlerts.outOfStock.length})
+                    </h3>
+                    <div className="space-y-2">
+                      {stats.stockAlerts.outOfStock.slice(0, 3).map((book) => (
+                        <Link
+                          key={book._id}
+                          to={`/seller/inventory/edit/${book._id}`}
+                          className="flex items-center gap-3 p-2 bg-background-primary rounded hover:bg-error/5 transition-colors"
+                        >
+                          <img src={book.coverImage} alt={book.title} className="w-10 h-14 object-cover rounded" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-text-primary truncate">{book.title}</p>
+                            <p className="text-xs text-error font-semibold">Restock needed</p>
+                          </div>
+                          <svg className="w-5 h-5 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </Link>
+                      ))}
+                      {stats.stockAlerts.outOfStock.length > 3 && (
+                        <Link to="/seller/inventory" className="block text-center text-sm text-accent-brown hover:underline mt-2">
+                          View all {stats.stockAlerts.outOfStock.length} out of stock items
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Low Stock */}
+                {stats.stockAlerts.lowStock?.length > 0 && (
+                  <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
+                    <h3 className="font-semibold text-warning mb-3 flex items-center gap-2">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                      Low Stock ({stats.stockAlerts.lowStock.length})
+                    </h3>
+                    <div className="space-y-2">
+                      {stats.stockAlerts.lowStock.slice(0, 3).map((book) => (
+                        <Link
+                          key={book._id}
+                          to={`/seller/inventory/edit/${book._id}`}
+                          className="flex items-center gap-3 p-2 bg-background-primary rounded hover:bg-warning/5 transition-colors"
+                        >
+                          <img src={book.coverImage} alt={book.title} className="w-10 h-14 object-cover rounded" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-text-primary truncate">{book.title}</p>
+                            <p className="text-xs text-warning font-semibold">Only {book.stock} left</p>
+                          </div>
+                          <svg className="w-5 h-5 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </Link>
+                      ))}
+                      {stats.stockAlerts.lowStock.length > 3 && (
+                        <Link to="/seller/inventory" className="block text-center text-sm text-accent-brown hover:underline mt-2">
+                          View all {stats.stockAlerts.lowStock.length} low stock items
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
         {/* Book Stats */}
         {stats.booksByStatus && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+            transition={{ delay: 0.3 }}
           >
             <Card elevated padding="lg">
               <h2 className="heading-3 mb-6">Book Status Overview</h2>

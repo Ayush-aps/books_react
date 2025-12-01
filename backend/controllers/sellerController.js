@@ -91,6 +91,10 @@ exports.getDashboard = async (req, res) => {
     const topBooks = books.sort((a, b) => b.reviewCount - a.reviewCount).slice(0, 5);
     const recentOrders = orders.slice(0, 5);
 
+    // Stock alerts - Out of stock and low stock books
+    const outOfStockBooks = books.filter(book => book.stock === 0 && book.isApproved === true);
+    const lowStockBooks = books.filter(book => book.stock > 0 && book.stock <= 5 && book.isApproved === true);
+
     res.json({
       success: true,
       message: "Dashboard data retrieved successfully",
@@ -106,6 +110,19 @@ exports.getDashboard = async (req, res) => {
         recentOrders,
         totalBooks: books.length,
         booksByStatus,
+        stockAlerts: {
+          outOfStock: outOfStockBooks.map(book => ({
+            _id: book._id,
+            title: book.title,
+            coverImage: book.coverImage
+          })),
+          lowStock: lowStockBooks.map(book => ({
+            _id: book._id,
+            title: book.title,
+            stock: book.stock,
+            coverImage: book.coverImage
+          }))
+        }
       },
     });
   } catch (err) {
