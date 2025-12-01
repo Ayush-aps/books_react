@@ -52,6 +52,7 @@ const ComplaintDetails = () => {
   });
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     fetchComplaintDetails();
     fetchAdmins();
   }, [id]);

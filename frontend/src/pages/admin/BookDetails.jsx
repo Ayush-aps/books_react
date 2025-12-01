@@ -30,6 +30,7 @@ const BookDetails = () => {
   const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     fetchBookDetails();
   }, [id]);
 
