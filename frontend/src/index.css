@@ -443,3 +443,177 @@
     background: transparent;
   }
 }
+
+/* =================================
+   DARK MODE STYLES
+   Context API Implementation
+   ================================= */
+@layer base {
+  .dark {
+    color-scheme: dark;
+  }
+
+  .dark body {
+    background-color: #1a1a1a;
+    color: #e5e5e5;
+  }
+
+  .dark .bg-background-primary {
+    background-color: #1a1a1a !important;
+  }
+
+  .dark .bg-background-secondary {
+    background-color: #2a2a2a !important;
+  }
+
+  .dark .bg-white {
+    background-color: #2a2a2a !important;
+  }
+
+  .dark .bg-cream {
+    background-color: #2a2a2a !important;
+  }
+
+  .dark .text-text-primary,
+  .dark .text-charcoal,
+  .dark .text-gray-900 {
+    color: #e5e5e5 !important;
+  }
+
+  .dark .text-text-secondary,
+  .dark .text-gray-700,
+  .dark .text-gray-600 {
+    color: #a0a0a0 !important;
+  }
+
+  .dark .text-text-tertiary,
+  .dark .text-gray-500 {
+    color: #6b6b6b !important;
+  }
+
+  .dark .border-border-primary,
+  .dark .border-gray-200,
+  .dark .border-gray-300 {
+    border-color: #404040 !important;
+  }
+
+  .dark .border-border-medium {
+    border-color: #505050 !important;
+  }
+
+  /* Cards and elevated components */
+  .dark [class*="shadow"] {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2) !important;
+  }
+
+  /* Form inputs */
+  .dark input,
+  .dark textarea,
+  .dark select {
+    background-color: #2a2a2a !important;
+    border-color: #404040 !important;
+    color: #e5e5e5 !important;
+  }
+
+  .dark input::placeholder,
+  .dark textarea::placeholder {
+    color: #6b6b6b !important;
+  }
+
+  .dark input:focus,
+  .dark textarea:focus,
+  .dark select:focus {
+    border-color: #8B7355 !important;
+    background-color: #333 !important;
+  }
+
+  /* Buttons - maintain theme colors */
+  .dark .bg-accent-brown {
+    background-color: #A08670 !important;
+  }
+
+  .dark .bg-accent-green {
+    background-color: #5A7D6F !important;
+  }
+
+  .dark .hover\:bg-accent-brown:hover {
+    background-color: #8B7355 !important;
+  }
+
+  .dark .hover\:bg-accent-green:hover {
+    background-color: #4A5D4F !important;
+  }
+
+  /* Keep success/error/warning colors visible */
+  .dark .bg-success {
+    background-color: #5A7D6F !important;
+  }
+
+  .dark .bg-error {
+    background-color: #c53030 !important;
+  }
+
+  .dark .bg-warning {
+    background-color: #d69e2e !important;
+  }
+
+  .dark .text-success {
+    color: #68d391 !important;
+  }
+
+  .dark .text-error {
+    color: #fc8181 !important;
+  }
+
+  .dark .text-warning {
+    color: #f6ad55 !important;
+  }
+
+  /* Header and Footer */
+  .dark header {
+    background-color: #2a2a2a !important;
+    border-bottom-color: #404040 !important;
+  }
+
+  .dark footer {
+    background-color: #2a2a2a !important;
+    border-top-color: #404040 !important;
+  }
+
+  /* Dropdown menus */
+  .dark .dropdown-menu {
+    background-color: #2a2a2a !important;
+    border-color: #404040 !important;
+  }
+
+  /* Hover states for cards */
+  .dark .hover\:shadow-lg:hover,
+  .dark .hover\:shadow-md:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  /* Modals and overlays */
+  .dark .modal-overlay {
+    background-color: rgba(0, 0, 0, 0.8) !important;
+  }
+
+  /* Loading spinner */
+  .dark .animate-spin {
+    border-color: #404040 !important;
+    border-top-color: #8B7355 !important;
+  }
+
+  /* Badges */
+  .dark .badge {
+    background-color: #404040 !important;
+  }
+
+  /* Links */
+  .dark a {
+    color: #A08670 !important;
+  }
+
+  .dark a:hover {
+    color: #C9A96E !important;
+  }
+}

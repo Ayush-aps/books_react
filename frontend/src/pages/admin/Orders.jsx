@@ -240,21 +240,23 @@ const Orders = () => {
                       </div>
 
                       {/* Actions */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                        <Input.Select
-                          id={`status-${order._id}`}
-                          label="Update Status"
-                          value={getOrderStatus(order)}
-                          onChange={(e) => handleStatusUpdate(order._id, e.target.value)}
-                          disabled={updatingOrderId === order._id}
-                          className="text-sm"
-                        >
-                          <option value="ordered">Ordered</option>
-                          <option value="processing">Processing</option>
-                          <option value="shipped">Shipped</option>
-                          <option value="delivered">Delivered</option>
-                          <option value="cancelled">Cancelled</option>
-                        </Input.Select>
+                      <div className="flex flex-col gap-4 lg:w-64">
+                        {/* Status Update Dropdown - Only show if not delivered or cancelled */}
+                        {getOrderStatus(order) !== 'delivered' && getOrderStatus(order) !== 'cancelled' && (
+                          <Input.Select
+                            id={`status-${order._id}`}
+                            label="Update Status"
+                            value={getOrderStatus(order)}
+                            onChange={(e) => handleStatusUpdate(order._id, e.target.value)}
+                            disabled={updatingOrderId === order._id}
+                          >
+                            <option value="ordered">Ordered</option>
+                            <option value="processing">Processing</option>
+                            <option value="shipped">Shipped</option>
+                            <option value="delivered">Delivered</option>
+                            <option value="cancelled">Cancelled</option>
+                          </Input.Select>
+                        )}
 
                         <Link
                           to={`/admin/orders/${order._id}`}

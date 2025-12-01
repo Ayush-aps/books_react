@@ -122,19 +122,56 @@ exports.createOrder = async (req, res, next) => {
 
     const order = await Order.create(orderData);
 
-    // Update book stock
+    // Update book stock and check for low/out of stock
+    const lowStockNotifications = [];
+    const outOfStockNotifications = [];
+    
     await Promise.all(
       orderItems.map(async (item) => {
-        await Book.findByIdAndUpdate(
+        const updatedBook = await Book.findByIdAndUpdate(
           item.book,
           { 
             $inc: { 
               stock: -item.quantity
             } 
+          },
+          { new: true }
+        ).populate('seller', '_id name email');
+        
+        // Check stock levels after update
+        if (updatedBook) {
+          if (updatedBook.stock === 0) {
+            outOfStockNotifications.push({
+              bookId: updatedBook._id,
+              bookTitle: updatedBook.title,
+              sellerId: updatedBook.seller._id,
+              sellerName: updatedBook.seller.name,
+              sellerEmail: updatedBook.seller.email
+            });
+          } else if (updatedBook.stock <= 5 && updatedBook.stock > 0) {
+            lowStockNotifications.push({
+              bookId: updatedBook._id,
+              bookTitle: updatedBook.title,
+              currentStock: updatedBook.stock,
+              sellerId: updatedBook.seller._id,
+              sellerName: updatedBook.seller.name,
+              sellerEmail: updatedBook.seller.email
+            });
           }
-        );
+        }
       })
     );
+    
+    // Log stock notifications (in production, send emails/notifications)
+    if (outOfStockNotifications.length > 0) {
+      console.log('⚠️ OUT OF STOCK ALERT:', outOfStockNotifications);
+      // TODO: Send email/notification to sellers and admin
+    }
+    
+    if (lowStockNotifications.length > 0) {
+      console.log('⚠️ LOW STOCK WARNING:', lowStockNotifications);
+      // TODO: Send email/notification to sellers and admin
+    }
 
     // Clear buyer's cart after successful order
     await Cart.findOneAndUpdate(

@@ -53,13 +53,13 @@ const OrderDetails = () => {
 
   const getStatusColor = (status) => {
     const colors = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      processing: 'bg-blue-100 text-blue-800',
-      shipped: 'bg-purple-100 text-purple-800',
-      delivered: 'bg-green-100 text-green-800',
-      cancelled: 'bg-red-100 text-red-800'
+      pending: 'bg-warning/10 text-warning',
+      processing: 'bg-info/10 text-info',
+      shipped: 'bg-accent-gold/10 text-accent-gold',
+      delivered: 'bg-success/10 text-success',
+      cancelled: 'bg-error/10 text-error'
     };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+    return colors[status] || 'bg-text-tertiary/10 text-text-tertiary';
   };
 
   const getStatusSteps = (currentStatus) => {
@@ -104,13 +104,13 @@ const OrderDetails = () => {
   const steps = getStatusSteps(order.orderStatus);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-background-primary py-8">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-6">
           <button
             onClick={() => navigate('/seller/orders')}
-            className="text-blue-600 hover:text-blue-700 flex items-center gap-2 mb-4"
+            className="text-accent-brown hover:text-accent-brown/80 flex items-center gap-2 mb-4 font-medium"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -118,11 +118,11 @@ const OrderDetails = () => {
             Back to Orders
           </button>
           
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg p-6 text-white">
+          <div className="bg-gradient-to-r from-accent-brown to-accent-brown/90 rounded-lg p-6 text-white shadow-lg">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
                 <h1 className="text-2xl font-bold mb-2">Order #{order._id.slice(-8)}</h1>
-                <p className="text-blue-100">
+                <p className="text-white/80">
                   Placed on {new Date(order.createdAt).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
@@ -133,8 +133,8 @@ const OrderDetails = () => {
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-blue-100 text-sm mb-1">Order Status</p>
-                <span className={`inline-block px-4 py-2 rounded-full text-sm font-semibold ${getStatusColor(order.orderStatus)}`}>
+                <p className="text-white/80 text-sm mb-1">Order Status</p>
+                <span className={`inline-block px-4 py-2 rounded-full text-sm font-semibold ${getStatusColor(order.orderStatus)} bg-white`}>
                   {order.orderStatus.charAt(0).toUpperCase() + order.orderStatus.slice(1)}
                 </span>
               </div>
@@ -144,18 +144,18 @@ const OrderDetails = () => {
 
         {/* Status Update */}
         {order.orderStatus !== 'delivered' && order.orderStatus !== 'cancelled' && (
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Update Order Status</h2>
+          <div className="bg-background-secondary rounded-lg shadow-sm p-6 mb-6 border border-border-primary">
+            <h2 className="text-lg font-semibold text-text-primary mb-4">Update Order Status</h2>
             <div className="flex flex-wrap gap-3">
               {['processing', 'shipped', 'delivered', 'cancelled'].map(status => (
                 <button
                   key={status}
                   onClick={() => handleStatusUpdate(status)}
                   disabled={updating || order.orderStatus === status}
-                  className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                     order.orderStatus === status
-                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                      : 'bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed'
+                      ? 'bg-background-primary text-text-tertiary cursor-not-allowed border border-border-primary'
+                      : 'bg-accent-brown text-white hover:bg-accent-brown/90 disabled:bg-background-primary disabled:text-text-tertiary disabled:cursor-not-allowed'
                   }`}
                 >
                   {updating ? 'Updating...' : `Mark as ${status.charAt(0).toUpperCase() + status.slice(1)}`}
@@ -167,38 +167,36 @@ const OrderDetails = () => {
 
         {/* Status Timeline */}
         {order.orderStatus !== 'cancelled' && (
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">Order Progress</h2>
-            <div className="relative">
-              <div className="flex justify-between items-center">
-                {steps.map((step, index) => (
-                  <div key={step.name} className="flex-1 relative">
-                    <div className="flex flex-col items-center">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        step.completed ? 'bg-green-500' : 'bg-gray-200'
-                      }`}>
-                        {step.completed ? (
-                          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        ) : (
-                          <span className="text-gray-500 font-semibold">{index + 1}</span>
-                        )}
-                      </div>
-                      <p className={`mt-2 text-sm font-medium ${
-                        step.completed ? 'text-green-600' : 'text-gray-500'
-                      }`}>
-                        {step.name}
-                      </p>
+          <div className="bg-background-secondary rounded-lg shadow-sm p-6 mb-6 border border-border-primary">
+            <h2 className="text-lg font-semibold text-text-primary mb-6">Order Progress</h2>
+            <div className="relative flex items-center justify-between">
+              {steps.map((step, index) => (
+                <div key={step.name} className="flex-1 flex items-center relative">
+                  <div className="flex flex-col items-center flex-1 relative z-10">
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center border-4 border-background-secondary shadow-lg ${
+                      step.completed ? 'bg-accent-green text-white' : 'bg-background-secondary text-text-tertiary border-border-primary'
+                    }`}>
+                      {step.completed ? (
+                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      ) : (
+                        <span className="font-semibold">{index + 1}</span>
+                      )}
                     </div>
-                    {index < steps.length - 1 && (
-                      <div className={`absolute top-5 left-1/2 w-full h-0.5 ${
-                        steps[index + 1].completed ? 'bg-green-500' : 'bg-gray-200'
-                      }`} style={{ zIndex: -1 }} />
-                    )}
+                    <p className={`mt-3 text-sm font-medium text-center ${
+                      step.completed ? 'text-accent-green' : 'text-text-tertiary'
+                    }`}>
+                      {step.name}
+                    </p>
                   </div>
-                ))}
-              </div>
+                  {index < steps.length - 1 && (
+                    <div className={`absolute top-6 left-1/2 right-0 h-1 -z-0 ${
+                      step.completed && steps[index + 1]?.completed ? 'bg-accent-green' : 'bg-border-primary'
+                    }`} style={{ width: 'calc(100% - 24px)', marginLeft: '12px' }} />
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -206,23 +204,23 @@ const OrderDetails = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Order Items */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Items</h2>
+            <div className="bg-background-secondary rounded-lg shadow-sm p-6 border border-border-primary">
+              <h2 className="text-lg font-semibold text-text-primary mb-4">Order Items</h2>
               <div className="space-y-4">
                 {order.items.map((item, index) => (
-                  <div key={index} className="flex gap-4 pb-4 border-b border-gray-200 last:border-0 last:pb-0">
+                  <div key={index} className="flex gap-4 pb-4 border-b border-border-primary last:border-0 last:pb-0">
                     {item.book?.coverImage && (
                       <img
                         src={item.book.coverImage}
                         alt={item.book.title}
-                        className="w-20 h-28 object-cover rounded"
+                        className="w-20 h-28 object-cover rounded-lg shadow"
                       />
                     )}
                     <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900">{item.book?.title || 'Unknown Book'}</h3>
-                      <p className="text-sm text-gray-600 mt-1">by {item.book?.author || 'Unknown Author'}</p>
-                      <p className="text-sm text-gray-500 mt-2">Quantity: {item.quantity}</p>
-                      <p className="text-lg font-semibold text-gray-900 mt-2">
+                      <h3 className="font-semibold text-text-primary">{item.book?.title || 'Unknown Book'}</h3>
+                      <p className="text-sm text-text-secondary mt-1">by {item.book?.author || 'Unknown Author'}</p>
+                      <p className="text-sm text-text-tertiary mt-2">Quantity: {item.quantity}</p>
+                      <p className="text-lg font-semibold text-accent-brown mt-2">
                         ₹{(item.price * item.quantity).toFixed(2)}
                       </p>
                     </div>
@@ -235,64 +233,64 @@ const OrderDetails = () => {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Buyer Information */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Buyer Information</h2>
+            <div className="bg-background-secondary rounded-lg shadow-sm p-6 border border-border-primary">
+              <h2 className="text-lg font-semibold text-text-primary mb-4">Buyer Information</h2>
               <div className="space-y-3 text-sm">
                 <div>
-                  <p className="text-gray-600">Name</p>
-                  <p className="font-medium text-gray-900">{order.buyer?.name || 'N/A'}</p>
+                  <p className="text-text-secondary">Name</p>
+                  <p className="font-medium text-text-primary">{order.buyer?.name || 'N/A'}</p>
                 </div>
                 <div>
-                  <p className="text-gray-600">Email</p>
-                  <p className="font-medium text-gray-900">{order.buyer?.email || 'N/A'}</p>
+                  <p className="text-text-secondary">Email</p>
+                  <p className="font-medium text-text-primary">{order.buyer?.email || 'N/A'}</p>
                 </div>
               </div>
             </div>
 
             {/* Shipping Address */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Shipping Address</h2>
-              <div className="bg-gray-50 rounded-lg p-4 text-sm">
-                <p className="font-medium text-gray-900">{order.shippingAddress.fullName}</p>
-                <p className="text-gray-600 mt-2">{order.shippingAddress.street}</p>
-                <p className="text-gray-600">
+            <div className="bg-background-secondary rounded-lg shadow-sm p-6 border border-border-primary">
+              <h2 className="text-lg font-semibold text-text-primary mb-4">Shipping Address</h2>
+              <div className="bg-background-primary rounded-lg p-4 text-sm border border-border-primary">
+                <p className="font-medium text-text-primary">{order.shippingAddress.fullName}</p>
+                <p className="text-text-secondary mt-2">{order.shippingAddress.street}</p>
+                <p className="text-text-secondary">
                   {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zipCode}
                 </p>
-                <p className="text-gray-600 mt-2">{order.shippingAddress.phone}</p>
+                <p className="text-text-secondary mt-2">{order.shippingAddress.phone}</p>
               </div>
             </div>
 
             {/* Payment Summary */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Payment Summary</h2>
+            <div className="bg-background-secondary rounded-lg shadow-sm p-6 border border-border-primary">
+              <h2 className="text-lg font-semibold text-text-primary mb-4">Payment Summary</h2>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Subtotal</span>
-                  <span className="text-gray-900">₹{subtotal.toFixed(2)}</span>
+                  <span className="text-text-secondary">Subtotal</span>
+                  <span className="text-text-primary">₹{subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Tax</span>
-                  <span className="text-gray-900">₹{tax.toFixed(2)}</span>
+                  <span className="text-text-secondary">Tax</span>
+                  <span className="text-text-primary">₹{tax.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Shipping</span>
-                  <span className="text-green-600 font-medium">FREE</span>
+                  <span className="text-text-secondary">Shipping</span>
+                  <span className="text-accent-green font-medium">FREE</span>
                 </div>
-                <div className="pt-2 border-t border-gray-200">
+                <div className="pt-2 border-t border-border-primary">
                   <div className="flex justify-between items-center">
-                    <span className="font-semibold text-gray-900">Total</span>
-                    <span className="text-xl font-bold text-gray-900">₹{order.totalAmount.toFixed(2)}</span>
+                    <span className="font-semibold text-text-primary">Total</span>
+                    <span className="text-xl font-bold text-accent-brown">₹{order.totalAmount.toFixed(2)}</span>
                   </div>
                 </div>
-                <div className="pt-2 mt-2 border-t border-gray-200">
+                <div className="pt-2 mt-2 border-t border-border-primary">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Payment Method</span>
-                    <span className="text-gray-900 capitalize">{order.paymentMethod}</span>
+                    <span className="text-text-secondary">Payment Method</span>
+                    <span className="text-text-primary capitalize">{order.paymentMethod}</span>
                   </div>
                   <div className="flex justify-between text-sm mt-1">
-                    <span className="text-gray-600">Payment Status</span>
+                    <span className="text-text-secondary">Payment Status</span>
                     <span className={`font-medium ${
-                      order.paymentStatus === 'paid' ? 'text-green-600' : 'text-yellow-600'
+                      order.paymentStatus === 'paid' ? 'text-success' : 'text-warning'
                     }`}>
                       {order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1)}
                     </span>

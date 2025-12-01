@@ -53,8 +53,8 @@ const UploadVideo = () => {
       setLoadingBooks(true);
       const response = await api.get('/library');
       console.log('Library response:', response.data);
-      // Extract library items from response
-      const libraryItems = response.data.data?.library || [];
+      // Extract library items from response and filter out items with null books
+      const libraryItems = (response.data.data?.library || []).filter(item => item.book && item.book._id);
       setOwnedBooks(libraryItems);
     } catch (err) {
       console.error('Failed to load owned books:', err);
@@ -65,9 +65,22 @@ const UploadVideo = () => {
   };
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (file) {
-      setValue('videoFile', file, { shouldValidate: true });
+      // Validate file type
+      if (!file.type.startsWith('video/')) {
+        setError('Please select a valid video file');
+        e.target.value = '';
+        return;
+      }
+      // Validate file size (50MB)
+      if (file.size > 50 * 1024 * 1024) {
+        setError('Video file must be less than 50MB');
+        e.target.value = '';
+        return;
+      }
+      setValue('videoFile', file, { shouldValidate: true, shouldDirty: true });
+      setError(null);
     }
   };
 
@@ -177,9 +190,11 @@ const UploadVideo = () => {
               >
                 <option value="">Choose a book from your library...</option>
                 {ownedBooks.map((item) => (
-                  <option key={item._id} value={item.book._id}>
-                    {item.book.title} by {item.book.author}
-                  </option>
+                  item.book ? (
+                    <option key={item._id} value={item.book._id}>
+                      {item.book.title} by {item.book.author}
+                    </option>
+                  ) : null
                 ))}
               </select>
               {errors.bookId && (
@@ -275,10 +290,10 @@ const UploadVideo = () => {
                       <span>Upload a video</span>
                       <input
                         id="videoFile"
+                        name="videoFile"
                         type="file"
                         accept="video/*"
                         className="sr-only"
-                        {...register("videoFile")}
                         onChange={handleFileChange}
                       />
                     </label>

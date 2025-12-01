@@ -10,6 +10,10 @@ import Footer from './components/layout/Footer'
 // Toast Provider
 import { ToastProvider } from './components/Toast'
 
+// Theme Provider (Context API)
+import { ThemeProvider } from './context/ThemeContext'
+import ThemeToggle from './components/ThemeToggle'
+
 // Public Pages
 import Home from './pages/Home'
 import About from './pages/About'
@@ -95,23 +99,19 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <ToastProvider>
-        <ScrollToTop />
-        <Routes>
-          {/* PDF Reader Route - Fullscreen without Header/Footer */}
-          <Route path="/buyer/reader/:bookId" element={<PrivateRoute role="buyer"><Reader /></PrivateRoute>} />
-
-          {/* All other routes with Header/Footer layout */}
-          <Route path="*" element={
-            <div className="min-h-screen flex flex-col">
-              <Header />
-              <main className="flex-grow" style={{ scrollBehavior: 'auto' }}>
-                <Routes>
-                  {/* Public Routes */}
-                  <Route path="/" element={<Home />} />
-                  <Route path="/about" element={<About />} />
-                  <Route path="/contact" element={<Contact />} />
-                  <Route path="/pricing" element={<Pricing />} />
+      <ThemeProvider>
+        <ToastProvider>
+          <div className="min-h-screen flex flex-col">
+            <ScrollToTop />
+            <Header />
+            <ThemeToggle />
+            <main className="flex-grow">
+            <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/pricing" element={<Pricing />} />
 
                   {/* Auth Routes */}
                   <Route path="/login" element={<Login />} />
@@ -172,15 +172,14 @@ function App() {
                   {/* Error Pages */}
                   <Route path="/500" element={<ServerError />} />
 
-                  {/* Catch all - 404 */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </main>
-              <Footer />
-            </div>
-          } />
-        </Routes>
-      </ToastProvider>
+            {/* Catch all - 404 */}
+            <Route path="*" element={<NotFound />} />
+            </Routes>
+          </main>
+          <Footer />
+          </div>
+        </ToastProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   )
 }
