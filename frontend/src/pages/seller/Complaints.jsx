@@ -126,7 +126,17 @@ const Complaints = () => {
               </p>
             </div>
             <Link to="/seller/register-complaint">
-              <Button variant="primary" size="lg">
+              <button 
+                className="text-white text-base rounded-lg transition-all duration-300 hover:scale-105 hover:brightness-110 focus:outline-none shadow-sm hover:shadow-md whitespace-nowrap inline-flex items-center"
+                style={{ 
+                  backgroundColor: '#8B7355',
+                  padding: '0.625rem 1.5rem',
+                  border: '1px solid transparent',
+                  lineHeight: '1.5',
+                  height: '50px',
+                  fontWeight: '500'
+                }}
+              >
                 <svg
                   className="w-5 h-5 mr-2"
                   fill="none"
@@ -141,7 +151,7 @@ const Complaints = () => {
                   />
                 </svg>
                 Register New Complaint
-              </Button>
+              </button>
             </Link>
           </div>
         </motion.div>
@@ -339,7 +349,18 @@ const Complaints = () => {
                         </div>
 
                         <div className="flex md:flex-col gap-2">
-                          <Button variant="outline" size="sm">
+                          <button
+                            className="text-charcoal text-xs sm:text-sm rounded-lg transition-all duration-300 hover:scale-105 hover:brightness-110 focus:outline-none hover:shadow-md whitespace-nowrap inline-flex items-center border-none"
+                            style={{ 
+                              backgroundColor: 'transparent',
+                              padding: '0.625rem 1.5rem',
+                              border: 'none',
+                              lineHeight: '1.5',
+                              height: '50px',
+                              fontWeight: '500',
+                              outline: 'none'
+                            }}
+                          >
                             View Details
                             <svg
                               className="w-4 h-4 ml-2"
@@ -354,7 +375,7 @@ const Complaints = () => {
                                 d="M9 5l7 7-7 7"
                               />
                             </svg>
-                          </Button>
+                          </button>
                         </div>
                       </div>
                     </Card.Body>

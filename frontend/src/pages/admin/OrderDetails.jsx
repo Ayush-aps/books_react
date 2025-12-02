@@ -233,7 +233,7 @@ const OrderDetails = () => {
             >
               <Card>
                 <Card.Header className="bg-brown">
-                  <h2 className="text-[20px] sm:text-[22px] font-bold text-white">Order Items</h2>
+                  <h2 className="text-[20px] sm:text-[22px] font-bold text-white font-serif">Order Items</h2>
                 </Card.Header>
                 <Card.Body className="p-3 sm:p-6">
                   <div className="space-y-3 sm:space-y-4">
@@ -299,7 +299,7 @@ const OrderDetails = () => {
             >
               <Card>
                 <Card.Header className="bg-brown">
-                  <h2 className="text-[20px] sm:text-[22px] font-bold text-white">Customer Information</h2>
+                  <h2 className="text-[20px] sm:text-[22px] font-bold text-white font-serif">Customer Information</h2>
                 </Card.Header>
                 <Card.Body className="p-3 sm:p-6">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -330,7 +330,7 @@ const OrderDetails = () => {
             >
               <Card>
                 <Card.Header className="bg-brown">
-                  <h2 className="text-[20px] sm:text-[22px] font-bold text-white">Payment Information</h2>
+                  <h2 className="text-[20px] sm:text-[22px] font-bold text-white font-serif">Payment Information</h2>
                 </Card.Header>
                 <Card.Body className="p-3 sm:p-6">
                   <div className="grid grid-cols-2 gap-3 sm:gap-4">
@@ -367,7 +367,7 @@ const OrderDetails = () => {
             >
               <Card>
                 <Card.Header className="bg-brown">
-                  <h2 className="text-[20px] sm:text-[22px] font-bold text-white">Update Order</h2>
+                  <h2 className="text-[20px] sm:text-[22px] font-bold text-white font-serif">Update Order</h2>
                 </Card.Header>
                 <Card.Body className="p-3 sm:p-6">
                   <form onSubmit={handleSubmit(handleUpdateOrder)} className="space-y-3 sm:space-y-4">

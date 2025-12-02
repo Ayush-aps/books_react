@@ -121,12 +121,24 @@ const ComplaintDetails = () => {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Back Button */}
         <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="mb-6">
-          <Link to="/seller/complaints" className="inline-flex items-center text-brown hover:text-brown/80 transition-colors">
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          <button
+            onClick={() => navigate('/seller/complaints')}
+            className="text-charcoal text-xs sm:text-sm rounded-lg transition-all duration-300 hover:scale-105 hover:brightness-110 focus:outline-none hover:shadow-md whitespace-nowrap inline-flex items-center border-none"
+            style={{ 
+              backgroundColor: 'transparent',
+              padding: '0.625rem 1.5rem',
+              border: 'none',
+              lineHeight: '1.5',
+              height: '50px',
+              fontWeight: '500',
+              outline: 'none'
+            }}
+          >
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             Back to Complaints
-          </Link>
+          </button>
         </motion.div>
 
         {/* Complaint Header */}
@@ -194,8 +206,8 @@ const ComplaintDetails = () => {
         {/* Complaint Description */}
         <motion.div variants={fadeInUp} initial="hidden" animate="visible">
           <Card className="mb-6">
-            <Card.Header>
-              <h2 className="heading-5 text-charcoal">Description</h2>
+            <Card.Header className="bg-brown">
+              <h2 className="heading-5 text-white font-serif">Description</h2>
             </Card.Header>
             <Card.Body>
               <p className="body text-charcoal whitespace-pre-wrap">{complaint.description}</p>
@@ -207,12 +219,12 @@ const ComplaintDetails = () => {
         {complaint.adminResponse && (
           <motion.div variants={fadeInUp} initial="hidden" animate="visible">
             <Card className="mb-6 border-l-4 border-blue-500">
-              <Card.Header>
+              <Card.Header className="bg-brown">
                 <div className="flex items-center gap-2">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <h2 className="heading-5 text-blue-900">Admin Response</h2>
+                  <h2 className="heading-5 text-white font-serif">Admin Response</h2>
                 </div>
               </Card.Header>
               <Card.Body>
@@ -226,8 +238,8 @@ const ComplaintDetails = () => {
         {complaint.resolution && complaint.resolution.action && (
           <motion.div variants={fadeInUp} initial="hidden" animate="visible">
             <Card className="mb-6 border-l-4 border-green-500">
-              <Card.Header>
-                <h2 className="heading-5 text-green-900">Resolution</h2>
+              <Card.Header className="bg-brown">
+                <h2 className="heading-5 text-white font-serif">Resolution</h2>
               </Card.Header>
               <Card.Body>
                 <div className="space-y-3">
@@ -258,8 +270,8 @@ const ComplaintDetails = () => {
         {complaint.comments && complaint.comments.length > 0 && (
           <motion.div variants={fadeInUp} initial="hidden" animate="visible">
             <Card className="mb-6">
-              <Card.Header>
-                <h2 className="heading-5 text-charcoal">
+              <Card.Header className="bg-brown">
+                <h2 className="heading-5 text-white font-serif">
                   Communication Thread ({complaint.comments.length})
                 </h2>
               </Card.Header>
@@ -300,8 +312,8 @@ const ComplaintDetails = () => {
         {complaint.status !== 'closed' && complaint.status !== 'resolved' && (
           <motion.div variants={fadeInUp} initial="hidden" animate="visible">
             <Card>
-              <Card.Header>
-                <h2 className="heading-5 text-charcoal">Add Comment</h2>
+              <Card.Header className="bg-brown">
+                <h2 className="heading-5 text-white font-serif">Add Comment</h2>
               </Card.Header>
               <Card.Body>
                 <form onSubmit={handleAddComment}>

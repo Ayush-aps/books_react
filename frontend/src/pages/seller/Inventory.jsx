@@ -155,12 +155,22 @@ const Inventory = () => {
             </p>
           </div>
           <Link to="/seller/upload">
-            <Button variant="primary" size="lg">
+            <button 
+              className="text-white text-base rounded-lg transition-all duration-300 hover:scale-105 hover:brightness-110 focus:outline-none shadow-sm hover:shadow-md whitespace-nowrap inline-flex items-center"
+              style={{ 
+                backgroundColor: '#8B7355',
+                padding: '0.625rem 1.5rem',
+                border: '1px solid transparent',
+                lineHeight: '1.5',
+                height: '50px',
+                fontWeight: '500'
+              }}
+            >
               <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
               Add New Book
-            </Button>
+            </button>
           </Link>
         </motion.div>
 
