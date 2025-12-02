@@ -238,6 +238,11 @@ const BookDetails = () => {
                       onClick={handleApprove}
                       disabled={processing}
                       loading={processing}
+                      style={{
+                        zIndex: 100,
+                        backgroundColor: '#16a34a',
+                        borderColor: '#16a34a'
+                      }}
                     >
                       {book.rejectionReason ? 'Re-Approve Book' : 'Approve Book'}
                     </Button>

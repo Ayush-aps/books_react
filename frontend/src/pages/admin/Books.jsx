@@ -142,6 +142,8 @@ const Books = () => {
     return 'Pending';
   };
 
+  const isPendingBook = (book) => pendingBooks.some(p => p._id === book._id);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -290,12 +292,27 @@ const Books = () => {
                         </p>
                       )}
 
-                      {!book.isApproved && !book.rejectionReason ? (
+                      {isPendingBook(book) ? (
                         <div className="flex flex-col sm:flex-row gap-1 sm:gap-1.5">
                           <button
                             onClick={() => handleApprove(book._id)}
                             disabled={processing}
                             className="w-full sm:flex-1 bg-green-600 text-white rounded font-medium py-1.5 sm:py-2 text-[10px] sm:text-xs hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 shadow-sm"
+                            style={{
+                              zIndex: 100,
+                              backgroundColor: '#16a34a',
+                              borderColor: '#16a34a'
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!processing) {
+                                e.currentTarget.style.backgroundColor = '#15803d';
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!processing) {
+                                e.currentTarget.style.backgroundColor = '#16a34a';
+                              }
+                            }}
                           >
                             Approve
                           </button>

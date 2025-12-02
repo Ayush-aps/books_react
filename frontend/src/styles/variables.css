@@ -387,6 +387,18 @@
   box-shadow: var(--shadow-hover-md);
 }
 
+/* Explicit bright green approve button override */
+.btn-approve {
+  background-color: #16a34a !important; /* Tailwind green-600 */
+  border-color: #16a34a !important;
+  color: var(--text-white) !important;
+}
+
+.btn-approve:hover {
+  background-color: #15803d !important; /* Tailwind green-700 */
+  border-color: #15803d !important;
+}
+
 /* Error Button - Terracotta Red */
 .btn-error {
   background-color: var(--error-primary);
