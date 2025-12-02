@@ -672,12 +672,12 @@ router.get("/pdf/:bookId", ensureAuthenticated, requireActiveSubscription, async
       });
     }
 
-    // Get the book details
+    // Get the book details and check if it still exists
     const book = await Book.findById(bookId);
     if (!book) {
       return res.status(404).json({
         success: false,
-        message: "Book does not exist.",
+        message: "This book is no longer available. It may have been removed by the seller.",
       });
     }
 

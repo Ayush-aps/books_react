@@ -146,7 +146,12 @@ export const registerSchema = z.object({
     required_error: "Role selection is required"
   }),
 })
-  .refine((data) => data.password === data.password2, {
+  .refine((data) => {
+    // Only validate if both password fields have values
+    // This prevents showing "passwords don't match" when user is still typing
+    if (!data.password || !data.password2) return true;
+    return data.password === data.password2;
+  }, {
     message: 'Passwords do not match',
     path: ['password2'],
   });
@@ -241,7 +246,15 @@ export const bookListingSchema = z.object({
   description: z.string()
     .min(10, "Description must be at least 10 characters")
     .max(2000, "Description cannot exceed 2000 characters")
-    .trim(),
+    .trim()
+    .refine(
+      (val) => /[a-zA-Z]/.test(val),
+      { message: "Description must contain at least one alphabetic character" }
+    )
+    .refine(
+      (val) => !/^\d+$/.test(val),
+      { message: "Description cannot contain only numbers" }
+    ),
 
   coverImage: z.string().url("Invalid URL").optional().or(z.literal('')),
 });

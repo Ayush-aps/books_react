@@ -88,7 +88,7 @@ const OrderSchema = new mongoose.Schema({
   },
   orderStatus: {
     type: String,
-    enum: ["ordered", "processing", "shipped", "delivered", "cancelled"],
+    enum: ["ordered", "processing", "shipped", "delivered", "cancelled", "return_requested", "returned"],
     default: "ordered",
   },
   trackingNumber: String,
@@ -114,6 +114,16 @@ const OrderSchema = new mongoose.Schema({
     carrier: String,
     trackingNumber: String,
     trackingUrl: String
+  },
+  returnRequest: {
+    requestedAt: Date,
+    reason: String,
+    status: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'pending'
+    },
+    adminNotes: String
   },
   statusHistory: [{
     status: String,

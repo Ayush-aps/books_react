@@ -7,14 +7,16 @@ const {
   getSellerOrders,
   getAllOrders,
   getOrder,
-  updateOrderStatus
+  updateOrderStatus,
+  cancelOrder,
+  requestReturn
 } = require('../controllers/orderController');
 
-const { 
-  ensureAuthenticated, 
-  ensureBuyer, 
-  ensureSeller, 
-  ensureAdmin 
+const {
+  ensureAuthenticated,
+  ensureBuyer,
+  ensureSeller,
+  ensureAdmin
 } = require('../middleware/auth');
 
 const router = express.Router();
@@ -65,6 +67,10 @@ router.post('/create-payment-intent', ensureAuthenticated, ensureBuyer, async (r
 router.post('/', ensureAuthenticated, ensureBuyer, createOrder);
 router.get('/my-orders', ensureAuthenticated, ensureBuyer, getMyOrders);
 
+// Buyer cancellation and return routes
+router.put('/:id/cancel', ensureAuthenticated, ensureBuyer, cancelOrder);
+router.put('/:id/return', ensureAuthenticated, ensureBuyer, requestReturn);
+
 // Seller routes
 router.get('/seller-orders', ensureAuthenticated, ensureSeller, getSellerOrders);
 
@@ -79,9 +85,9 @@ router.put('/:id/status', ensureAuthenticated, async (req, res, next) => {
   if (req.user.role === 'seller' || req.user.role === 'admin') {
     return next();
   }
-  return res.status(403).json({ 
-    success: false, 
-    message: 'Access denied. This resource is only for sellers and administrators.' 
+  return res.status(403).json({
+    success: false,
+    message: 'Access denied. This resource is only for sellers and administrators.'
   });
 }, updateOrderStatus);
 
@@ -92,7 +98,7 @@ router.get('/buyer/orders', ensureAuthenticated, ensureBuyer, async (req, res) =
     const orders = await Order.find({ buyer: req.user._id })
       .populate('items.book', 'title author coverImage')
       .populate('items.seller', 'name email');
-    
+
     res.render('buyer/orders', { orders });
   } catch (error) {
     console.error(error);
@@ -106,7 +112,7 @@ router.get('/seller/orders', ensureAuthenticated, ensureSeller, async (req, res)
   const orders = await Order.find({ 'items.seller': req.user.id })
     .populate('buyer', 'name email')
     .populate('items.book', 'title author coverImage');
-  
+
   res.render('orders/seller-orders', { orders });
 });
 
@@ -114,23 +120,23 @@ router.get('/seller/orders', ensureAuthenticated, ensureSeller, async (req, res)
 router.get('/admin/orders', ensureAuthenticated, ensureAdmin, async (req, res) => {
   const { status, startDate, endDate } = req.query;
   let query = {};
-  
+
   if (status) {
     query.orderStatus = status;
   }
-  
+
   if (startDate && endDate) {
     query.orderDate = {
       $gte: new Date(startDate),
       $lte: new Date(endDate)
     };
   }
-  
+
   const orders = await Order.find(query)
     .populate('buyer', 'name email')
     .populate('items.seller', 'name email')
     .populate('items.book', 'title author coverImage');
-  
+
   res.render('orders/admin-orders', { orders });
 });
 
@@ -142,13 +148,13 @@ router.get('/admin/orders', ensureAuthenticated, ensureAdmin, async (req, res) =
 router.get('/buyer/order/:id', ensureAuthenticated, ensureBuyer, async (req, res) => {
   try {
     console.log('Fetching order details for ID:', req.params.id); // Debug log
-    
+
     const order = await Order.findOne({
       _id: req.params.id,
       buyer: req.user._id
     })
-    .populate('items.book', 'title author coverImage')
-    .populate('items.seller', 'name email');
+      .populate('items.book', 'title author coverImage')
+      .populate('items.seller', 'name email');
 
     if (!order) {
       console.log('Order not found'); // Debug log

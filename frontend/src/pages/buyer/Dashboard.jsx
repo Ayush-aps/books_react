@@ -8,6 +8,7 @@ import Card from '../../components/Card';
 import Button from '../../components/Button';
 import Badge from '../../components/Badge';
 import { fadeInUp, staggerContainer, staggerItem } from '../../utils/animations';
+import { roundPrice } from '../../utils/priceUtils';
 
 function BuyerDashboard() {
   const [loading, setLoading] = useState(true);
@@ -172,9 +173,9 @@ function BuyerDashboard() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="heading-3">Recent Orders</h2>
                 <Link to="/buyer/orders">
-                  <button 
+                  <button
                     className="text-white text-base rounded-lg transition-all duration-300 hover:scale-105 hover:brightness-110 focus:outline-none shadow-sm hover:shadow-md whitespace-nowrap flex items-center gap-1"
-                    style={{ 
+                    style={{
                       backgroundColor: '#8B7355',
                       padding: '0.625rem 1.5rem',
                       border: '1px solid transparent',
@@ -239,9 +240,9 @@ function BuyerDashboard() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="heading-3">Recently Viewed</h2>
                 <Link to="/buyer/browse">
-                  <button 
+                  <button
                     className="text-white text-base rounded-lg transition-all duration-300 hover:scale-105 hover:brightness-110 focus:outline-none shadow-sm hover:shadow-md whitespace-nowrap flex items-center gap-1"
-                    style={{ 
+                    style={{
                       backgroundColor: '#8B7355',
                       padding: '0.625rem 1.5rem',
                       border: '1px solid transparent',
@@ -277,7 +278,7 @@ function BuyerDashboard() {
                       <div className="flex-1">
                         <p className="font-medium">{book.title}</p>
                         <p className="text-sm text-text-secondary">{book.author}</p>
-                        <p className="font-bold text-accent-brown mt-1">₹{book.price}</p>
+                        <p className="font-bold text-accent-brown mt-1">₹{roundPrice(book.price)}</p>
                       </div>
                     </Link>
                   ))}

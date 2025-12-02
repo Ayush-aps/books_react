@@ -14,6 +14,7 @@ import Card from '../../components/Card';
 import Badge from '../../components/Badge';
 import { motion } from 'framer-motion';
 import { fadeInUp, staggerContainer, staggerItem } from '../../utils/animations';
+import { roundPrice } from '../../utils/priceUtils';
 
 const Checkout = () => {
   const dispatch = useDispatch();
@@ -529,7 +530,7 @@ const Checkout = () => {
                               )}
                             </div>
                             <p className="body font-semibold text-brown">
-                              ₹{(price * item.quantity).toFixed(2)}
+                              ₹{roundPrice(price * item.quantity)}
                             </p>
                           </div>
                         </div>
@@ -541,11 +542,11 @@ const Checkout = () => {
                   <div className="border-t-2 border-surface pt-4 space-y-3">
                     <div className="flex justify-between body text-charcoal/70">
                       <span>Subtotal</span>
-                      <span className="font-medium text-charcoal">₹{subtotal.toFixed(2)}</span>
+                      <span className="font-medium text-charcoal">₹{roundPrice(subtotal)}</span>
                     </div>
                     <div className="flex justify-between body text-charcoal/70">
                       <span>Tax (8%)</span>
-                      <span className="font-medium text-charcoal">₹{tax.toFixed(2)}</span>
+                      <span className="font-medium text-charcoal">₹{roundPrice(tax)}</span>
                     </div>
                     <div className="flex justify-between body text-charcoal/70">
                       <span>Shipping</span>
@@ -553,7 +554,7 @@ const Checkout = () => {
                         {shipping === 0 ? (
                           <Badge variant="success" size="sm">FREE</Badge>
                         ) : (
-                          `₹${shipping.toFixed(2)}`
+                          `₹${roundPrice(shipping)}`
                         )}
                       </span>
                     </div>
@@ -567,7 +568,7 @@ const Checkout = () => {
                     )}
                     <div className="border-t-2 border-surface pt-3 flex justify-between items-center">
                       <span className="heading-4 text-charcoal">Total</span>
-                      <span className="heading-3 text-brown">₹{total.toFixed(2)}</span>
+                      <span className="heading-3 text-brown">₹{roundPrice(total)}</span>
                     </div>
                   </div>
 

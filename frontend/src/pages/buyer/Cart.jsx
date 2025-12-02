@@ -13,6 +13,7 @@ import Card from '../../components/Card';
 import Badge from '../../components/Badge';
 import { useState, useEffect } from 'react';
 import { fadeInUp, staggerContainer, staggerItem } from '../../utils/animations';
+import { roundPrice } from '../../utils/priceUtils';
 
 const Cart = () => {
   const dispatch = useDispatch();
@@ -83,7 +84,7 @@ const Cart = () => {
           >
             Shopping Cart
           </motion.h1>
-          
+
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -106,10 +107,10 @@ const Cart = () => {
               <h2 className="heading-2 mb-3">Your cart is empty</h2>
               <p className="body-lg text-text-secondary mb-8">Add some books to get started!</p>
               <Link to="/buyer/browse">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="text-white text-base rounded-lg transition-all duration-300 hover:scale-105 hover:brightness-110 focus:outline-none shadow-sm hover:shadow-md whitespace-nowrap"
-                  style={{ 
+                  style={{
                     backgroundColor: '#8B7355',
                     padding: '0.625rem 1.5rem',
                     border: '1px solid transparent',
@@ -189,7 +190,7 @@ const Cart = () => {
 
                           {/* Book Info */}
                           <div className="flex-1">
-                            <Link 
+                            <Link
                               to={`/buyer/book/${bookId}`}
                               className="heading-4 hover:text-accent-brown transition-colors"
                             >
@@ -203,11 +204,11 @@ const Cart = () => {
                             {/* Price */}
                             <div className="mt-4 flex items-baseline gap-2">
                               <span className="text-xl font-bold text-text-primary">
-                                ₹{discountedPrice?.toFixed(2) || '0.00'}
+                                ₹{roundPrice(discountedPrice) || '0'}
                               </span>
                               {hasDiscount && (
                                 <span className="text-sm text-text-tertiary line-through">
-                                  ₹{originalPrice?.toFixed(2) || '0.00'}
+                                  ₹{roundPrice(originalPrice) || '0'}
                                 </span>
                               )}
                             </div>
@@ -253,7 +254,7 @@ const Cart = () => {
                           {/* Item Total */}
                           <div className="text-right">
                             <p className="text-xl font-bold text-text-primary">
-                              ₹{(discountedPrice * item.quantity).toFixed(2)}
+                              ₹{roundPrice(discountedPrice * item.quantity)}
                             </p>
                           </div>
                         </div>
@@ -303,22 +304,22 @@ const Cart = () => {
 
                             {/* Book Info */}
                             <div className="flex-1">
-                              <Link 
+                              <Link
                                 to={`/buyer/book/${bookId}`}
                                 className="heading-5 hover:text-accent-brown transition-colors"
                               >
                                 {book.title}
                               </Link>
                               <p className="text-text-secondary mt-1 body-sm">{book.author}</p>
-                              
+
                               {/* Price */}
                               <div className="mt-2 flex items-baseline gap-2">
                                 <span className="text-lg font-bold text-text-primary">
-                                  ₹{discountedPrice?.toFixed(2) || '0.00'}
+                                  ₹{roundPrice(discountedPrice) || '0'}
                                 </span>
                                 {hasDiscount && (
                                   <span className="text-xs text-text-tertiary line-through">
-                                    ₹{originalPrice?.toFixed(2) || '0.00'}
+                                    ₹{roundPrice(originalPrice) || '0'}
                                   </span>
                                 )}
                               </div>
@@ -360,19 +361,19 @@ const Cart = () => {
             >
               <Card elevated padding="lg">
                 <h2 className="heading-3 mb-6">Order Summary</h2>
-                
+
                 <div className="space-y-4 mb-6">
                   <div className="flex justify-between body text-text-secondary">
                     <span>Subtotal ({items.length} {items.length === 1 ? 'item' : 'items'})</span>
-                    <span className="font-medium text-text-primary">₹{subtotal.toFixed(2)}</span>
+                    <span className="font-medium text-text-primary">₹{roundPrice(subtotal)}</span>
                   </div>
                   <div className="flex justify-between body text-text-secondary">
                     <span>Tax (8%)</span>
-                    <span className="font-medium text-text-primary">₹{tax.toFixed(2)}</span>
+                    <span className="font-medium text-text-primary">₹{roundPrice(tax)}</span>
                   </div>
                   <div className="border-t border-border-primary pt-4 flex justify-between">
                     <span className="heading-4">Total</span>
-                    <span className="heading-3 text-accent-brown">₹{total.toFixed(2)}</span>
+                    <span className="heading-3 text-accent-brown">₹{roundPrice(total)}</span>
                   </div>
                 </div>
 
