@@ -1,9 +1,4 @@
-/**
- * Books Slice - Redux Toolkit Implementation
- * NOTE: This is a demonstration file for evaluation purposes.
- * The application currently uses traditional Redux actions/reducers.
- * This slice is NOT connected to the store.
- */
+
 
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../../services/api';
