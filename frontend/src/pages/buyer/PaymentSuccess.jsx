@@ -7,6 +7,7 @@ import Card from '../../components/Card';
 import Badge from '../../components/Badge';
 import { motion } from 'framer-motion';
 import { fadeInUp, scaleIn, staggerContainer, staggerItem } from '../../utils/animations';
+import { roundPrice } from '../../utils/priceUtils';
 
 const PaymentSuccess = () => {
   const navigate = useNavigate();
@@ -15,6 +16,15 @@ const PaymentSuccess = () => {
   const sessionId = searchParams.get('session_id');
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Utility function to format payment method text
+  const formatPaymentMethod = (method) => {
+    if (!method) return 'Card';
+    return method.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  // Check if order is COD
+  const isCOD = order?.paymentMethod === 'cash_on_delivery';
 
   useEffect(() => {
     if (orderId) {
@@ -48,20 +58,20 @@ const PaymentSuccess = () => {
     <div className="min-h-screen bg-cream py-16">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Success Animation & Icon */}
-        <motion.div 
+        <motion.div
           className="text-center mb-12"
           variants={staggerContainer}
           initial="hidden"
           animate="visible"
         >
-          <motion.div 
+          <motion.div
             className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-green/20 to-green/10 rounded-full mb-6 relative"
             variants={scaleIn}
           >
             {/* Decorative rings */}
             <div className="absolute inset-0 rounded-full border-2 border-green/20 animate-ping" style={{ animationDuration: '2s' }}></div>
             <div className="absolute inset-0 rounded-full border-2 border-green/30"></div>
-            
+
             <svg
               className="w-12 h-12 text-green relative z-10"
               fill="none"
@@ -77,17 +87,19 @@ const PaymentSuccess = () => {
             </svg>
           </motion.div>
 
-          <motion.h1 
+          <motion.h1
             className="heading-1 text-charcoal mb-3"
             variants={fadeInUp}
           >
-            Payment Successful!
+            {isCOD ? 'Order Placed Successfully!' : 'Payment Successful!'}
           </motion.h1>
-          <motion.p 
+          <motion.p
             className="body-lg text-charcoal/70"
             variants={fadeInUp}
           >
-            Thank you for your order. We've received your payment.
+            {isCOD
+              ? 'Thank you for your order. Please keep cash ready for delivery.'
+              : 'Thank you for your order. We\'ve received your payment.'}
           </motion.p>
         </motion.div>
 
@@ -122,13 +134,14 @@ const PaymentSuccess = () => {
                   <div className="bg-cream/50 rounded-lg p-4 border border-surface">
                     <p className="body-sm text-charcoal/60 mb-1">Payment Method</p>
                     <div className="flex items-center gap-2">
-                      <p className="heading-4 text-charcoal capitalize">{order.paymentMethod}</p>
-                      <Badge variant="success" size="sm">Paid</Badge>
+                      <p className="heading-4 text-charcoal">{formatPaymentMethod(order.paymentMethod)}</p>
+                      {!isCOD && <Badge variant="success" size="sm">Paid</Badge>}
+                      {isCOD && <Badge variant="warning" size="sm">Pay on Delivery</Badge>}
                     </div>
                   </div>
                   <div className="bg-brown/5 rounded-lg p-4 border-2 border-brown/20">
                     <p className="body-sm text-brown/70 mb-1">Total Amount</p>
-                    <p className="heading-2 text-brown">₹{order.totalAmount.toFixed(2)}</p>
+                    <p className="heading-2 text-brown">₹{roundPrice(order.totalAmount)}</p>
                   </div>
                 </div>
 
@@ -181,10 +194,10 @@ const PaymentSuccess = () => {
                           <div className="flex items-center gap-2 mt-1">
                             <span className="body-sm text-charcoal/60">Qty: {item.quantity}</span>
                             <span className="text-charcoal/40">•</span>
-                            <span className="body-sm text-charcoal/60">₹{item.price.toFixed(2)} each</span>
+                            <span className="body-sm text-charcoal/60">₹{roundPrice(item.price)} each</span>
                           </div>
                         </div>
-                        <p className="heading-4 text-brown">₹{(item.price * item.quantity).toFixed(2)}</p>
+                        <p className="heading-4 text-brown">₹{roundPrice(item.price * item.quantity)}</p>
                       </div>
                     ))}
                   </div>
@@ -249,7 +262,7 @@ const PaymentSuccess = () => {
         </motion.div>
 
         {/* Action Buttons */}
-        <motion.div 
+        <motion.div
           className="grid sm:grid-cols-3 gap-4 mb-8"
           variants={staggerContainer}
           initial="hidden"
@@ -281,7 +294,7 @@ const PaymentSuccess = () => {
         </motion.div>
 
         {/* Help Section */}
-        <motion.div 
+        <motion.div
           className="text-center"
           variants={fadeInUp}
           initial="hidden"

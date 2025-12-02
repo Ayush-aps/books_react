@@ -114,11 +114,7 @@ const BookSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-});
+}, { timestamps: true });
 
 // Create index for search functionality
 BookSchema.index({

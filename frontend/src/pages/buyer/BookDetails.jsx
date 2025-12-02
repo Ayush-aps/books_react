@@ -7,7 +7,9 @@ import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
-import { fadeInUp, staggerContainer, staggerItem, scaleIn } from '../../utils/animations';
+import { useToast } from '../../components/Toast';
+import { fadeInUp, scaleIn, staggerContainer, staggerItem } from '../../utils/animations';
+import { roundPrice } from '../../utils/priceUtils';
 import { fetchBookDetails } from '../../redux/actions/bookActions';
 import { addToCart, saveForLater } from '../../redux/actions/cartActions';
 import { addBookToLibrary } from '../../redux/actions/libraryActions';
@@ -125,7 +127,7 @@ const BookDetails = () => {
     }
 
     const result = await dispatch(addBookToLibrary(currentBook._id));
-    
+
     // Check if subscription is required
     if (!result.success && result.requiresSubscription) {
       // Show message to take subscription first
@@ -194,7 +196,7 @@ const BookDetails = () => {
   }
 
   const book = currentBook;
-  const discountedPrice = book.discountPercentage 
+  const discountedPrice = book.discountPercentage
     ? book.price - (book.price * book.discountPercentage / 100)
     : book.price;
   const isOutOfStock = book.stock === 0;
@@ -205,7 +207,7 @@ const BookDetails = () => {
     <div className="min-h-screen bg-background-primary py-8 md:py-12">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb */}
-        <motion.nav 
+        <motion.nav
           className="mb-8"
           initial="hidden"
           animate="visible"
@@ -238,7 +240,7 @@ const BookDetails = () => {
                   initial="hidden"
                   animate="visible"
                 />
-                
+
                 {/* Status Badges */}
                 <div className="absolute top-4 right-4 flex flex-col gap-2">
                   {book.discountPercentage > 0 && (
@@ -267,7 +269,7 @@ const BookDetails = () => {
             <div>
               <h1 className="heading-2 mb-2 text-text-primary">{book.title}</h1>
               <p className="text-lg text-text-secondary">by <span className="font-medium text-text-primary">{book.author}</span></p>
-              
+
               {/* Rating */}
               <div className="flex items-center gap-3 mt-4">
                 <div className="flex text-warning">
@@ -293,11 +295,11 @@ const BookDetails = () => {
                 <div>
                   <div className="flex items-baseline gap-3">
                     <span className="text-4xl font-serif font-bold text-accent-brown">
-                      ₹{discountedPrice.toFixed(2)}
+                      ₹{roundPrice(discountedPrice)}
                     </span>
                     {book.discountPercentage > 0 && (
                       <span className="text-xl text-text-tertiary line-through">
-                        ₹{book.price.toFixed(2)}
+                        ₹{roundPrice(book.price)}
                       </span>
                     )}
                   </div>
@@ -345,7 +347,7 @@ const BookDetails = () => {
                     </svg>
                     Add to Cart
                   </Button>
-                  
+
                   {/* Secondary Actions */}
                   <div className="flex flex-col sm:flex-row gap-4">
                     <Button
@@ -413,15 +415,14 @@ const BookDetails = () => {
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`pb-4 text-base font-medium capitalize transition-colors relative ${
-                      activeTab === tab 
-                        ? 'text-accent-brown' 
+                    className={`pb-4 text-base font-medium capitalize transition-colors relative ${activeTab === tab
+                        ? 'text-accent-brown'
                         : 'text-text-secondary hover:text-text-primary'
-                    }`}
+                      }`}
                   >
                     {tab}
                     {activeTab === tab && (
-                      <motion.div 
+                      <motion.div
                         layoutId="activeTab"
                         className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent-brown"
                       />
@@ -458,11 +459,11 @@ const BookDetails = () => {
                   </div>
                   <div>
                     <h4 className="text-sm font-medium text-text-tertiary mb-1">Condition</h4>
-                    <Badge 
+                    <Badge
                       variant={
-                        book.condition === 'new' ? 'success' : 
-                        book.condition === 'like-new' ? 'info' : 
-                        'warning'
+                        book.condition === 'new' ? 'success' :
+                          book.condition === 'like-new' ? 'info' :
+                            'warning'
                       }
                     >
                       {book.condition}
@@ -591,9 +592,9 @@ const BookDetails = () => {
             <h2 className="heading-3 mb-8">You might also like</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {recommendedBooks.map((relatedBook) => (
-                <BookCard 
-                  key={relatedBook._id} 
-                  book={relatedBook} 
+                <BookCard
+                  key={relatedBook._id}
+                  book={relatedBook}
                   onAddToCart={handleRelatedAddToCart}
                 />
               ))}

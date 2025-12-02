@@ -209,7 +209,7 @@ const PdfReader = () => {
           } else if (response.status === 403) {
             setError('You need an active subscription to access this book.');
           } else if (response.status === 404) {
-            setError('Book not found in your library.');
+            setError('This book is no longer available. It may have been removed by the seller.');
           } else {
             setError(`Failed to load PDF (Error ${response.status})`);
           }

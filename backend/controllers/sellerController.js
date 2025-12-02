@@ -808,8 +808,9 @@ exports.getOrderDetails = async (req, res) => {
 exports.updateOrderStatus = async (req, res) => {
   try {
     const { status } = req.body;
+    const Book = require('../models/Book');
 
-    if (!status || !["ordered", "processing", "shipped", "delivered", "cancelled"].includes(status)) {
+    if (!status || !["ordered", "processing", "shipped", "delivered", "cancelled", "return_requested", "returned"].includes(status)) {
       return res.status(400).json({
         success: false,
         message: "Invalid status provided",
@@ -828,12 +829,29 @@ exports.updateOrderStatus = async (req, res) => {
       });
     }
 
+    // **STOCK RESTORATION: Restore stock if order is being cancelled**
+    if (status === 'cancelled' && order.orderStatus !== 'cancelled') {
+      console.log('📦 Seller cancelling order, restoring stock:', order.orderId);
+      await Promise.all(
+        order.items.map(async (item) => {
+          const updatedBook = await Book.findByIdAndUpdate(
+            item.book,
+            { $inc: { stock: item.quantity } },
+            { new: true }
+          );
+          console.log(`  ✅ Restored ${item.quantity} units to book: ${updatedBook?.title}`);
+        })
+      );
+    }
+
     order.orderStatus = status;
     await order.save();
 
     res.json({
       success: true,
-      message: "Order status updated successfully",
+      message: status === 'cancelled'
+        ? 'Order cancelled and stock restored successfully'
+        : 'Order status updated successfully',
       data: { order },
     });
   } catch (err) {

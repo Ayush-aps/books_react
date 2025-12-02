@@ -9,11 +9,19 @@ import Card from '../../components/Card';
 import Badge from '../../components/Badge';
 import { motion } from 'framer-motion';
 import { fadeInUp, staggerContainer, staggerItem } from '../../utils/animations';
+import { roundPrice } from '../../utils/priceUtils';
 
 const Orders = () => {
   const dispatch = useDispatch();
   const { orders, loading, error } = useSelector(state => state.orders);
   const [filter, setFilter] = useState('all');
+  const [actionLoading, setActionLoading] = useState(null);
+
+  // Utility function to format text (replace underscores with spaces)
+  const formatText = (text) => {
+    if (!text) return '';
+    return text.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
 
   useEffect(() => {
     dispatch(fetchOrders());
@@ -26,15 +34,80 @@ const Orders = () => {
       processing: 'info',
       shipped: 'info',
       delivered: 'success',
-      cancelled: 'error'
+      cancelled: 'error',
+      return_requested: 'warning',
+      returned: 'info'
     };
     return variants[status] || 'default';
   };
 
   const getOrderStatus = (order) => order.orderStatus || order.status || 'ordered';
 
-  const filteredOrders = filter === 'all' 
-    ? orders 
+  const handleCancelOrder = async (orderId) => {
+    if (!window.confirm('Are you sure you want to cancel this order? Stock will be restored.')) {
+      return;
+    }
+
+    try {
+      setActionLoading(orderId);
+      const response = await fetch(`http://localhost:3000/api/orders/${orderId}/cancel`, {
+        method: 'PUT',
+        credentials: 'include'
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert(data.message || 'Order cancelled successfully');
+        dispatch(fetchOrders()); // Refresh orders
+      } else {
+        alert(data.message || 'Failed to cancel order');
+      }
+    } catch (error) {
+      console.error('Cancel order error:', error);
+      alert('Failed to cancel order. Please try again.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleRequestReturn = async (orderId) => {
+    const reason = prompt('Please provide a reason for return:');
+
+    if (!reason || reason.trim() === '') {
+      alert('Return reason is required');
+      return;
+    }
+
+    try {
+      setActionLoading(orderId);
+      const response = await fetch(`http://localhost:3000/api/orders/${orderId}/return`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ reason })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert(data.message || 'Return request submitted successfully');
+        dispatch(fetchOrders()); // Refresh orders
+      } else {
+        alert(data.message || 'Failed to submit return request');
+      }
+    } catch (error) {
+      console.error('Request return error:', error);
+      alert('Failed to submit return request. Please try again.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const filteredOrders = filter === 'all'
+    ? orders
     : orders.filter(order => getOrderStatus(order) === filter);
 
   if (loading) {
@@ -49,7 +122,7 @@ const Orders = () => {
     <div className="min-h-screen bg-cream py-12">
       <div className="container-custom">
         {/* Header */}
-        <motion.div 
+        <motion.div
           className="mb-12"
           variants={fadeInUp}
           initial="hidden"
@@ -60,7 +133,7 @@ const Orders = () => {
         </motion.div>
 
         {error && (
-          <motion.div 
+          <motion.div
             className="mb-6"
             variants={fadeInUp}
             initial="hidden"
@@ -71,25 +144,24 @@ const Orders = () => {
         )}
 
         {/* Filter Tabs */}
-        <motion.div 
+        <motion.div
           className="mb-8 flex gap-2 overflow-x-auto pb-2"
           variants={fadeInUp}
           initial="hidden"
           animate="visible"
         >
-          {['all', 'ordered', 'processing', 'shipped', 'delivered', 'cancelled'].map((status) => {
+          {['all', 'ordered', 'processing', 'shipped', 'delivered', 'cancelled', 'return_requested'].map((status) => {
             const isActive = filter === status;
             return (
               <button
                 key={status}
                 onClick={() => setFilter(status)}
-                className={`px-5 py-2.5 rounded-lg font-medium whitespace-nowrap transition-all duration-200 ${
-                  isActive
-                    ? 'bg-brown text-cream shadow-md'
-                    : 'bg-white text-charcoal/70 hover:bg-surface hover:text-charcoal border border-surface'
-                }`}
+                className={`px-5 py-2.5 rounded-lg font-medium whitespace-nowrap transition-all duration-200 ${isActive
+                  ? 'bg-brown text-cream shadow-md'
+                  : 'bg-white text-charcoal/70 hover:bg-surface hover:text-charcoal border border-surface'
+                  }`}
               >
-                {status.charAt(0).toUpperCase() + status.slice(1)}
+                {formatText(status)}
               </button>
             );
           })}
@@ -120,7 +192,7 @@ const Orders = () => {
                 {filter === 'all' ? 'No orders yet' : `No ${filter} orders`}
               </h2>
               <p className="body text-charcoal/60 mb-6">
-                {filter === 'all' 
+                {filter === 'all'
                   ? 'Start shopping to see your orders here'
                   : `You don't have any ${filter} orders`}
               </p>
@@ -132,7 +204,7 @@ const Orders = () => {
             </Card>
           </motion.div>
         ) : (
-          <motion.div 
+          <motion.div
             className="space-y-6"
             variants={staggerContainer}
             initial="hidden"
@@ -150,7 +222,7 @@ const Orders = () => {
                             Order ID: <span className="font-mono font-semibold text-charcoal">#{order.orderId || order._id.slice(-8).toUpperCase()}</span>
                           </p>
                           <Badge variant={getStatusVariant(getOrderStatus(order))} size="md">
-                            {getOrderStatus(order).charAt(0).toUpperCase() + getOrderStatus(order).slice(1)}
+                            {formatText(getOrderStatus(order))}
                           </Badge>
                         </div>
                         <p className="body-sm text-charcoal/60">
@@ -162,9 +234,9 @@ const Orders = () => {
                         </p>
                       </div>
                       <Link to={`/buyer/orders/${order._id}`}>
-                        <button 
+                        <button
                           className="text-white text-base rounded-lg transition-all duration-300 hover:scale-105 hover:brightness-110 focus:outline-none shadow-sm hover:shadow-md whitespace-nowrap flex items-center gap-1"
-                          style={{ 
+                          style={{
                             backgroundColor: '#8B7355',
                             padding: '0.3rem 1.3rem',
                             border: '1px solid transparent',
@@ -204,7 +276,7 @@ const Orders = () => {
                                 Quantity: {item.quantity}
                               </p>
                               <p className="body font-semibold text-brown">
-                                ₹{item.price.toFixed(2)}
+                                ₹{roundPrice(item.price)}
                               </p>
                               {getOrderStatus(order) === 'delivered' && item.book?._id && (
                                 <Link
@@ -228,6 +300,71 @@ const Orders = () => {
                       </div>
                     </div>
 
+                    {/* Action Buttons */}
+                    <div className="border-t-2 border-surface pt-4 pb-4 flex flex-wrap gap-3">
+                      {/* Cancel Button - Show for ordered/processing orders */}
+                      {(getOrderStatus(order) === 'ordered' || getOrderStatus(order) === 'processing') && (
+                        <button
+                          onClick={() => handleCancelOrder(order._id)}
+                          disabled={actionLoading === order._id}
+                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        >
+                          {actionLoading === order._id ? (
+                            <>
+                              <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Cancelling...
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                              Cancel Order
+                            </>
+                          )}
+                        </button>
+                      )}
+
+                      {/* Return Button - Show for delivered orders */}
+                      {getOrderStatus(order) === 'delivered' && (
+                        <button
+                          onClick={() => handleRequestReturn(order._id)}
+                          disabled={actionLoading === order._id}
+                          className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        >
+                          {actionLoading === order._id ? (
+                            <>
+                              <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Requesting...
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                              </svg>
+                              Request Return
+                            </>
+                          )}
+                        </button>
+                      )}
+
+                      {/* Return Status Badge */}
+                      {getOrderStatus(order) === 'return_requested' && (
+                        <div className="px-4 py-2 bg-yellow-100 text-yellow-800 rounded-lg flex items-center gap-2">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                          </svg>
+                          <span className="font-medium">Return Requested - Pending Admin Review</span>
+                        </div>
+                      )}
+                    </div>
+
                     {/* Order Footer */}
                     <div className="border-t-2 border-surface pt-4 flex flex-wrap items-center justify-between gap-4">
                       <div className="flex items-center gap-4 text-charcoal/60 body-sm">
@@ -235,7 +372,7 @@ const Orders = () => {
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                           </svg>
-                          <span className="capitalize">{order.paymentMethod}</span>
+                          <span>{formatText(order.paymentMethod)}</span>
                         </div>
                         <span className="text-charcoal/40">•</span>
                         <div className="flex items-center gap-2">
@@ -248,7 +385,7 @@ const Orders = () => {
                       <div className="flex items-center gap-2">
                         <span className="body text-charcoal/70">Total:</span>
                         <span className="heading-3 text-brown">
-                          ₹{order.totalAmount.toFixed(2)}
+                          ₹{roundPrice(order.totalAmount)}
                         </span>
                       </div>
                     </div>

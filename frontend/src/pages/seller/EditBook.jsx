@@ -30,6 +30,9 @@ const EditBook = () => {
     'Horror', 'Adventure', 'Young Adult', 'Children', 'Comics', 'Other'
   ];
 
+  const LANGUAGES = ['English', 'Hindi', 'Punjabi', 'French', 'Spanish', 'German', 'Marathi', 'Telugu'];
+  const [languageMode, setLanguageMode] = useState('select'); // 'select' | 'manual'
+
   // React Hook Form setup
   const { register, handleSubmit, formState: { errors, isSubmitting }, reset, setValue } = useForm({
     resolver: zodResolver(bookListingSchema),
@@ -45,7 +48,8 @@ const EditBook = () => {
       isbn: '',
       publicationYear: '',
       description: '',
-      format: 'paperback'
+      format: 'paperback',
+      language: 'English'
     }
   });
 
@@ -78,8 +82,17 @@ const EditBook = () => {
         isbn: book.isbn || '',
         publicationYear: book.publishedDate ? new Date(book.publishedDate).getFullYear() : (book.publicationYear || ''),
         description: book.description || '',
-        format: book.format || 'paperback'
+        format: book.format || 'paperback',
+        language: book.language || 'English'
       });
+
+      // Set language mode based on whether the fetched language is in our list
+      const fetchedLang = book.language || 'English';
+      if (LANGUAGES.includes(fetchedLang)) {
+        setLanguageMode('select');
+      } else {
+        setLanguageMode('manual');
+      }
 
       // Update additional state for non-form fields
       setCoverImage(book.coverImage || '');
@@ -104,6 +117,7 @@ const EditBook = () => {
         condition: formData.condition || condition,
         discountPercentage: formData.discountPercentage ? parseFloat(formData.discountPercentage) : 0,
         coverImage: coverImage || undefined,
+        language: formData.language || 'English',
         // Include resubmit flag if this is a rejected book being resubmitted
         resubmit: isResubmitMode || (bookData?.rejectionReason ? true : false)
       };
@@ -298,6 +312,62 @@ const EditBook = () => {
                 />
                 {errors.publicationYear && (
                   <p className="text-red-500 text-sm mt-1">{errors.publicationYear.message}</p>
+                )}
+              </div>
+
+              <div className="relative">
+                {languageMode === 'select' ? (
+                  <>
+                    <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-2">
+                      Language
+                    </label>
+                    <select
+                      id="language"
+                      {...register('language')}
+                      className={`w-full px-3 py-2 border ${errors.language
+                          ? 'border-red-500 focus:ring-red-500'
+                          : 'border-gray-300 focus:ring-blue-500'
+                        } rounded-md focus:outline-none focus:ring-2`}
+                    >
+                      {LANGUAGES.map(lang => (
+                        <option key={lang} value={lang}>{lang}</option>
+                      ))}
+                    </select>
+                  </>
+                ) : (
+                  <>
+                    <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-2">
+                      Language
+                    </label>
+                    <input
+                      type="text"
+                      id="language"
+                      {...register('language')}
+                      className={`w-full px-3 py-2 border ${errors.language
+                          ? 'border-red-500 focus:ring-red-500'
+                          : 'border-gray-300 focus:ring-blue-500'
+                        } rounded-md focus:outline-none focus:ring-2`}
+                      placeholder="e.g., English"
+                    />
+                  </>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newMode = languageMode === 'select' ? 'manual' : 'select';
+                    setLanguageMode(newMode);
+                    if (newMode === 'select') {
+                      setValue('language', 'English');
+                    } else {
+                      setValue('language', '');
+                    }
+                  }}
+                  className="absolute top-0 right-0 text-xs text-blue-600 hover:underline focus:outline-none"
+                >
+                  {languageMode === 'select' ? 'Type manually' : 'Select from list'}
+                </button>
+                {errors.language && (
+                  <p className="text-red-500 text-sm mt-1">{errors.language.message}</p>
                 )}
               </div>
             </div>

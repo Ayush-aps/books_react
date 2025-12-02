@@ -5,6 +5,7 @@
 
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { roundPrice } from '../utils/priceUtils';
 
 const BookCard = ({ book, onAddToCart, compact = false }) => {
   const navigate = useNavigate();
@@ -95,9 +96,9 @@ const BookCard = ({ book, onAddToCart, compact = false }) => {
 
         <div className="mt-auto">
           <div className="flex flex-wrap items-center gap-1.5 mb-2">
-            <span className={`font-bold text-gray-900 ${compact ? 'text-sm' : 'text-base'}`}>₹{effectivePrice}</span>
+            <span className={`font-bold text-gray-900 ${compact ? 'text-sm' : 'text-base'}`}>₹{roundPrice(effectivePrice)}</span>
             {hasDiscount && (
-              <span className={`text-gray-400 line-through ${compact ? 'text-[10px]' : 'text-xs'}`}>₹{book.price}</span>
+              <span className={`text-gray-400 line-through ${compact ? 'text-[10px]' : 'text-xs'}`}>₹{roundPrice(book.price)}</span>
             )}
             {book.condition && (
               <span className="text-[10px] text-gray-500 capitalize bg-gray-50 px-1.5 py-0.5 rounded">{book.condition}</span>

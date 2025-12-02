@@ -27,20 +27,20 @@ exports.createOrder = async (req, res, next) => {
     for (const item of items) {
       // Support both bookId and book field
       const bookId = item.bookId || item.book;
-      
+
       // Validate bookId is a valid MongoDB ObjectId
       if (!bookId || !mongoose.Types.ObjectId.isValid(bookId)) {
         invalidBookIds.push(bookId || 'undefined');
         continue;
       }
-      
+
       const book = await Book.findById(bookId).populate('seller', '_id name email');
-      
+
       if (!book) {
         notFoundBooks.push(bookId);
         continue;
       }
-      
+
       if (book.stock < item.quantity) {
         insufficientStockBooks.push({
           title: book.title,
@@ -69,7 +69,7 @@ exports.createOrder = async (req, res, next) => {
         details: { invalidBookIds }
       });
     }
-    
+
     if (notFoundBooks.length > 0) {
       return res.status(400).json({
         success: false,
@@ -98,7 +98,7 @@ exports.createOrder = async (req, res, next) => {
 
     // Set payment status based on payment method
     const paymentStatus = paymentMethod === 'cash_on_delivery' || paymentMethod === 'cod' ? 'pending' : 'completed';
-    
+
     // Prepare order data
     const orderData = {
       buyer: req.user.id,
@@ -125,19 +125,19 @@ exports.createOrder = async (req, res, next) => {
     // Update book stock and check for low/out of stock
     const lowStockNotifications = [];
     const outOfStockNotifications = [];
-    
+
     await Promise.all(
       orderItems.map(async (item) => {
         const updatedBook = await Book.findByIdAndUpdate(
           item.book,
-          { 
-            $inc: { 
+          {
+            $inc: {
               stock: -item.quantity
-            } 
+            }
           },
           { new: true }
         ).populate('seller', '_id name email');
-        
+
         // Check stock levels after update
         if (updatedBook) {
           if (updatedBook.stock === 0) {
@@ -161,13 +161,13 @@ exports.createOrder = async (req, res, next) => {
         }
       })
     );
-    
+
     // Log stock notifications (in production, send emails/notifications)
     if (outOfStockNotifications.length > 0) {
       console.log('⚠️ OUT OF STOCK ALERT:', outOfStockNotifications);
       // TODO: Send email/notification to sellers and admin
     }
-    
+
     if (lowStockNotifications.length > 0) {
       console.log('⚠️ LOW STOCK WARNING:', lowStockNotifications);
       // TODO: Send email/notification to sellers and admin
@@ -286,12 +286,12 @@ exports.getOrder = async (req, res, next) => {
 
     // Check if user is authorized to view this order
     const buyerId = order.buyer._id ? order.buyer._id.toString() : order.buyer.toString();
-    if (req.user.role !== 'admin' && 
-        buyerId !== req.user.id && 
-        !order.items.some(item => {
-          const sellerId = item.seller._id ? item.seller._id.toString() : item.seller.toString();
-          return sellerId === req.user.id;
-        })) {
+    if (req.user.role !== 'admin' &&
+      buyerId !== req.user.id &&
+      !order.items.some(item => {
+        const sellerId = item.seller._id ? item.seller._id.toString() : item.seller.toString();
+        return sellerId === req.user.id;
+      })) {
       return res.status(403).json({
         success: false,
         message: 'Not authorized to access this order'
@@ -316,6 +316,7 @@ exports.getOrder = async (req, res, next) => {
 exports.updateOrderStatus = async (req, res, next) => {
   try {
     const { orderStatus, trackingNumber, deliveryDate } = req.body;
+    const Book = require('../models/Book');
 
     const order = await Order.findById(req.params.id);
 
@@ -327,12 +328,27 @@ exports.updateOrderStatus = async (req, res, next) => {
     }
 
     // Check if user is authorized to update this order
-    if (req.user.role !== 'admin' && 
-        !order.items.some(item => item.seller.toString() === req.user.id)) {
+    if (req.user.role !== 'admin' &&
+      !order.items.some(item => item.seller.toString() === req.user.id)) {
       return res.status(403).json({
         success: false,
         message: 'Not authorized to update this order'
       });
+    }
+
+    // **STOCK RESTORATION: Restore stock if order is being cancelled**
+    if (orderStatus === 'cancelled' && order.orderStatus !== 'cancelled') {
+      console.log('📦 Restoring stock for cancelled order:', order.orderId);
+      await Promise.all(
+        order.items.map(async (item) => {
+          const updatedBook = await Book.findByIdAndUpdate(
+            item.book,
+            { $inc: { stock: item.quantity } },
+            { new: true }
+          );
+          console.log(`  ✅ Restored ${item.quantity} units to book: ${updatedBook?.title}`);
+        })
+      );
     }
 
     // Update order status
@@ -345,9 +361,169 @@ exports.updateOrderStatus = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
+      message: orderStatus === 'cancelled'
+        ? 'Order cancelled and stock restored successfully'
+        : 'Order status updated successfully',
       data: order
     });
   } catch (error) {
+    console.error('Update order status error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// @desc    Cancel order (Buyer)
+// @route   PUT /api/orders/:id/cancel
+// @access  Private (Buyer)
+exports.cancelOrder = async (req, res, next) => {
+  try {
+    const Book = require('../models/Book');
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found'
+      });
+    }
+
+    // Check if buyer owns this order
+    if (order.buyer.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to cancel this order'
+      });
+    }
+
+    // Only allow cancellation if order is not shipped or delivered
+    if (['shipped', 'delivered'].includes(order.orderStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot cancel order that has been shipped or delivered. Please request a return instead.'
+      });
+    }
+
+    // Already cancelled
+    if (order.orderStatus === 'cancelled') {
+      return res.status(400).json({
+        success: false,
+        message: 'Order is already cancelled'
+      });
+    }
+
+    // Restore stock
+    console.log('📦 Buyer cancelling order, restoring stock:', order.orderId);
+    await Promise.all(
+      order.items.map(async (item) => {
+        const updatedBook = await Book.findByIdAndUpdate(
+          item.book,
+          { $inc: { stock: item.quantity } },
+          { new: true }
+        );
+        console.log(`  ✅ Restored ${item.quantity} units to book: ${updatedBook?.title}`);
+      })
+    );
+
+    // Update order status
+    order.orderStatus = 'cancelled';
+    order.lastStatusUpdate = Date.now();
+    await order.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Order cancelled successfully and stock restored',
+      data: order
+    });
+  } catch (error) {
+    console.error('Cancel order error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// @desc    Request return for delivered order (Buyer)
+// @route   PUT /api/orders/:id/return
+// @access  Private (Buyer)
+exports.requestReturn = async (req, res, next) => {
+  try {
+    const { reason } = req.body;
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found'
+      });
+    }
+
+    // Check if buyer owns this order
+    if (order.buyer.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to request return for this order'
+      });
+    }
+
+    // Only allow return request for delivered orders
+    if (order.orderStatus !== 'delivered') {
+      return res.status(400).json({
+        success: false,
+        message: 'Can only request return for delivered orders'
+      });
+    }
+
+    // Check if already requested
+    if (order.orderStatus === 'return_requested' || order.orderStatus === 'returned') {
+      return res.status(400).json({
+        success: false,
+        message: 'Return already requested for this order'
+      });
+    }
+
+    // **10-DAY RETURN WINDOW: Check if order was delivered within last 10 days**
+    if (order.deliveryDate) {
+      const deliveryDate = new Date(order.deliveryDate);
+      const currentDate = new Date();
+      const daysSinceDelivery = Math.floor((currentDate - deliveryDate) / (1000 * 60 * 60 * 24));
+
+      if (daysSinceDelivery > 10) {
+        return res.status(400).json({
+          success: false,
+          message: `Return window has expired. Returns are only allowed within 10 days of delivery. This order was delivered ${daysSinceDelivery} days ago.`
+        });
+      }
+    }
+
+    if (!reason || reason.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a reason for return'
+      });
+    }
+
+    // Update order with return request
+    order.orderStatus = 'return_requested';
+    order.returnRequest = {
+      requestedAt: Date.now(),
+      reason: reason.trim(),
+      status: 'pending'
+    };
+    order.lastStatusUpdate = Date.now();
+
+    await order.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Return request submitted successfully. Admin will review your request.',
+      data: order
+    });
+  } catch (error) {
+    console.error('Request return error:', error);
     res.status(500).json({
       success: false,
       message: error.message
