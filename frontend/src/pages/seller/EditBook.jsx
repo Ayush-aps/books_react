@@ -113,7 +113,7 @@ const EditBook = () => {
 
       const response = await sellerService.updateBook(id, updateData, epubFile);
       console.log('✅ Update response:', response);
-      
+
       const successMessage = response.data?.isResubmission
         ? 'Book resubmitted successfully! It is now pending admin approval.'
         : 'Book updated successfully!';
@@ -190,11 +190,11 @@ const EditBook = () => {
         )}
 
         {/* Form */}
-        <form 
+        <form
           onSubmit={(e) => {
             console.log('🔍 Form submit event triggered');
             handleSubmit(onSubmit)(e);
-          }} 
+          }}
           className="bg-white rounded-lg shadow-md p-6 space-y-6"
         >
           {/* Basic Information */}
@@ -409,50 +409,27 @@ const EditBook = () => {
             )}
           </div>
 
-          {/* Cover Image URL */}
-          <div>
-            <label htmlFor="coverImage" className="block text-sm font-medium text-gray-700 mb-2">
-              Cover Image URL
-            </label>
-            <input
-              type="url"
-              id="coverImage"
-              {...register('coverImage')}
-              className={`w-full px-3 py-2 border ${errors.coverImage
-                ? 'border-red-500 focus:ring-red-500'
-                : 'border-gray-300 focus:ring-blue-500'
-                } rounded-md focus:outline-none focus:ring-2`}
-              placeholder="https://example.com/cover.jpg"
-            />
-            {errors.coverImage && (
-              <p className="text-red-500 text-sm mt-1">{errors.coverImage.message}</p>
-            )}
-            <p className="text-sm text-gray-500 mt-1">
-              Enter a direct URL to the book cover image
-            </p>
-          </div>
-
-          {/* ePub File Upload */}
+          {/* PDF File Upload */}
           <div>
             <label htmlFor="epubFile" className="block text-sm font-medium text-gray-700 mb-2">
-              ePub File (Optional)
+              PDF File (Optional)
             </label>
             <input
               type="file"
               id="epubFile"
-              accept=".epub,application/epub+zip"
+              accept=".pdf,application/pdf"
               onChange={(e) => setEpubFile(e.target.files[0])}
               className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
             />
             <p className="text-sm text-gray-500 mt-1">
-              Upload an ePub file to enable interactive reading with annotations
+              Upload a PDF file to enable reading in the PDF viewer
             </p>
             {bookData?.epubFile && !epubFile && (
               <p className="text-sm text-green-600 mt-2 flex items-center gap-2">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                Current ePub file is available
+                Current PDF file is available
               </p>
             )}
             {epubFile && (
@@ -484,8 +461,8 @@ const EditBook = () => {
                 console.log('   Button disabled:', isSubmitting);
               }}
               className={`flex-1 py-3 px-6 rounded-lg font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors shadow-md ${bookData?.rejectionReason
-                  ? 'bg-emerald-600 text-white hover:bg-emerald-700 border-2 border-emerald-700'
-                  : 'bg-blue-600 text-white hover:bg-blue-700 border-2 border-blue-700'
+                ? 'bg-emerald-600 text-white hover:bg-emerald-700 border-2 border-emerald-700'
+                : 'bg-blue-600 text-white hover:bg-blue-700 border-2 border-blue-700'
                 }`}
             >
               {isSubmitting ? (

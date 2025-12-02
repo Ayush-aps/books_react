@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
@@ -57,7 +57,7 @@ const PdfReader = () => {
   const [highlights, setHighlights] = useState([]);
   const [showHighlightsSidebar, setShowHighlightsSidebar] = useState(false);
   const [selectionRange, setSelectionRange] = useState(null);
-  
+
   // Ref to store highlight application status to prevent infinite loop/re-application
   const highlightsAppliedRef = useRef({});
 
@@ -76,6 +76,11 @@ const PdfReader = () => {
   // Swipe detection for vertical scrolling
   const touchStartY = useRef(0);
   const touchEndY = useRef(0);
+
+  // Memoize the PDF file configuration to prevent unnecessary reloads
+  const pdfFileConfig = useMemo(() => {
+    return pdfUrl || null;
+  }, [pdfUrl]);
 
   // --- PERSISTENCE: LOAD DATA FROM LOCAL STORAGE (Runs once on mount) ---
   useEffect(() => {
@@ -181,20 +186,67 @@ const PdfReader = () => {
     };
   }, [numPages, viewMode, currentPage, bookId, selectionMenu.show]);
 
-  // --- LOAD PDF URL ---
+  // --- LOAD PDF AS BLOB WITH CREDENTIALS ---
   useEffect(() => {
     const loadPdfUrl = async () => {
       try {
-        // Using the existing SherlockHolmes.pdf in public/books folder
-        setPdfUrl('/books/SherlockHolmes.pdf');
+        setLoading(true);
+        setError(null);
+
+        // **FIX: Fetch PDF as blob with credentials to ensure cookies are sent**
+        const backendPdfUrl = `http://localhost:3000/api/library/pdf/${bookId}`;
+
+        console.log('[PDF Reader] Fetching PDF from backend:', backendPdfUrl);
+
+        const response = await fetch(backendPdfUrl, {
+          method: 'GET',
+          credentials: 'include', // Include cookies for authentication
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            setError('Please log in to access this book.');
+          } else if (response.status === 403) {
+            setError('You need an active subscription to access this book.');
+          } else if (response.status === 404) {
+            setError('Book not found in your library.');
+          } else {
+            setError(`Failed to load PDF (Error ${response.status})`);
+          }
+          setLoading(false);
+          return;
+        }
+
+        // Convert response to blob
+        const blob = await response.blob();
+
+        // Create object URL from blob
+        const objectUrl = URL.createObjectURL(blob);
+
+        console.log('[PDF Reader] PDF loaded successfully as blob');
+        setPdfUrl(objectUrl);
         setLoading(false);
+
       } catch (err) {
-        setError('Failed to load PDF');
+        console.error('[PDF Reader] Error loading PDF:', err);
+        setError('Failed to load PDF. Please try again.');
         setLoading(false);
       }
     };
 
-    loadPdfUrl();
+    if (bookId) {
+      loadPdfUrl();
+    } else {
+      setError('No book ID provided');
+      setLoading(false);
+    }
+
+    // Cleanup: Revoke object URL when component unmounts
+    return () => {
+      if (pdfUrl && pdfUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(pdfUrl);
+      }
+    };
   }, [bookId]);
 
   // --- DOCUMENT LOAD SUCCESS HANDLER ---
@@ -419,14 +471,14 @@ const PdfReader = () => {
       // Get selection range and position
       const range = selection.getRangeAt(0);
       const rect = range.getBoundingClientRect();
-      
+
       // Check if selection is within the PDF container
       const containerRect = containerRef.current.getBoundingClientRect();
       if (rect.bottom < containerRect.top || rect.top > containerRect.bottom) {
-          // Selection is outside of the visible PDF area, ignore it
-          setSelectionMenu({ show: false, x: 0, y: 0, isHighlighted: false });
-          setSelectionRange(null);
-          return;
+        // Selection is outside of the visible PDF area, ignore it
+        setSelectionMenu({ show: false, x: 0, y: 0, isHighlighted: false });
+        setSelectionRange(null);
+        return;
       }
 
       // Store the range for precise highlighting
@@ -459,7 +511,7 @@ const PdfReader = () => {
         show: true,
         x: rect.left + rect.width / 2,
         // Adjust menu position to be above the selection
-        y: rect.top - 10, 
+        y: rect.top - 10,
         isHighlighted
       });
     } else {
@@ -498,30 +550,30 @@ const PdfReader = () => {
 
       // Iterate through all spans to rebuild the full text and find the offsets
       for (let i = 0; i < textSpans.length; i++) {
-          const span = textSpans[i];
-          const spanText = span.textContent;
+        const span = textSpans[i];
+        const spanText = span.textContent;
 
-          // Find start offset
-          if (!foundStartContainer && span.contains(selectionRange.startContainer)) {
-              startOffset = fullText.length + selectionRange.startOffset;
-              foundStartContainer = true;
-          }
+        // Find start offset
+        if (!foundStartContainer && span.contains(selectionRange.startContainer)) {
+          startOffset = fullText.length + selectionRange.startOffset;
+          foundStartContainer = true;
+        }
 
-          // Find end offset
-          if (span.contains(selectionRange.endContainer)) {
-              // We need to check if the endContainer is the same as startContainer but a different offset,
-              // or if it's a new container. We must break *after* calculating the end offset.
-              endOffset = fullText.length + selectionRange.endOffset;
-              break; 
-          }
+        // Find end offset
+        if (span.contains(selectionRange.endContainer)) {
+          // We need to check if the endContainer is the same as startContainer but a different offset,
+          // or if it's a new container. We must break *after* calculating the end offset.
+          endOffset = fullText.length + selectionRange.endOffset;
+          break;
+        }
 
-          fullText += spanText;
+        fullText += spanText;
       }
 
       // Fallback check to ensure the end offset is correct if selection spans multiple elements
       if (startOffset !== -1 && endOffset === -1) {
-          endOffset = startOffset + selectedText.length;
-          // This fallback is extremely unreliable but serves as a last resort if the DOM traversal failed.
+        endOffset = startOffset + selectedText.length;
+        // This fallback is extremely unreliable but serves as a last resort if the DOM traversal failed.
       }
 
 
@@ -535,10 +587,10 @@ const PdfReader = () => {
           endOffset,
           // We don't strictly need to save boundingRect for persistence, 
           // but we keep it for debugging or if we later implement DOM re-rendering based on coordinates.
-          boundingRect: selectionRange.boundingRect 
+          boundingRect: selectionRange.boundingRect
         }
       };
-      
+
       // Reset the application status for the current page to force re-render
       highlightsAppliedRef.current[currentPage] = false;
 
@@ -556,9 +608,9 @@ const PdfReader = () => {
   const removeHighlight = (highlightId) => {
     // Reset the application status for *all* pages to clear the highlight
     highlights.forEach(h => {
-        if (h.id === highlightId) {
-            highlightsAppliedRef.current[h.page] = false;
-        }
+      if (h.id === highlightId) {
+        highlightsAppliedRef.current[h.page] = false;
+      }
     });
 
     setHighlights(prev => prev.filter(h => h.id !== highlightId));
@@ -588,7 +640,7 @@ const PdfReader = () => {
     // Apply highlights with a short delay to ensure text layer is rendered
     const timer = setTimeout(() => {
       const textLayers = document.querySelectorAll('.react-pdf__Page__textContent');
-      
+
       if (textLayers.length === 0) {
         // Retry if no text layers are found yet
         return;
@@ -599,7 +651,7 @@ const PdfReader = () => {
 
         // Skip re-application if highlights were already applied for this page in this render cycle
         if (highlightsAppliedRef.current[pageNum]) {
-            return;
+          return;
         }
 
         const pageHighlights = highlights.filter(h => h.page === pageNum);
@@ -611,8 +663,8 @@ const PdfReader = () => {
         });
 
         if (pageHighlights.length === 0) {
-            highlightsAppliedRef.current[pageNum] = true;
-            return; // No highlights for this page
+          highlightsAppliedRef.current[pageNum] = true;
+          return; // No highlights for this page
         }
 
         // Build a character-level map of the text
@@ -652,18 +704,18 @@ const PdfReader = () => {
               span.style.backgroundColor = highlight.color || 'rgba(255, 248, 220, 0.6)';
               span.style.transition = 'background-color 0.2s';
             });
-            
-          } 
+
+          }
           // NOTE: Removed fallback to text matching as it's unreliable and should be fixed with offsets.
         });
-        
+
         // Mark this page as applied only after processing all its highlights
         highlightsAppliedRef.current[pageNum] = true;
       });
     }, 100); // Reduced timeout to apply highlights faster
 
     return () => clearTimeout(timer);
-  }, [highlights, numPages, rotation, scale, isReady, viewMode]); 
+  }, [highlights, numPages, rotation, scale, isReady, viewMode]);
   // Dependency array includes everything that changes the DOM size/position
 
   // Navigate to highlight
@@ -686,7 +738,7 @@ const PdfReader = () => {
       // Reset applied flag for the new page
       highlightsAppliedRef.current[highlight.page] = false;
     }
-    
+
     if (window.innerWidth < 640) {
       setShowHighlightsSidebar(false);
     }
@@ -788,8 +840,19 @@ const PdfReader = () => {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-900">
-        <div className="text-red-500 text-xl">{error}</div>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 p-6">
+        <div className="max-w-md text-center">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h2 className="text-white text-2xl font-bold mb-4">Unable to Load PDF</h2>
+          <p className="text-gray-300 text-lg mb-6">{error}</p>
+          <button
+            onClick={closeReader}
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 flex items-center gap-2 mx-auto"
+          >
+            <ChevronLeft size={20} />
+            Go Back
+          </button>
+        </div>
       </div>
     );
   }
@@ -1036,7 +1099,7 @@ const PdfReader = () => {
           // Continuous Scroll Mode
           <div className="flex flex-col items-center py-4 sm:py-8 px-2 sm:px-4 gap-2 sm:gap-4">
             <Document
-              file={pdfUrl}
+              file={pdfFileConfig}
               onLoadSuccess={onDocumentLoadSuccess}
               loading={
                 <div className="flex items-center justify-center p-10 sm:p-20 bg-gray-100 rounded-lg">
@@ -1074,7 +1137,7 @@ const PdfReader = () => {
           // Page-Fill Mode
           <div className="relative w-full h-full flex items-center justify-center pt-4 sm:pt-8 pb-4 sm:pb-8">
             <Document
-              file={pdfUrl}
+              file={pdfFileConfig}
               onLoadSuccess={onDocumentLoadSuccess}
               loading={
                 <div className="flex items-center justify-center p-10 sm:p-20 bg-gray-100 rounded-lg">
@@ -1175,4 +1238,4 @@ const PdfReader = () => {
   );
 };
 
-export default PdfReader;
+export default PdfReader; 

@@ -5,6 +5,7 @@
 
 const express = require("express");
 const router = express.Router();
+const axios = require("axios");
 const { ensureAuthenticated } = require("../middleware/auth");
 const Library = require("../models/Library");
 const Book = require("../models/Book");
@@ -52,7 +53,7 @@ const requireActiveSubscription = async (req, res, next) => {
 router.get("/", ensureAuthenticated, async (req, res) => {
   try {
     console.log('=== Library Request for user:', req.user._id);
-    
+
     // Check subscription status FIRST (before any DB queries)
     const subscription = await Subscription.findOne({
       user: req.user._id,
@@ -638,6 +639,110 @@ router.delete("/annotations/:bookId/:annotationId", ensureAuthenticated, require
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Server error", error: err.message });
+  }
+});
+
+/**
+ * @route   GET /api/library/pdf/:bookId
+ * @desc    Stream PDF file for a book (Requires active subscription)
+ * @access  Private + Active Subscription
+ */
+router.get("/pdf/:bookId", ensureAuthenticated, requireActiveSubscription, async (req, res) => {
+  try {
+    const bookId = req.params.bookId;
+    const userId = req.user._id;
+
+    // Find the user's library
+    const library = await Library.findOne({ user: userId });
+
+    if (!library) {
+      return res.status(404).json({
+        success: false,
+        message: "Library not found. Please add this book to your library first.",
+      });
+    }
+
+    // Check if book is in user's library
+    const bookItem = library.items.find((item) => item.book && item.book.toString() === bookId);
+
+    if (!bookItem) {
+      return res.status(404).json({
+        success: false,
+        message: "Book not found in your library. Please add this book to your library first.",
+      });
+    }
+
+    // Get the book details
+    const book = await Book.findById(bookId);
+    if (!book) {
+      return res.status(404).json({
+        success: false,
+        message: "Book does not exist.",
+      });
+    }
+
+    // Check if book has a PDF file
+    if (!book.epubFile) {
+      return res.status(404).json({
+        success: false,
+        message: "This book does not have a PDF file available.",
+      });
+    }
+
+    // **FIX: Stream the PDF through the backend to bypass Cloudinary 401 errors**
+    try {
+      // Fetch the PDF from Cloudinary
+      const pdfResponse = await axios({
+        method: 'GET',
+        url: book.epubFile,
+        responseType: 'stream',
+        timeout: 30000, // 30 second timeout
+      });
+
+      // Set appropriate headers for PDF streaming
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="${book.title}.pdf"`);
+      res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
+
+      // If Cloudinary provides content-length, forward it
+      if (pdfResponse.headers['content-length']) {
+        res.setHeader('Content-Length', pdfResponse.headers['content-length']);
+      }
+
+      // Stream the PDF to the client
+      pdfResponse.data.pipe(res);
+
+      // Handle stream errors
+      pdfResponse.data.on('error', (streamError) => {
+        console.error('PDF stream error:', streamError);
+        if (!res.headersSent) {
+          res.status(500).json({
+            success: false,
+            message: "Error streaming PDF file",
+          });
+        }
+      });
+
+    } catch (fetchError) {
+      console.error('Error fetching PDF from Cloudinary:', fetchError.message);
+
+      // Return detailed error information
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch PDF from storage. Please try again later.",
+        error: fetchError.response?.status === 401
+          ? "Storage authentication failed"
+          : fetchError.message,
+      });
+    }
+
+  } catch (err) {
+    console.error('PDF endpoint error:', err);
+    res.status(500).json({
+      success: false,
+      message: "Error loading PDF",
+      error: err.message,
+    });
   }
 });
 
