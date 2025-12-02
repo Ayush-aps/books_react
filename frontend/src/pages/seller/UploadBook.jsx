@@ -799,10 +799,10 @@ const UploadBook = () => {
                     placeholder="Provide a detailed description of the book..."
                   />
 
-                  {/* Book File Upload */}
+                  {/* PDF File Upload */}
                   <div className="space-y-2">
                     <label className="body-sm font-semibold text-charcoal">
-                      Upload Book File (PDF or EPUB)
+                      Upload PDF File
                     </label>
                     <div className="flex items-center justify-center w-full">
                       <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-taupe/30 border-dashed rounded-lg cursor-pointer bg-taupe/5 hover:bg-taupe/10 transition-colors">
@@ -813,12 +813,12 @@ const UploadBook = () => {
                           <p className="mb-2 text-sm text-charcoal/70">
                             <span className="font-semibold">Click to upload</span> or drag and drop
                           </p>
-                          <p className="text-xs text-charcoal/50">EPUB or PDF (MAX. 50MB)</p>
+                          <p className="text-xs text-charcoal/50">PDF only (MAX. 50MB)</p>
                         </div>
                         <input
                           type="file"
                           className="hidden"
-                          accept=".epub,.pdf,application/epub+zip,application/pdf"
+                          accept=".pdf,application/pdf"
                           onChange={(e) => {
                             const file = e.target.files[0];
                             if (file) {
@@ -870,29 +870,7 @@ const UploadBook = () => {
                     )}
                   </div>
 
-                  {/* ePub File Upload */}
-                  <div className="space-y-2">
-                    <label className="body-sm font-semibold text-charcoal mb-2 block">
-                      ePub File (Optional)
-                    </label>
-                    <input
-                      type="file"
-                      accept=".epub,application/epub+zip"
-                      onChange={(e) => setEpubFile(e.target.files[0])}
-                      className="block w-full text-sm text-charcoal file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brown/10 file:text-brown hover:file:bg-brown/20 cursor-pointer"
-                    />
-                    <p className="text-xs text-charcoal/60">
-                      Upload an ePub file to enable interactive reading with annotations
-                    </p>
-                    {epubFile && (
-                      <p className="text-sm text-green flex items-center gap-2">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        {epubFile.name}
-                      </p>
-                    )}
-                  </div>
+
                 </div>
               </Card.Body>
             </Card>

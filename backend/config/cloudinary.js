@@ -125,12 +125,11 @@ const uploadBookFile = async (filePath, options = {}) => {
     const extension = path.extname(filename).substring(1).toLowerCase();
 
     const result = await cloudinary.uploader.upload(filePath, {
-      resource_type: 'raw',
-      folder: 'book-files', // Changed folder name to be more generic
+      resource_type: 'auto', // Changed from 'raw' to 'auto' for better public access
+      folder: 'book-files',
       public_id: filenameWithoutExt,
       use_filename: true,
       unique_filename: true,
-      format: extension,
       ...options
     });
 
@@ -155,7 +154,7 @@ const uploadBookFile = async (filePath, options = {}) => {
 const deleteBookFile = async (publicId) => {
   try {
     const result = await cloudinary.uploader.destroy(publicId, {
-      resource_type: 'raw'
+      resource_type: 'auto' // Changed from 'raw' to 'auto'
     });
     return { success: true, result };
   } catch (error) {

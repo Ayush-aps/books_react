@@ -8,18 +8,16 @@ const router = express.Router();
 const multer = require('multer');
 const { ensureAuthenticated, ensureSeller } = require("../middleware/auth");
 
-// Multer config for file uploads (ePub files)
+// Multer config for file uploads (PDF files)
 const upload = multer({
   dest: 'uploads/',
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
   fileFilter: (req, file, cb) => {
-    if (file.mimetype === 'application/epub+zip' ||
-      file.mimetype === 'application/pdf' ||
-      file.originalname.endsWith('.epub') ||
+    if (file.mimetype === 'application/pdf' ||
       file.originalname.endsWith('.pdf')) {
       cb(null, true);
     } else {
-      cb(new Error('Only .epub and .pdf files are allowed'), false);
+      cb(new Error('Only .pdf files are allowed'), false);
     }
   }
 });
