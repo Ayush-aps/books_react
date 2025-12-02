@@ -10,6 +10,7 @@ import { fetchOrderDetails } from '../../redux/actions/orderActions';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
 import SuccessToast from '../../components/SuccessToast';
+import ReturnRequestModal from '../../components/ReturnRequestModal';
 import { roundPrice } from '../../utils/priceUtils';
 
 const OrderDetails = () => {
@@ -20,6 +21,7 @@ const OrderDetails = () => {
   const { currentOrder, loading, error } = useSelector(state => state.orders);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [showReturnModal, setShowReturnModal] = useState(false);
 
   // Utility function to format text (replace underscores with spaces)
   const formatText = (text) => {
@@ -64,14 +66,7 @@ const OrderDetails = () => {
     }
   };
 
-  const handleRequestReturn = async () => {
-    const reason = prompt('Please provide a reason for return:');
-
-    if (!reason || reason.trim() === '') {
-      alert('Return reason is required');
-      return;
-    }
-
+  const handleRequestReturn = async (reason) => {
     try {
       setActionLoading(true);
       const response = await fetch(`http://localhost:3000/api/orders/${id}/return`, {
@@ -87,6 +82,7 @@ const OrderDetails = () => {
 
       if (data.success) {
         alert(data.message || 'Return request submitted successfully');
+        setShowReturnModal(false);
         dispatch(fetchOrderDetails(id)); // Refresh order details
       } else {
         alert(data.message || 'Failed to submit return request');
@@ -367,7 +363,7 @@ const OrderDetails = () => {
               {/* Return Button - Show for delivered orders */}
               {orderStatus === 'delivered' && (
                 <button
-                  onClick={handleRequestReturn}
+                  onClick={() => setShowReturnModal(true)}
                   disabled={actionLoading}
                   className="px-6 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium"
                 >
@@ -429,6 +425,14 @@ const OrderDetails = () => {
           duration={5000}
         />
       )}
+
+      {/* Return Request Modal */}
+      <ReturnRequestModal
+        isOpen={showReturnModal}
+        onClose={() => setShowReturnModal(false)}
+        onSubmit={handleRequestReturn}
+        isLoading={actionLoading}
+      />
     </div>
   );
 };

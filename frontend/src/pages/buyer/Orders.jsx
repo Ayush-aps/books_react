@@ -10,12 +10,15 @@ import Badge from '../../components/Badge';
 import { motion } from 'framer-motion';
 import { fadeInUp, staggerContainer, staggerItem } from '../../utils/animations';
 import { roundPrice } from '../../utils/priceUtils';
+import ReturnRequestModal from '../../components/ReturnRequestModal';
 
 const Orders = () => {
   const dispatch = useDispatch();
   const { orders, loading, error } = useSelector(state => state.orders);
   const [filter, setFilter] = useState('all');
   const [actionLoading, setActionLoading] = useState(null);
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState(null);
 
   // Utility function to format text (replace underscores with spaces)
   const formatText = (text) => {
@@ -71,17 +74,12 @@ const Orders = () => {
     }
   };
 
-  const handleRequestReturn = async (orderId) => {
-    const reason = prompt('Please provide a reason for return:');
-
-    if (!reason || reason.trim() === '') {
-      alert('Return reason is required');
-      return;
-    }
+  const handleRequestReturn = async (reason) => {
+    if (!selectedOrderId) return;
 
     try {
-      setActionLoading(orderId);
-      const response = await fetch(`http://localhost:3000/api/orders/${orderId}/return`, {
+      setActionLoading(selectedOrderId);
+      const response = await fetch(`http://localhost:3000/api/orders/${selectedOrderId}/return`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
@@ -94,6 +92,8 @@ const Orders = () => {
 
       if (data.success) {
         alert(data.message || 'Return request submitted successfully');
+        setShowReturnModal(false);
+        setSelectedOrderId(null);
         dispatch(fetchOrders()); // Refresh orders
       } else {
         alert(data.message || 'Failed to submit return request');
@@ -331,7 +331,10 @@ const Orders = () => {
                       {/* Return Button - Show for delivered orders */}
                       {getOrderStatus(order) === 'delivered' && (
                         <button
-                          onClick={() => handleRequestReturn(order._id)}
+                          onClick={() => {
+                            setSelectedOrderId(order._id);
+                            setShowReturnModal(true);
+                          }}
                           disabled={actionLoading === order._id}
                           className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                         >
@@ -396,6 +399,17 @@ const Orders = () => {
           </motion.div>
         )}
       </div>
+
+      {/* Return Request Modal */}
+      <ReturnRequestModal
+        isOpen={showReturnModal}
+        onClose={() => {
+          setShowReturnModal(false);
+          setSelectedOrderId(null);
+        }}
+        onSubmit={handleRequestReturn}
+        isLoading={actionLoading === selectedOrderId}
+      />
     </div>
   );
 };
