@@ -666,7 +666,14 @@ exports.getComplaintDetails = async (req, res) => {
     const complaint = await Complaint.findById(req.params.id)
       .populate("user", "name email role phone")
       .populate("assignedTo", "name email")
-      .populate("order", "totalAmount createdAt")
+      .populate({
+        path: "order",
+        select: "totalAmount createdAt _id",
+        populate: {
+          path: "items.seller",
+          select: "name email"
+        }
+      })
       .populate("book", "title author coverImage")
       .populate("comments.user", "name role")
       .populate("resolution.resolvedBy", "name");

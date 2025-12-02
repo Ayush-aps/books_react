@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useState, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import api from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
@@ -13,6 +13,7 @@ import SuccessToast from '../../components/SuccessToast';
 
 const VideoWatch = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user } = useSelector(state => state.auth);
   const videoRef = useRef(null);
 
@@ -302,12 +303,24 @@ const VideoWatch = () => {
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-lg font-bold text-gray-900 mb-4">More Actions</h2>
               <div className="space-y-2">
-                <Link
-                  to="/buyer/video-feed"
-                  className="block text-blue-600 hover:text-blue-800 font-medium text-sm"
+                <button
+                  onClick={() => navigate('/buyer/video-feed')}
+                  className="text-charcoal text-xs sm:text-sm rounded-lg transition-all duration-300 hover:scale-105 hover:brightness-110 focus:outline-none hover:shadow-md whitespace-nowrap inline-flex items-center border-none"
+                  style={{ 
+                    backgroundColor: 'transparent',
+                    padding: '0.625rem 1.5rem',
+                    border: 'none',
+                    lineHeight: '1.5',
+                    height: '50px',
+                    fontWeight: '500',
+                    outline: 'none'
+                  }}
                 >
-                  ← Back to Videos
-                </Link>
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  Back to Videos
+                </button>
                 <Link
                   to="/buyer/upload-video"
                   className="block text-blue-600 hover:text-blue-800 font-medium text-sm"

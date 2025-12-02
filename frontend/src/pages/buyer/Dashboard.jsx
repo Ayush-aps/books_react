@@ -172,12 +172,22 @@ function BuyerDashboard() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="heading-3">Recent Orders</h2>
                 <Link to="/buyer/orders">
-                  <Button variant="ghost" size="sm">
+                  <button 
+                    className="text-white text-base rounded-lg transition-all duration-300 hover:scale-105 hover:brightness-110 focus:outline-none shadow-sm hover:shadow-md whitespace-nowrap flex items-center gap-1"
+                    style={{ 
+                      backgroundColor: '#8B7355',
+                      padding: '0.625rem 1.5rem',
+                      border: '1px solid transparent',
+                      lineHeight: '1.5',
+                      height: '40px',
+                      fontWeight: '500'
+                    }}
+                  >
                     View All
                     <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
-                  </Button>
+                  </button>
                 </Link>
               </div>
               {dashboardData.recentOrders.length === 0 ? (
@@ -193,7 +203,7 @@ function BuyerDashboard() {
                         <p className="text-sm text-text-secondary">{new Date(order.createdAt).toLocaleDateString()}</p>
                       </div>
                       <div className="text-right flex flex-col items-end gap-2">
-                        <p className="font-bold">${order.total}</p>
+                        <p className="font-bold">₹{order.total}</p>
                         <Badge
                           variant={
                             (() => {
@@ -229,12 +239,22 @@ function BuyerDashboard() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="heading-3">Recently Viewed</h2>
                 <Link to="/buyer/browse">
-                  <Button variant="ghost" size="sm">
+                  <button 
+                    className="text-white text-base rounded-lg transition-all duration-300 hover:scale-105 hover:brightness-110 focus:outline-none shadow-sm hover:shadow-md whitespace-nowrap flex items-center gap-1"
+                    style={{ 
+                      backgroundColor: '#8B7355',
+                      padding: '0.625rem 1.5rem',
+                      border: '1px solid transparent',
+                      lineHeight: '1.5',
+                      height: '40px',
+                      fontWeight: '500'
+                    }}
+                  >
                     Browse More
                     <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
-                  </Button>
+                  </button>
                 </Link>
               </div>
               {dashboardData.recentlyViewed.length === 0 ? (

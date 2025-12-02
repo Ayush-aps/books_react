@@ -78,7 +78,7 @@ const BookCard = ({ book, onAddToCart, compact = false }) => {
             </div>
           )}
           {book.stock > 0 && book.stock <= 5 && (
-            <div className="absolute top-2 left-2 bg-warning text-white px-2 py-1 rounded text-xs font-bold shadow-sm">
+            <div className="absolute top-2 left-2 bg-gray-100 text-black px-2 py-1 rounded text-xs font-bold shadow-sm">
               Only {book.stock} left
             </div>
           )}

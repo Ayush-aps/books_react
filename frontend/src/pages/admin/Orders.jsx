@@ -225,6 +225,16 @@ const Orders = () => {
                           <div>
                             <p className="text-xs sm:text-sm text-charcoal/60 mb-1">Items</p>
                             <p className="text-xs sm:text-sm font-medium text-charcoal">{order.items.length} item(s)</p>
+                            {order.items && order.items.length > 0 && (() => {
+                              const sellers = order.items
+                                .map(item => item.seller?.name)
+                                .filter((name, index, self) => name && self.indexOf(name) === index);
+                              return sellers.length > 0 && (
+                                <p className="text-xs text-charcoal/50 mt-1 truncate" title={sellers.join(', ')}>
+                                  Seller{sellers.length > 1 ? 's' : ''}: {sellers.length > 1 ? `${sellers.length} sellers` : sellers[0]}
+                                </p>
+                              );
+                            })()}
                           </div>
                           <div>
                             <p className="text-xs sm:text-sm text-charcoal/60 mb-1">Total</p>

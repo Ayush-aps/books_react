@@ -58,6 +58,17 @@ const UserSchema = new mongoose.Schema({
   },
   resetPasswordToken: String,
   resetPasswordExpire: Date,
+  // Track recently viewed books
+  recentlyViewed: [{
+    book: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Book'
+    },
+    viewedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   createdAt: {
     type: Date,
     default: Date.now,

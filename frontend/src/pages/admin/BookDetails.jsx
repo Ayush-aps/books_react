@@ -100,13 +100,24 @@ const BookDetails = () => {
       <div className="min-h-screen flex items-center justify-center">
         <div className="max-w-md w-full px-4">
           <ErrorMessage message={error} />
-          <Button
+          <button
             onClick={() => navigate('/admin/content')}
-            variant="outline"
-            className="mt-4 w-full"
+            className="text-charcoal text-xs sm:text-sm rounded-lg transition-all duration-300 hover:scale-105 hover:brightness-110 focus:outline-none hover:shadow-md whitespace-nowrap inline-flex items-center border-none mt-4 w-full justify-center"
+            style={{ 
+              backgroundColor: 'transparent',
+              padding: '0.625rem 1.5rem',
+              border: 'none',
+              lineHeight: '1.5',
+              height: '50px',
+              fontWeight: '500',
+              outline: 'none'
+            }}
           >
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
             Back to Content Moderation
-          </Button>
+          </button>
         </div>
       </div>
     );
@@ -126,9 +137,18 @@ const BookDetails = () => {
         >
           <button
             onClick={() => navigate('/admin/content')}
-            className="text-brown hover:text-brown/80 flex items-center gap-2 mb-4 transition-colors"
+            className="text-charcoal text-xs sm:text-sm rounded-lg transition-all duration-300 hover:scale-105 hover:brightness-110 focus:outline-none hover:shadow-md whitespace-nowrap inline-flex items-center border-none"
+            style={{ 
+              backgroundColor: 'transparent',
+              padding: '0.625rem 1.5rem',
+              border: 'none',
+              lineHeight: '1.5',
+              height: '50px',
+              fontWeight: '500',
+              outline: 'none'
+            }}
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             Back to Content Moderation

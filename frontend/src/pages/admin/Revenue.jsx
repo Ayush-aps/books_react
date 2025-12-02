@@ -170,17 +170,24 @@ const Revenue = () => {
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2">Revenue Analytics</h1>
             <p className="text-sm sm:text-base md:text-lg text-text-secondary">Detailed revenue statistics and transaction history</p>
           </div>
-          <Button
-            variant="outline"
+          <button
             onClick={() => navigate('/admin/dashboard')}
-            size="sm"
-            className="w-full sm:w-auto text-xs sm:text-sm"
+            className="text-charcoal text-xs sm:text-sm rounded-lg transition-all duration-300 hover:scale-105 hover:brightness-110 focus:outline-none hover:shadow-md whitespace-nowrap inline-flex items-center border-none w-full sm:w-auto"
+            style={{ 
+              backgroundColor: 'transparent',
+              padding: '0.625rem 1.5rem',
+              border: 'none',
+              lineHeight: '1.5',
+              height: '50px',
+              fontWeight: '500',
+              outline: 'none'
+            }}
           >
             <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             Back to Dashboard
-          </Button>
+          </button>
         </motion.div>
 
         {/* Revenue Summary Cards - Responsive Grid */}

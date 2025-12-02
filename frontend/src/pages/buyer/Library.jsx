@@ -10,6 +10,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { fadeInUp, staggerContainer, staggerItem } from '../../utils/animations';
 import { fetchLibrary } from '../../redux/actions/libraryActions';
+import { fetchSubscriptionStatus } from '../../redux/actions/subscriptionActions';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import Badge from '../../components/Badge';
@@ -21,7 +22,7 @@ const Library = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { books = [], loading, error } = useSelector(state => state.library);
-  const { currentSubscription } = useSelector(state => state.subscription);
+  const { currentSubscription, loading: subscriptionLoading } = useSelector(state => state.subscription);
   const [hasSubscription, setHasSubscription] = useState(null); // null = checking, true = subscribed, false = not subscribed
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [subscriptionError, setSubscriptionError] = useState(null);
@@ -33,7 +34,10 @@ const Library = () => {
     setShowSubscriptionModal(false);
     setSubscriptionError(null);
     setFetchAttempted(false);
-  }, []);
+    
+    // Fetch subscription status
+    dispatch(fetchSubscriptionStatus());
+  }, [dispatch]);
 
   useEffect(() => {
     if (fetchAttempted) return; // Prevent multiple fetches
@@ -251,16 +255,8 @@ const Library = () => {
                 {books.length} {books.length === 1 ? 'book' : 'books'} in your library
               </p>
             </div>
-            {currentSubscription && (
-            <Card className="bg-gradient-to-r from-brown to-accent-brown text-white border-0">
-              <Card.Body className="py-3 px-5">
-                <p className="body-sm opacity-90">Active Subscription</p>
-                <p className="heading-5">{currentSubscription.planName}</p>
-              </Card.Body>
-            </Card>
-          )}
-        </motion.div>
 
+        </motion.div>
         {error && (
           <motion.div 
             className="mb-6"
@@ -308,7 +304,7 @@ const Library = () => {
           </motion.div>
         ) : (
           <motion.div 
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4"
             variants={staggerContainer}
             initial="hidden"
             animate="visible"
@@ -335,19 +331,18 @@ const Library = () => {
                         />
                         {/* Progress Badge Overlay */}
                         {progress > 0 && progress < 100 && (
-                          <div className="absolute top-3 right-3">
-                            <Badge variant={getProgressVariant(progress)} size="lg">
+                          <div className="absolute top-1.5 right-1.5">
+                            <Badge variant={getProgressVariant(progress)} size="sm">
                               {progress}%
                             </Badge>
                           </div>
                         )}
                         {progress === 100 && (
-                          <div className="absolute top-3 left-3">
-                            <Badge variant="success" className="flex items-center gap-1">
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <div className="absolute top-1.5 left-1.5">
+                            <Badge variant="success" size="sm" className="flex items-center gap-0.5">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                               </svg>
-                              <span>Completed</span>
                             </Badge>
                           </div>
                         )}
@@ -355,25 +350,26 @@ const Library = () => {
                     </Link>
 
                     {/* Book Info */}
-                    <Card.Body className="flex flex-col flex-grow">
-                      <div className="flex-grow">
+                    <Card.Body className="flex flex-col flex-grow p-2 md:p-3">
+                      <div className="flex-grow min-h-0">
                         <Link
                           to={`/buyer/reader/${book._id}`}
-                          className="heading-5 text-text-primary hover:text-brown line-clamp-2 mb-2 block transition-colors"
+                          className="text-sm font-semibold text-text-primary hover:text-brown line-clamp-2 mb-1 block transition-colors leading-tight"
+                          title={book.title}
                         >
                           {book.title}
                         </Link>
-                        <p className="body-sm text-text-secondary mb-4 line-clamp-1">{book.author}</p>
+                        <p className="text-xs text-text-secondary mb-2 line-clamp-1" title={book.author}>{book.author}</p>
 
                         {/* Progress Bar */}
-                        <div className="mb-4">
-                          <div className="flex items-center justify-between text-xs text-text-secondary mb-2">
-                            <span className="font-medium">Reading Progress</span>
+                        <div className="mb-2">
+                          <div className="flex items-center justify-between text-[10px] text-text-secondary mb-1">
+                            <span className="font-medium">Progress</span>
                             <span className="font-semibold text-brown">{progress}%</span>
                           </div>
-                          <div className="w-full bg-cream/80 border border-taupe/30 rounded-full h-2.5 overflow-hidden">
+                          <div className="w-full bg-cream/80 border border-taupe/30 rounded-full h-1.5 overflow-hidden">
                             <div
-                              className={`h-2.5 rounded-full transition-all duration-500 ease-out ${getProgressColor(progress)}`}
+                              className={`h-1.5 rounded-full transition-all duration-500 ease-out ${getProgressColor(progress)}`}
                               style={{ width: `${progress}%` }}
                             />
                           </div>
@@ -381,24 +377,24 @@ const Library = () => {
                       </div>
 
                       {/* Action Buttons */}
-                      <div className="flex gap-2 mt-auto">
-                        <Link to={`/buyer/reader/${book._id}`} className="flex-1">
+                      <div className="flex gap-1.5 mt-auto">
+                        <Link to={`/buyer/reader/${book._id}`} className="flex-1 min-w-0">
                           <Button
                             variant="primary"
                             size="sm"
                             fullWidth
-                            className="whitespace-nowrap"
+                            className="text-xs py-1.5 px-2 whitespace-nowrap overflow-hidden text-ellipsis"
                           >
-                            {progress > 0 ? 'Continue Reading' : 'Start Reading'}
+                            {progress > 0 ? 'Continue' : 'Start'}
                           </Button>
                         </Link>
                         <Link to={`/buyer/book/${book._id}`} title="View Book Details">
                           <Button
                             variant="outline"
                             size="sm"
-                            className="px-3"
+                            className="px-2 py-1.5 min-w-[32px]"
                           >
-                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                           </Button>
@@ -407,8 +403,8 @@ const Library = () => {
 
                       {/* Last Read */}
                       {libraryItem.lastRead && (
-                        <p className="text-xs text-text-tertiary mt-3 pt-3 border-t border-border-light">
-                          Last read: {new Date(libraryItem.lastRead).toLocaleDateString('en-US', { 
+                        <p className="text-[10px] text-text-tertiary mt-2 pt-2 border-t border-border-light">
+                          {new Date(libraryItem.lastRead).toLocaleDateString('en-US', { 
                             month: 'short', 
                             day: 'numeric', 
                             year: 'numeric' 
@@ -423,8 +419,8 @@ const Library = () => {
           </motion.div>
         )}
 
-        {/* Subscription CTA */}
-        {!currentSubscription && books.length > 0 && (
+        {/* Subscription CTA - Only show if user does NOT have an active subscription */}
+        {!subscriptionLoading && !(currentSubscription && currentSubscription.isActive && new Date(currentSubscription.endDate) > new Date()) && books.length > 0 && (
           <motion.div
             className="mt-12"
             variants={fadeInUp}

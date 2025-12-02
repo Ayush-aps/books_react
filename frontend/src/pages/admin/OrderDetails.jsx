@@ -132,9 +132,24 @@ const OrderDetails = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ErrorMessage message="Order not found" />
           <div className="mt-6">
-            <Button onClick={() => navigate('/admin/orders')} variant="outline">
+            <button 
+              onClick={() => navigate('/admin/orders')}
+              className="text-charcoal text-xs sm:text-sm rounded-lg transition-all duration-300 hover:scale-105 hover:brightness-110 focus:outline-none hover:shadow-md whitespace-nowrap inline-flex items-center border-none"
+              style={{ 
+                backgroundColor: 'transparent',
+                padding: '0.625rem 1.5rem',
+                border: 'none',
+                lineHeight: '1.5',
+                height: '50px',
+                fontWeight: '500',
+                outline: 'none'
+              }}
+            >
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
               Back to Orders
-            </Button>
+            </button>
           </div>
         </div>
       </div>
@@ -152,17 +167,24 @@ const OrderDetails = () => {
           animate="visible"
         >
           <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
-            <Button
+            <button 
               onClick={() => navigate('/admin/orders')}
-              variant="ghost"
-              size="sm"
-              className="text-xs sm:text-sm"
+              className="text-charcoal text-xs sm:text-sm rounded-lg transition-all duration-300 hover:scale-105 hover:brightness-110 focus:outline-none hover:shadow-md whitespace-nowrap inline-flex items-center border-none"
+              style={{ 
+                backgroundColor: 'transparent',
+                padding: '0.625rem 1.5rem',
+                border: 'none',
+                lineHeight: '1.5',
+                height: '50px',
+                fontWeight: '500',
+                outline: 'none'
+              }}
             >
               <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
               Back to Orders
-            </Button>
+            </button>
           </div>
           <div className="flex flex-col gap-3 sm:gap-4">
             <div>
@@ -210,8 +232,8 @@ const OrderDetails = () => {
               animate="visible"
             >
               <Card>
-                <Card.Header>
-                  <h2 className="text-lg sm:text-xl font-bold text-charcoal">Order Items</h2>
+                <Card.Header className="bg-brown">
+                  <h2 className="text-[20px] sm:text-[22px] font-bold text-white">Order Items</h2>
                 </Card.Header>
                 <Card.Body className="p-3 sm:p-6">
                   <div className="space-y-3 sm:space-y-4">
@@ -225,16 +247,19 @@ const OrderDetails = () => {
                         <div className="flex-1 min-w-0">
                           <h4 className="font-semibold text-charcoal mb-1 text-sm sm:text-base">{item.title}</h4>
                           <p className="text-xs sm:text-sm text-charcoal/70 mb-2">by {item.author}</p>
+                          {item.seller && (
+                            <p className="text-xs sm:text-sm text-charcoal/60 mb-2">
+                              Seller: <span className="font-medium text-charcoal">{item.seller.name}</span>
+                              {item.seller.email && (
+                                <span className="text-charcoal/50"> ({item.seller.email})</span>
+                              )}
+                            </p>
+                          )}
                           <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm">
                             <p className="text-charcoal/60">Qty: {item.quantity}</p>
                             <p className="text-charcoal/60">•</p>
                             <p className="font-medium text-brown">₹{item.price.toFixed(2)} each</p>
                           </div>
-                          {item.seller && (
-                            <p className="text-xs sm:text-sm text-charcoal/50 mt-2">
-                              Seller: {item.seller.name} ({item.seller.email})
-                            </p>
-                          )}
                         </div>
                         <div className="text-right">
                           <p className="text-base sm:text-lg font-bold text-brown">₹{(item.price * item.quantity).toFixed(2)}</p>
@@ -273,8 +298,8 @@ const OrderDetails = () => {
               animate="visible"
             >
               <Card>
-                <Card.Header>
-                  <h2 className="text-lg sm:text-xl font-bold text-charcoal">Customer Information</h2>
+                <Card.Header className="bg-brown">
+                  <h2 className="text-[20px] sm:text-[22px] font-bold text-white">Customer Information</h2>
                 </Card.Header>
                 <Card.Body className="p-3 sm:p-6">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -304,8 +329,8 @@ const OrderDetails = () => {
               animate="visible"
             >
               <Card>
-                <Card.Header>
-                  <h2 className="text-lg sm:text-xl font-bold text-charcoal">Payment Information</h2>
+                <Card.Header className="bg-brown">
+                  <h2 className="text-[20px] sm:text-[22px] font-bold text-white">Payment Information</h2>
                 </Card.Header>
                 <Card.Body className="p-3 sm:p-6">
                   <div className="grid grid-cols-2 gap-3 sm:gap-4">
@@ -341,8 +366,8 @@ const OrderDetails = () => {
               animate="visible"
             >
               <Card>
-                <Card.Header>
-                  <h2 className="text-lg sm:text-xl font-bold text-charcoal">Update Order</h2>
+                <Card.Header className="bg-brown">
+                  <h2 className="text-[20px] sm:text-[22px] font-bold text-white">Update Order</h2>
                 </Card.Header>
                 <Card.Body className="p-3 sm:p-6">
                   <form onSubmit={handleSubmit(handleUpdateOrder)} className="space-y-3 sm:space-y-4">

@@ -314,14 +314,26 @@ const ComplaintDetails = () => {
                     disabled={submitting}
                   />
                   <div className="flex justify-end gap-3">
-                    <Button
+                    <button
                       type="button"
-                      variant="outline"
                       onClick={() => navigate('/seller/complaints')}
                       disabled={submitting}
+                      className="text-charcoal text-xs sm:text-sm rounded-lg transition-all duration-300 hover:scale-105 hover:brightness-110 focus:outline-none hover:shadow-md whitespace-nowrap inline-flex items-center border-none disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ 
+                        backgroundColor: 'transparent',
+                        padding: '0.625rem 1.5rem',
+                        border: 'none',
+                        lineHeight: '1.5',
+                        height: '50px',
+                        fontWeight: '500',
+                        outline: 'none'
+                      }}
                     >
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
                       Back to List
-                    </Button>
+                    </button>
                     <Button
                       type="submit"
                       variant="primary"

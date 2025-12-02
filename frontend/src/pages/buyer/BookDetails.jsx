@@ -76,6 +76,22 @@ const BookDetails = () => {
     }
   }, [canReview]);
 
+  // Track book view when user visits the page
+  useEffect(() => {
+    const trackView = async () => {
+      if (user && id && currentBook) {
+        try {
+          await api.post(`/buyer/track-view/${id}`);
+        } catch (err) {
+          // Silently fail - don't interrupt user experience
+          console.error('Error tracking view:', err);
+        }
+      }
+    };
+
+    trackView();
+  }, [currentBook, user, id]);
+
   const handleAddToCart = async () => {
     if (!user) {
       navigate('/login', { state: { from: `/buyer/book/${id}` } });

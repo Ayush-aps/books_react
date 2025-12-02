@@ -121,12 +121,24 @@ const ComplaintDetails = () => {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Back Button */}
         <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="mb-6">
-          <Link to="/buyer/complaints" className="inline-flex items-center text-brown hover:text-brown/80 transition-colors">
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          <button 
+            onClick={() => navigate('/buyer/complaints')}
+            className="text-charcoal text-xs sm:text-sm rounded-lg transition-all duration-300 hover:scale-105 hover:brightness-110 focus:outline-none hover:shadow-md whitespace-nowrap inline-flex items-center border-none"
+            style={{ 
+              backgroundColor: 'transparent',
+              padding: '0.625rem 1.5rem',
+              border: 'none',
+              lineHeight: '1.5',
+              height: '50px',
+              fontWeight: '500',
+              outline: 'none'
+            }}
+          >
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             Back to Complaints
-          </Link>
+          </button>
         </motion.div>
 
         {/* Complaint Header */}
@@ -167,19 +179,35 @@ const ComplaintDetails = () => {
               {(complaint.order || complaint.book) && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-border-light">
                   {complaint.order && (
-                    <div className="flex items-center gap-3 p-3 bg-cream rounded-lg">
-                      <div className="w-10 h-10 bg-brown/10 rounded-lg flex items-center justify-center">
+                    <Link 
+                      to={`/buyer/orders/${complaint.order._id}`}
+                      className="flex items-center gap-3 p-3 bg-cream rounded-lg hover:bg-cream/80 transition-colors cursor-pointer group"
+                    >
+                      <div className="w-10 h-10 bg-brown/10 rounded-lg flex items-center justify-center group-hover:bg-brown/20 transition-colors">
                         <svg className="w-5 h-5 text-brown" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                         </svg>
                       </div>
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <p className="text-xs text-charcoal/60">Related Order</p>
                         <p className="body-sm font-semibold text-charcoal">
                           #{complaint.order._id?.slice(-8)} - ₹{complaint.order.totalAmount?.toFixed(2)}
                         </p>
+                        {complaint.order.items && complaint.order.items.length > 0 && (
+                          <p className="text-xs text-charcoal/50 mt-1">
+                            Seller: {(() => {
+                              const sellers = complaint.order.items
+                                .map(item => item.seller?.name)
+                                .filter((name, index, self) => name && self.indexOf(name) === index);
+                              return sellers.length > 0 ? sellers.join(', ') : 'N/A';
+                            })()}
+                          </p>
+                        )}
                       </div>
-                    </div>
+                      <svg className="w-5 h-5 text-charcoal/40 group-hover:text-brown transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </Link>
                   )}
                   {complaint.book && (
                     <div className="flex items-center gap-3 p-3 bg-cream rounded-lg">
@@ -323,14 +351,26 @@ const ComplaintDetails = () => {
                     disabled={submitting}
                   />
                   <div className="flex justify-end gap-3">
-                    <Button
+                    <button
                       type="button"
-                      variant="outline"
                       onClick={() => navigate('/buyer/complaints')}
                       disabled={submitting}
+                      className="text-charcoal text-xs sm:text-sm rounded-lg transition-all duration-300 hover:scale-105 hover:brightness-110 focus:outline-none hover:shadow-md whitespace-nowrap inline-flex items-center border-none disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ 
+                        backgroundColor: 'transparent',
+                        padding: '0.625rem 1.5rem',
+                        border: 'none',
+                        lineHeight: '1.5',
+                        height: '50px',
+                        fontWeight: '500',
+                        outline: 'none'
+                      }}
                     >
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
                       Back to List
-                    </Button>
+                    </button>
                     <Button
                       type="submit"
                       variant="primary"

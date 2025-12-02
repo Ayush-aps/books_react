@@ -265,7 +265,7 @@ const PaymentSuccess = () => {
             </motion.div>
           )}
           <motion.div variants={staggerItem}>
-            <Link to="/browse">
+            <Link to="/buyer/browse">
               <Button variant="outline" size="lg" fullWidth>
                 Continue Shopping
               </Button>

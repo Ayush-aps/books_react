@@ -59,14 +59,19 @@ exports.getDashboard = async (req, res) => {
       .select("_id subject status createdAt");
     console.log("Complaints found:", complaints.length);
 
-    // Get recently viewed books
-    const recentlyViewed = await Book.find({
-      isApproved: true,
-      isAvailable: true,
-    })
-      .sort({ views: -1 })
-      .limit(3)
-      .select("_id title author price coverImage");
+    // Get recently viewed books - user's actual viewed books
+    const user = await User.findById(userId).populate({
+      path: 'recentlyViewed.book',
+      select: '_id title author price coverImage',
+      match: { isApproved: true, isAvailable: true }
+    });
+
+    // Extract books from recentlyViewed array, filter out nulls (deleted books)
+    // Handle case where recentlyViewed might not exist for existing users
+    const recentlyViewed = (user.recentlyViewed || [])
+      .map(item => item && item.book ? item.book : null)
+      .filter(book => book !== null) // Remove deleted books
+      .slice(0, 3); // Get only the 3 most recent
     console.log("Recently viewed books:", recentlyViewed.length);
 
     // Transform recentOrders to include 'total' field for frontend compatibility
@@ -94,6 +99,64 @@ exports.getDashboard = async (req, res) => {
       success: false,
       message: "Server error loading dashboard",
       error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+};
+
+// @desc    Track book view
+// @route   POST /api/buyer/track-view/:bookId
+// @access  Private (Buyer)
+exports.trackBookView = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const bookId = req.params.bookId;
+
+    // Verify book exists
+    const book = await Book.findById(bookId);
+    if (!book) {
+      return res.status(404).json({
+        success: false,
+        message: 'Book not found'
+      });
+    }
+
+    // Get user and update recently viewed
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Remove existing entry for this book if it exists
+    user.recentlyViewed = user.recentlyViewed.filter(
+      item => item.book && item.book.toString() !== bookId
+    );
+
+    // Add to beginning of array (most recent first)
+    user.recentlyViewed.unshift({
+      book: bookId,
+      viewedAt: new Date()
+    });
+
+    // Keep only last 20 viewed books
+    if (user.recentlyViewed.length > 20) {
+      user.recentlyViewed = user.recentlyViewed.slice(0, 20);
+    }
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'View tracked successfully'
+    });
+  } catch (err) {
+    console.error('Error tracking book view:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Error tracking book view',
+      error: err.message
     });
   }
 };
@@ -968,7 +1031,14 @@ exports.getComplaintDetails = async (req, res) => {
       userRole: 'buyer'
     })
       .populate("book", "title coverImage author")
-      .populate("order", "totalAmount createdAt")
+      .populate({
+        path: "order",
+        select: "totalAmount createdAt _id",
+        populate: {
+          path: "items.seller",
+          select: "name email"
+        }
+      })
       .populate("assignedTo", "name email")
       .populate("comments.user", "name role")
       .populate("resolution.resolvedBy", "name");
@@ -1109,7 +1179,47 @@ exports.browseBooks = async (req, res) => {
       query.$and = andConditions;
     }
 
-    const genres = await Book.distinct("genres");
+    // Get all distinct genres and normalize them
+    const rawGenres = await Book.distinct("genres");
+    
+    // Normalize genres: remove quotes, trim, capitalize properly, and deduplicate
+    const genreMap = new Map();
+    
+    rawGenres.forEach(genre => {
+      if (!genre || typeof genre !== 'string') return;
+      
+      // Remove quotes (both single and double) and trim whitespace
+      let normalized = genre.replace(/^["']|["']$/g, '').trim();
+      
+      // Skip empty strings
+      if (!normalized) return;
+      
+      // Create a key for case-insensitive comparison
+      const key = normalized.toLowerCase();
+      
+      // If we haven't seen this genre yet, or if the current one is better formatted
+      // (has proper capitalization), use it
+      if (!genreMap.has(key)) {
+        // Capitalize first letter of each word
+        normalized = normalized.split(' ').map(word => 
+          word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        ).join(' ');
+        genreMap.set(key, normalized);
+      } else {
+        // If we already have this genre, prefer the one with proper capitalization
+        const existing = genreMap.get(key);
+        // Check if current is better formatted (has capital letters)
+        if (normalized !== normalized.toLowerCase() && existing === existing.toLowerCase()) {
+          normalized = normalized.split(' ').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+          ).join(' ');
+          genreMap.set(key, normalized);
+        }
+      }
+    });
+    
+    // Convert map values to array and sort alphabetically
+    const genres = Array.from(genreMap.values()).sort();
 
     let books = [];
 

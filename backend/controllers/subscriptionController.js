@@ -56,15 +56,31 @@ exports.getPlans = (req, res) => {
 // @access  Private
 exports.getStatus = async (req, res) => {
   try {
-    const subscription = await Subscription.findOne({
+    // First, try to find an active subscription (isActive=true and endDate in future)
+    let subscription = await Subscription.findOne({
       user: req.user._id,
+      isActive: true,
+      endDate: { $gt: new Date() }
     }).sort({ createdAt: -1 });
+
+    // If no active subscription found, get the most recent subscription (for display purposes)
+    if (!subscription) {
+      subscription = await Subscription.findOne({
+        user: req.user._id,
+      }).sort({ createdAt: -1 });
+    }
+
+    // Determine if user has an active subscription
+    const hasActiveSubscription = subscription && 
+      subscription.isActive && 
+      new Date(subscription.endDate) > new Date();
 
     res.json({
       success: true,
       message: "Subscription status retrieved successfully",
       data: {
         hasSubscription: !!subscription,
+        hasActiveSubscription: hasActiveSubscription,
         subscription: subscription || null,
       },
     });

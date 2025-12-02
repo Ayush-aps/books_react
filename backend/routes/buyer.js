@@ -45,6 +45,7 @@ const upload = multer({
 const {
   // Dashboard
   getDashboard,
+  trackBookView,
   // Cart Management
   getCart,
   addToCart,
@@ -78,6 +79,7 @@ const {
 // DASHBOARD ROUTES
 // ============================================
 router.get("/dashboard", ensureAuthenticated, ensureBuyer, getDashboard);
+router.post("/track-view/:bookId", ensureAuthenticated, ensureBuyer, trackBookView);
 
 // ============================================
 // CART MANAGEMENT ROUTES

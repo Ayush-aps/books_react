@@ -106,12 +106,23 @@ const Cart = () => {
               <h2 className="heading-2 mb-3">Your cart is empty</h2>
               <p className="body-lg text-text-secondary mb-8">Add some books to get started!</p>
               <Link to="/buyer/browse">
-                <Button variant="primary" size="lg">
+                <button 
+                  type="button" 
+                  className="text-white text-base rounded-lg transition-all duration-300 hover:scale-105 hover:brightness-110 focus:outline-none shadow-sm hover:shadow-md whitespace-nowrap"
+                  style={{ 
+                    backgroundColor: '#8B7355',
+                    padding: '0.625rem 1.5rem',
+                    border: '1px solid transparent',
+                    lineHeight: '1.5',
+                    height: '50px',
+                    fontWeight: '500'
+                  }}
+                >
                   Browse Books
-                  <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 ml-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                   </svg>
-                </Button>
+                </button>
               </Link>
             </Card>
           </motion.div>

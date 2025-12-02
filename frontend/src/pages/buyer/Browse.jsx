@@ -25,6 +25,24 @@ const Browse = () => {
   const [localFilters, setLocalFilters] = useState(filters);
   const searchTimeoutRef = useRef(null);
 
+  // Normalize genres: remove duplicates (case-insensitive), remove quotes, and sort
+  const normalizedGenres = genres && Array.isArray(genres) ? (() => {
+    const genreMap = new Map();
+    genres.forEach(genre => {
+      if (!genre || typeof genre !== 'string') return;
+      // Remove quotes and trim
+      let normalized = genre.replace(/^["']|["']$/g, '').trim();
+      if (!normalized) return;
+      // Use lowercase as key for case-insensitive deduplication
+      const key = normalized.toLowerCase();
+      // Keep the first occurrence (which should already be properly formatted from backend)
+      if (!genreMap.has(key)) {
+        genreMap.set(key, normalized);
+      }
+    });
+    return Array.from(genreMap.values()).sort();
+  })() : [];
+
   // Debounced fetch function for search
   const debouncedFetch = useCallback((filters) => {
     if (searchTimeoutRef.current) {
@@ -113,7 +131,7 @@ const Browse = () => {
               <Filter
                 filters={localFilters}
                 onFilterChange={handleFilterChange}
-                genres={genres}
+                genres={normalizedGenres}
                 onClearFilters={handleClearFilters}
               />
             </div>

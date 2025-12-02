@@ -162,12 +162,22 @@ const Orders = () => {
                         </p>
                       </div>
                       <Link to={`/buyer/orders/${order._id}`}>
-                        <Button variant="ghost" size="sm">
+                        <button 
+                          className="text-white text-base rounded-lg transition-all duration-300 hover:scale-105 hover:brightness-110 focus:outline-none shadow-sm hover:shadow-md whitespace-nowrap flex items-center gap-1"
+                          style={{ 
+                            backgroundColor: '#8B7355',
+                            padding: '0.3rem 1.3rem',
+                            border: '1px solid transparent',
+                            lineHeight: '1.5',
+                            height: '40px',
+                            fontWeight: '500'
+                          }}
+                        >
                           View Details
                           <svg className="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                           </svg>
-                        </Button>
+                        </button>
                       </Link>
                     </div>
 
@@ -185,6 +195,11 @@ const Orders = () => {
                               <p className="body font-semibold text-charcoal truncate mb-1">
                                 {item.book?.title || 'Book Title'}
                               </p>
+                              {item.seller && (
+                                <p className="body-sm text-charcoal/50 mb-1">
+                                  Seller: <span className="font-medium text-charcoal/70">{item.seller.name}</span>
+                                </p>
+                              )}
                               <p className="body-sm text-charcoal/60 mb-2">
                                 Quantity: {item.quantity}
                               </p>
