@@ -32,6 +32,7 @@ const Complaints = () => {
   const [totalComplaints, setTotalComplaints] = useState(0);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     fetchComplaints();
   }, [page, statusFilter, priorityFilter, categoryFilter, roleFilter]);
 

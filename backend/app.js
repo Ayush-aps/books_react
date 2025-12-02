@@ -32,6 +32,7 @@ const videosRouter = require('./routes/videos');
 const ordersRoutes = require("./routes/orders");
 const reviewsRoutes = require("./routes/reviews");
 const booksRoutes = require("./routes/books");
+const highlightRoutes = require("./routes/highlight");
 
 // Import database connection
 const connectDB = require("./config/db");
@@ -114,11 +115,12 @@ app.use((req, res, next) => {
 
 // API Routes
 app.use("/api/public", publicRoutes);
-app.use("/api/books", booksRoutes); // Mount books routes
+app.use("/api/books", booksRoutes);
 app.use("/api/subscription", subscriptionRouter);
 app.use("/api/library", libraryRouter);
 app.use("/api/videos", videosRouter);
 app.use("/api/reviews", reviewsRoutes);
+app.use("/api/highlights", highlightRoutes);
 app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/buyer", buyerRoutes);
 app.use("/api/seller", sellerRoutes);

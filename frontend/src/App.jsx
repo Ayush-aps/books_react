@@ -37,7 +37,7 @@ import Library from './pages/buyer/Library'
 import VideoFeed from './pages/buyer/VideoFeed'
 import VideoWatch from './pages/buyer/VideoWatch'
 import Addresses from './pages/buyer/Addresses'
-import Reader from './pages/buyer/Reader'
+import Reader from './pages/buyer/PdfReader'
 import RegisterComplaint from './pages/buyer/RegisterComplaint'
 import BuyerComplaints from './pages/buyer/Complaints'
 import BuyerComplaintDetails from './pages/buyer/ComplaintDetails'
@@ -106,78 +106,78 @@ function App() {
             <Header />
             <ThemeToggle />
             <main className="flex-grow">
-            <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Home />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/pricing" element={<Pricing />} />
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<Home />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/pricing" element={<Pricing />} />
 
-            {/* Auth Routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+                {/* Auth Routes */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
 
-            {/* Buyer Routes */}
-            <Route path="/buyer/dashboard" element={<PrivateRoute role="buyer"><BuyerDashboard /></PrivateRoute>} />
-            <Route path="/buyer/browse" element={<PrivateRoute role="buyer"><BuyerBrowse /></PrivateRoute>} />
-            <Route path="/buyer/book/:id" element={<PrivateRoute role="buyer"><BookDetails /></PrivateRoute>} />
-            <Route path="/buyer/cart" element={<PrivateRoute role="buyer"><Cart /></PrivateRoute>} />
-            <Route path="/buyer/checkout" element={<PrivateRoute role="buyer"><Checkout /></PrivateRoute>} />
-            <Route path="/buyer/orders" element={<PrivateRoute role="buyer"><BuyerOrders /></PrivateRoute>} />
-            <Route path="/buyer/orders/:id" element={<PrivateRoute role="buyer"><OrderDetails /></PrivateRoute>} />
-            <Route path="/buyer/profile" element={<PrivateRoute role="buyer"><Profile /></PrivateRoute>} />
-            <Route path="/buyer/library" element={<PrivateRoute role="buyer"><Library /></PrivateRoute>} />
-            <Route path="/buyer/video-feed" element={<PrivateRoute role="buyer"><VideoFeed /></PrivateRoute>} />
-            <Route path="/buyer/videos/upload" element={<Navigate to="/buyer/upload-video" replace />} />
-            <Route path="/buyer/videos/:id" element={<PrivateRoute role="buyer"><VideoWatch /></PrivateRoute>} />
-            <Route path="/buyer/addresses" element={<PrivateRoute role="buyer"><Addresses /></PrivateRoute>} />
-            <Route path="/buyer/reader/:bookId" element={<PrivateRoute role="buyer"><Reader /></PrivateRoute>} />
-            <Route path="/buyer/complaints" element={<PrivateRoute role="buyer"><BuyerComplaints /></PrivateRoute>} />
-            <Route path="/buyer/complaints/:id" element={<PrivateRoute role="buyer"><BuyerComplaintDetails /></PrivateRoute>} />
-            <Route path="/buyer/register-complaint" element={<PrivateRoute role="buyer"><RegisterComplaint /></PrivateRoute>} />
-            <Route path="/buyer/upload-video" element={<PrivateRoute role="buyer"><UploadVideo /></PrivateRoute>} />
-            <Route path="/buyer/payment-success" element={<PrivateRoute role="buyer"><PaymentSuccess /></PrivateRoute>} />
+                {/* Buyer Routes */}
+                <Route path="/buyer/dashboard" element={<PrivateRoute role="buyer"><BuyerDashboard /></PrivateRoute>} />
+                <Route path="/buyer/browse" element={<PrivateRoute role="buyer"><BuyerBrowse /></PrivateRoute>} />
+                <Route path="/buyer/book/:id" element={<PrivateRoute role="buyer"><BookDetails /></PrivateRoute>} />
+                <Route path="/buyer/cart" element={<PrivateRoute role="buyer"><Cart /></PrivateRoute>} />
+                <Route path="/buyer/checkout" element={<PrivateRoute role="buyer"><Checkout /></PrivateRoute>} />
+                <Route path="/buyer/orders" element={<PrivateRoute role="buyer"><BuyerOrders /></PrivateRoute>} />
+                <Route path="/buyer/orders/:id" element={<PrivateRoute role="buyer"><OrderDetails /></PrivateRoute>} />
+                <Route path="/buyer/profile" element={<PrivateRoute role="buyer"><Profile /></PrivateRoute>} />
+                <Route path="/buyer/library" element={<PrivateRoute role="buyer"><Library /></PrivateRoute>} />
+                <Route path="/buyer/video-feed" element={<PrivateRoute role="buyer"><VideoFeed /></PrivateRoute>} />
+                <Route path="/buyer/videos/upload" element={<Navigate to="/buyer/upload-video" replace />} />
+                <Route path="/buyer/videos/:id" element={<PrivateRoute role="buyer"><VideoWatch /></PrivateRoute>} />
+                <Route path="/buyer/addresses" element={<PrivateRoute role="buyer"><Addresses /></PrivateRoute>} />
+                <Route path="/buyer/complaints" element={<PrivateRoute role="buyer"><BuyerComplaints /></PrivateRoute>} />
+                <Route path="/buyer/complaints/:id" element={<PrivateRoute role="buyer"><BuyerComplaintDetails /></PrivateRoute>} />
+                <Route path="/buyer/register-complaint" element={<PrivateRoute role="buyer"><RegisterComplaint /></PrivateRoute>} />
+                <Route path="/buyer/upload-video" element={<PrivateRoute role="buyer"><UploadVideo /></PrivateRoute>} />
+                <Route path="/buyer/payment-success" element={<PrivateRoute role="buyer"><PaymentSuccess /></PrivateRoute>} />
+                <Route path="/buyer/reader/:bookId" element={<PrivateRoute role="buyer"><Reader /></PrivateRoute>} />
 
-            {/* Seller Routes */}
-            <Route path="/seller/dashboard" element={<PrivateRoute role="seller"><SellerDashboard /></PrivateRoute>} />
-            <Route path="/seller/revenue" element={<PrivateRoute role="seller"><SellerRevenue /></PrivateRoute>} />
-            <Route path="/seller/inventory" element={<PrivateRoute role="seller"><Inventory /></PrivateRoute>} />
-            <Route path="/seller/upload" element={<PrivateRoute role="seller"><UploadBook /></PrivateRoute>} />
-            <Route path="/seller/books/:id" element={<PrivateRoute role="seller"><SellerBookDetails /></PrivateRoute>} />
-            <Route path="/seller/edit-book/:id" element={<PrivateRoute role="seller"><EditBook /></PrivateRoute>} />
-            <Route path="/seller/orders" element={<PrivateRoute role="seller"><SellerOrders /></PrivateRoute>} />
-            <Route path="/seller/orders/:id" element={<PrivateRoute role="seller"><SellerOrderDetails /></PrivateRoute>} />
-            <Route path="/seller/complaints" element={<PrivateRoute role="seller"><SellerComplaints /></PrivateRoute>} />
-            <Route path="/seller/complaints/:id" element={<PrivateRoute role="seller"><SellerComplaintDetails /></PrivateRoute>} />
-            <Route path="/seller/register-complaint" element={<PrivateRoute role="seller"><SellerRegisterComplaint /></PrivateRoute>} />
-            <Route path="/seller/view-book/:id" element={<PrivateRoute role="seller"><SellerViewBook /></PrivateRoute>} />
+                {/* Seller Routes */}
+                <Route path="/seller/dashboard" element={<PrivateRoute role="seller"><SellerDashboard /></PrivateRoute>} />
+                <Route path="/seller/revenue" element={<PrivateRoute role="seller"><SellerRevenue /></PrivateRoute>} />
+                <Route path="/seller/inventory" element={<PrivateRoute role="seller"><Inventory /></PrivateRoute>} />
+                <Route path="/seller/upload" element={<PrivateRoute role="seller"><UploadBook /></PrivateRoute>} />
+                <Route path="/seller/books/:id" element={<PrivateRoute role="seller"><SellerBookDetails /></PrivateRoute>} />
+                <Route path="/seller/edit-book/:id" element={<PrivateRoute role="seller"><EditBook /></PrivateRoute>} />
+                <Route path="/seller/orders" element={<PrivateRoute role="seller"><SellerOrders /></PrivateRoute>} />
+                <Route path="/seller/orders/:id" element={<PrivateRoute role="seller"><SellerOrderDetails /></PrivateRoute>} />
+                <Route path="/seller/complaints" element={<PrivateRoute role="seller"><SellerComplaints /></PrivateRoute>} />
+                <Route path="/seller/complaints/:id" element={<PrivateRoute role="seller"><SellerComplaintDetails /></PrivateRoute>} />
+                <Route path="/seller/register-complaint" element={<PrivateRoute role="seller"><SellerRegisterComplaint /></PrivateRoute>} />
+                <Route path="/seller/view-book/:id" element={<PrivateRoute role="seller"><SellerViewBook /></PrivateRoute>} />
 
-            {/* Admin Routes */}
-            <Route path="/admin/dashboard" element={<PrivateRoute role="admin"><AdminDashboard /></PrivateRoute>} />
-            <Route path="/admin/revenue" element={<PrivateRoute role="admin"><Revenue /></PrivateRoute>} />
-            <Route path="/admin/users" element={<PrivateRoute role="admin"><AdminUsers /></PrivateRoute>} />
-            <Route path="/admin/books" element={<PrivateRoute role="admin"><AdminBooks /></PrivateRoute>} />
-            <Route path="/admin/content" element={<PrivateRoute role="admin"><AdminBooks /></PrivateRoute>} />
-            <Route path="/admin/content/:id" element={<PrivateRoute role="admin"><AdminBookDetails /></PrivateRoute>} />
-            <Route path="/admin/orders" element={<PrivateRoute role="admin"><AdminOrders /></PrivateRoute>} />
-            <Route path="/admin/orders/:id" element={<PrivateRoute role="admin"><AdminOrderDetails /></PrivateRoute>} />
-            <Route path="/admin/reports" element={<PrivateRoute role="admin"><AdminReports /></PrivateRoute>} />
-            <Route path="/admin/complaints" element={<PrivateRoute role="admin"><AdminComplaints /></PrivateRoute>} />
-            <Route path="/admin/complaints/:id" element={<PrivateRoute role="admin"><AdminComplaintDetails /></PrivateRoute>} />
-            <Route path="/admin/view-book/:id" element={<PrivateRoute role="admin"><AdminViewBook /></PrivateRoute>} />
+                {/* Admin Routes */}
+                <Route path="/admin/dashboard" element={<PrivateRoute role="admin"><AdminDashboard /></PrivateRoute>} />
+                <Route path="/admin/revenue" element={<PrivateRoute role="admin"><Revenue /></PrivateRoute>} />
+                <Route path="/admin/users" element={<PrivateRoute role="admin"><AdminUsers /></PrivateRoute>} />
+                <Route path="/admin/books" element={<PrivateRoute role="admin"><AdminBooks /></PrivateRoute>} />
+                <Route path="/admin/content" element={<PrivateRoute role="admin"><AdminBooks /></PrivateRoute>} />
+                <Route path="/admin/content/:id" element={<PrivateRoute role="admin"><AdminBookDetails /></PrivateRoute>} />
+                <Route path="/admin/orders" element={<PrivateRoute role="admin"><AdminOrders /></PrivateRoute>} />
+                <Route path="/admin/orders/:id" element={<PrivateRoute role="admin"><AdminOrderDetails /></PrivateRoute>} />
+                <Route path="/admin/reports" element={<PrivateRoute role="admin"><AdminReports /></PrivateRoute>} />
+                <Route path="/admin/complaints" element={<PrivateRoute role="admin"><AdminComplaints /></PrivateRoute>} />
+                <Route path="/admin/complaints/:id" element={<PrivateRoute role="admin"><AdminComplaintDetails /></PrivateRoute>} />
+                <Route path="/admin/view-book/:id" element={<PrivateRoute role="admin"><AdminViewBook /></PrivateRoute>} />
 
-            {/* Subscription Routes */}
-            <Route path="/subscription/checkout" element={<PrivateRoute role="buyer"><SubscriptionCheckout /></PrivateRoute>} />
-            <Route path="/subscription/success" element={<PrivateRoute role="buyer"><SubscriptionSuccess /></PrivateRoute>} />
+                {/* Subscription Routes */}
+                <Route path="/subscription/checkout" element={<PrivateRoute role="buyer"><SubscriptionCheckout /></PrivateRoute>} />
+                <Route path="/subscription/success" element={<PrivateRoute role="buyer"><SubscriptionSuccess /></PrivateRoute>} />
 
-            {/* Error Pages */}
-            <Route path="/500" element={<ServerError />} />
+                {/* Error Pages */}
+                <Route path="/500" element={<ServerError />} />
 
-            {/* Catch all - 404 */}
-            <Route path="*" element={<NotFound />} />
-            </Routes>
-          </main>
-          <Footer />
+                {/* Catch all - 404 */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </main>
+            <Footer />
           </div>
         </ToastProvider>
       </ThemeProvider>

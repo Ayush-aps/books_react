@@ -40,6 +40,7 @@ const Books = () => {
   });
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     fetchBooks();
   }, []);
 
@@ -150,22 +151,22 @@ const Books = () => {
   }
 
   return (
-    <div className="min-h-screen bg-cream py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-cream py-6 sm:py-8 md:py-12">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
         {/* Header */}
         <motion.div
-          className="mb-12"
+          className="mb-6 sm:mb-8 md:mb-12"
           variants={fadeInUp}
           initial="hidden"
           animate="visible"
         >
-          <h1 className="heading-1 text-charcoal mb-2">Content Moderation</h1>
-          <p className="body text-charcoal/70">Review and moderate books in the system</p>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-charcoal mb-1 sm:mb-2">Content Moderation</h1>
+          <p className="text-sm sm:text-base text-charcoal/70">Review and moderate books in the system</p>
         </motion.div>
 
         {error && (
           <motion.div
-            className="mb-6"
+            className="mb-4 sm:mb-6"
             variants={fadeInUp}
             initial="hidden"
             animate="visible"
@@ -174,35 +175,37 @@ const Books = () => {
           </motion.div>
         )}
 
-        {/* Filter Tabs */}
+        {/* Filter Tabs - Mobile Optimized */}
         <motion.div
-          className="mb-8"
+          className="mb-4 sm:mb-6 md:mb-8"
           variants={fadeInUp}
           initial="hidden"
           animate="visible"
         >
           <Card>
-            <Card.Body className="p-0">
-              <nav className="flex space-x-1 overflow-x-auto p-2">
+            <Card.Body className="p-1 sm:p-2">
+              <nav className="flex space-x-1 overflow-x-auto scrollbar-hide">
                 {[
-                  { value: 'pending', label: 'Pending Review', count: pendingBooks.length },
-                  { value: 'approved', label: 'Approved', count: approvedBooks.length },
-                  { value: 'rejected', label: 'Rejected', count: rejectedBooks.length },
-                  { value: 'all', label: 'All Books', count: allBooks.length }
+                  { value: 'pending', label: 'Pending', mobileLabel: 'Pending', count: pendingBooks.length },
+                  { value: 'approved', label: 'Approved', mobileLabel: 'Approved', count: approvedBooks.length },
+                  { value: 'rejected', label: 'Rejected', mobileLabel: 'Rejected', count: rejectedBooks.length },
+                  { value: 'all', label: 'All Books', mobileLabel: 'All', count: allBooks.length }
                 ].map(tab => (
                   <button
                     key={tab.value}
                     onClick={() => setStatusFilter(tab.value)}
-                    className={`px-6 py-3 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${statusFilter === tab.value
+                    className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg font-medium text-xs sm:text-sm whitespace-nowrap transition-all ${
+                      statusFilter === tab.value
                         ? 'bg-brown text-white shadow-sm'
                         : 'text-charcoal/70 hover:bg-taupe/10'
-                      }`}
+                    }`}
                   >
-                    {tab.label}
+                    <span className="hidden sm:inline">{tab.label}</span>
+                    <span className="sm:hidden">{tab.mobileLabel}</span>
                     <Badge
                       variant={statusFilter === tab.value ? 'light' : 'default'}
                       size="sm"
-                      className="ml-2"
+                      className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5"
                     >
                       {tab.count}
                     </Badge>
@@ -213,7 +216,7 @@ const Books = () => {
           </Card>
         </motion.div>
 
-        {/* Books Grid */}
+        {/* Books Grid - Responsive */}
         {filteredBooks.length === 0 ? (
           <motion.div
             variants={fadeInUp}
@@ -221,14 +224,14 @@ const Books = () => {
             animate="visible"
           >
             <Card>
-              <Card.Body className="py-16 text-center">
-                <div className="max-w-md mx-auto">
-                  <div className="w-24 h-24 bg-taupe/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <svg className="w-12 h-12 text-taupe" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <Card.Body className="py-12 sm:py-16 text-center">
+                <div className="max-w-md mx-auto px-4">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-taupe/10 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                    <svg className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-taupe" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                     </svg>
                   </div>
-                  <h3 className="heading-4 text-charcoal mb-3">
+                  <h3 className="text-lg sm:text-xl font-semibold text-charcoal mb-2 sm:mb-3">
                     {statusFilter === 'all' ? 'No books found' : `No ${statusFilter} books`}
                   </h3>
                 </div>
@@ -237,7 +240,7 @@ const Books = () => {
           </motion.div>
         ) : (
           <motion.div
-            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-5"
+            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5"
             variants={staggerContainer}
             initial="hidden"
             animate="visible"
@@ -252,61 +255,61 @@ const Books = () => {
                         alt={book.title}
                         className="absolute inset-0 w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                       />
-                      <div className="absolute top-2 right-2">
-                        <Badge variant={getStatusVariant(book)} className="text-xs px-2 py-1">
+                      <div className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2">
+                        <Badge variant={getStatusVariant(book)} className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1">
                           {getStatusText(book)}
                         </Badge>
                       </div>
                       {book.stock === 0 && (
                         <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center">
-                          <span className="text-white font-bold text-xs">Out of Stock</span>
+                          <span className="text-white font-bold text-[10px] sm:text-xs">Out of Stock</span>
                         </div>
                       )}
                     </div>
                   </Link>
 
-                  <div className="flex flex-col flex-grow p-3">
+                  <div className="flex flex-col flex-grow p-2 sm:p-3">
                     <Link to={`/admin/content/${book._id}`} className="block mb-1">
-                      <h3 className="font-semibold text-sm text-gray-900 hover:text-accent-brown line-clamp-2 transition-colors leading-tight min-h-[2rem]">
+                      <h3 className="font-semibold text-xs sm:text-sm text-gray-900 hover:text-accent-brown line-clamp-2 transition-colors leading-tight min-h-[2rem] sm:min-h-[2.5rem]">
                         {book.title || 'Untitled'}
                       </h3>
                     </Link>
-                    <p className="text-gray-500 line-clamp-1 text-[11px] mb-2">{book.author || 'Unknown'}</p>
+                    <p className="text-gray-500 line-clamp-1 text-[10px] sm:text-[11px] mb-1.5 sm:mb-2">{book.author || 'Unknown'}</p>
 
                     <div className="mt-auto">
-                      <div className="flex flex-wrap items-center gap-1.5 mb-2">
-                        <span className="font-bold text-gray-900 text-sm">₹{book.price ? book.price.toFixed(2) : '0.00'}</span>
+                      <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 mb-1.5 sm:mb-2">
+                        <span className="font-bold text-gray-900 text-xs sm:text-sm">₹{book.price ? book.price.toFixed(2) : '0.00'}</span>
                         {book.condition && (
-                          <span className="text-[10px] text-gray-500 capitalize bg-gray-50 px-1.5 py-0.5 rounded">{book.condition}</span>
+                          <span className="text-[9px] sm:text-[10px] text-gray-500 capitalize bg-gray-50 px-1 sm:px-1.5 py-0.5 rounded">{book.condition}</span>
                         )}
                       </div>
 
                       {book.seller?.name && (
-                        <p className="text-[10px] text-gray-500 mb-2 line-clamp-1">
+                        <p className="text-[9px] sm:text-[10px] text-gray-500 mb-1.5 sm:mb-2 line-clamp-1">
                           By: {book.seller.name}
                         </p>
                       )}
 
                       {!book.isApproved && !book.rejectionReason ? (
-                        <div className="flex gap-1">
+                        <div className="flex flex-col sm:flex-row gap-1 sm:gap-1.5">
                           <button
                             onClick={() => handleApprove(book._id)}
                             disabled={processing}
-                            className="flex-1 bg-accent-green text-white rounded font-medium py-1.5 text-xs hover:bg-accent-green/90 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 shadow-md relative z-10"
+                            className="w-full sm:flex-1 bg-green-600 text-white rounded font-medium py-1.5 sm:py-2 text-[10px] sm:text-xs hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 shadow-sm"
                           >
                             Approve
                           </button>
                           <button
                             onClick={() => handleRejectClick(book)}
                             disabled={processing}
-                            className="flex-1 bg-red-600 text-white rounded font-medium py-1.5 text-xs hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 shadow-sm"
+                            className="w-full sm:flex-1 bg-red-600 text-white rounded font-medium py-1.5 sm:py-2 text-[10px] sm:text-xs hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 shadow-sm"
                           >
                             Reject
                           </button>
                         </div>
                       ) : (
                         <Link to={`/admin/content/${book._id}`} className="block">
-                          <button className="w-full bg-gray-100 text-gray-700 border border-gray-300 rounded font-medium py-1.5 text-xs hover:bg-gray-200 transition-colors duration-200 shadow-sm">
+                          <button className="w-full bg-gray-100 text-gray-700 border border-gray-300 rounded font-medium py-1.5 sm:py-2 text-[10px] sm:text-xs hover:bg-gray-200 transition-colors duration-200 shadow-sm">
                             View Details
                           </button>
                         </Link>
@@ -319,23 +322,23 @@ const Books = () => {
           </motion.div>
         )}
 
-        {/* Reject Modal */}
+        {/* Reject Modal - Mobile Optimized */}
         {showRejectModal && (
           <Modal
             isOpen={showRejectModal}
             onClose={() => {
               setShowRejectModal(false);
-              setRejectReason('');
+              reset({ reason: '' });
               setSelectedBook(null);
             }}
             title="Reject Book"
             size="md"
           >
-            <div className="p-6">
-              <p className="body text-charcoal mb-4">
+            <div className="p-4 sm:p-6">
+              <p className="text-sm sm:text-base text-charcoal mb-3 sm:mb-4">
                 Provide feedback to the seller for <span className="font-semibold">{selectedBook?.title}</span>:
               </p>
-              <p className="body-sm text-charcoal/60 mb-4">
+              <p className="text-xs sm:text-sm text-charcoal/60 mb-3 sm:mb-4">
                 This message will be visible to the seller in their inventory. Please provide constructive feedback to help them improve.
               </p>
               <form onSubmit={handleSubmit(handleRejectConfirm)}>
@@ -344,8 +347,9 @@ const Books = () => {
                   rows={4}
                   placeholder="e.g., 'Please provide a higher quality cover image and fix the ISBN format.'"
                   error={errors.reason?.message}
+                  className="text-sm"
                 />
-                <div className="flex gap-3 mt-6">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-4 sm:mt-6">
                   <Button
                     variant="outline"
                     size="lg"
@@ -357,6 +361,7 @@ const Books = () => {
                       setSelectedBook(null);
                     }}
                     disabled={processing}
+                    className="order-2 sm:order-1"
                   >
                     Cancel
                   </Button>
@@ -367,6 +372,7 @@ const Books = () => {
                     type="submit"
                     disabled={processing}
                     loading={processing}
+                    className="order-1 sm:order-2"
                   >
                     Confirm Rejection
                   </Button>

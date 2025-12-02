@@ -29,6 +29,7 @@ const Orders = () => {
   const [totalOrders, setTotalOrders] = useState(0);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     fetchOrders();
   }, [currentPage, statusFilter]);
 
@@ -110,22 +111,22 @@ const Orders = () => {
   }
 
   return (
-    <div className="min-h-screen bg-cream py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-cream py-6 sm:py-8 md:py-12">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
         {/* Header */}
         <motion.div 
-          className="mb-12"
+          className="mb-8 sm:mb-12"
           variants={fadeInUp}
           initial="hidden"
           animate="visible"
         >
-          <h1 className="heading-1 text-charcoal mb-2">Order Management</h1>
-          <p className="body text-charcoal/70">View and manage all orders in the system</p>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-charcoal mb-1 sm:mb-2">Order Management</h1>
+          <p className="text-sm sm:text-base text-charcoal/70">View and manage all orders in the system</p>
         </motion.div>
 
         {error && (
           <motion.div 
-            className="mb-6"
+            className="mb-4 sm:mb-6"
             variants={fadeInUp}
             initial="hidden"
             animate="visible"
@@ -134,32 +135,32 @@ const Orders = () => {
           </motion.div>
         )}
 
-        {/* Filter Tabs */}
+        {/* Filter Tabs - Mobile Optimized */}
         <motion.div 
-          className="mb-8"
+          className="mb-6 sm:mb-8"
           variants={fadeInUp}
           initial="hidden"
           animate="visible"
         >
           <Card>
-            <Card.Body className="p-0">
-              <nav className="flex space-x-1 overflow-x-auto p-2">
+            <Card.Body className="p-1 sm:p-2">
+              <nav className="flex space-x-1 overflow-x-auto scrollbar-hide">
                 {filterTabs.map(tab => (
                   <button
                     key={tab.value}
                     onClick={() => handleFilterChange(tab.value)}
-                    className={`px-6 py-3 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
+                    className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg font-medium text-xs sm:text-sm whitespace-nowrap transition-all ${
                       statusFilter === tab.value
                         ? 'bg-brown text-white shadow-sm'
                         : 'text-charcoal/70 hover:bg-taupe/10'
                     }`}
                   >
-                    {tab.label}
+                    <span>{tab.label}</span>
                     {tab.count !== null && (
                       <Badge 
                         variant={statusFilter === tab.value ? 'light' : 'default'} 
                         size="sm" 
-                        className="ml-2"
+                        className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5"
                       >
                         {tab.count}
                       </Badge>
@@ -171,7 +172,7 @@ const Orders = () => {
           </Card>
         </motion.div>
 
-        {/* Orders List */}
+        {/* Orders List - Mobile Optimized */}
         {orders.length === 0 ? (
           <motion.div
             variants={fadeInUp}
@@ -179,14 +180,14 @@ const Orders = () => {
             animate="visible"
           >
             <Card>
-              <Card.Body className="py-16 text-center">
-                <div className="max-w-md mx-auto">
-                  <div className="w-24 h-24 bg-taupe/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <svg className="w-12 h-12 text-taupe" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <Card.Body className="py-12 sm:py-16 text-center">
+                <div className="max-w-md mx-auto px-4">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-taupe/10 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                    <svg className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-taupe" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   </div>
-                  <h3 className="heading-4 text-charcoal mb-3">
+                  <h3 className="text-lg sm:text-xl font-semibold text-charcoal mb-2 sm:mb-3">
                     {statusFilter === 'all' ? 'No orders yet' : `No ${statusFilter} orders`}
                   </h3>
                 </div>
@@ -195,7 +196,7 @@ const Orders = () => {
           </motion.div>
         ) : (
           <motion.div 
-            className="space-y-4"
+            className="space-y-3 sm:space-y-4"
             variants={staggerContainer}
             initial="hidden"
             animate="visible"
@@ -203,35 +204,35 @@ const Orders = () => {
             {orders.map(order => (
               <motion.div key={order._id} variants={staggerItem}>
                 <Card hoverable>
-                  <Card.Body>
-                    <div className="flex flex-col lg:flex-row lg:items-center gap-6">
+                  <Card.Body className="p-3 sm:p-4 md:p-6">
+                    <div className="flex flex-col gap-4">
                       {/* Order Info */}
                       <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-4">
-                          <h3 className="heading-4 text-charcoal">
+                        <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                          <h3 className="text-base sm:text-lg md:text-xl font-bold text-charcoal">
                             Order #{order.orderId || order._id.slice(-8)}
                           </h3>
-                          <Badge variant={getStatusVariant(getOrderStatus(order))}>
+                          <Badge variant={getStatusVariant(getOrderStatus(order))} className="text-xs sm:text-sm">
                             {getOrderStatus(order).charAt(0).toUpperCase() + getOrderStatus(order).slice(1)}
                           </Badge>
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                           <div>
-                            <p className="body-sm text-charcoal/60 mb-1">Buyer</p>
-                            <p className="body-sm font-medium text-charcoal">{order.buyer?.name || 'N/A'}</p>
-                            <p className="body-sm text-charcoal/50 truncate">{order.buyer?.email || ''}</p>
+                            <p className="text-xs sm:text-sm text-charcoal/60 mb-1">Buyer</p>
+                            <p className="text-xs sm:text-sm font-medium text-charcoal">{order.buyer?.name || 'N/A'}</p>
+                            <p className="text-xs sm:text-sm text-charcoal/50 truncate">{order.buyer?.email || ''}</p>
                           </div>
                           <div>
-                            <p className="body-sm text-charcoal/60 mb-1">Items</p>
-                            <p className="body-sm font-medium text-charcoal">{order.items.length} item(s)</p>
+                            <p className="text-xs sm:text-sm text-charcoal/60 mb-1">Items</p>
+                            <p className="text-xs sm:text-sm font-medium text-charcoal">{order.items.length} item(s)</p>
                           </div>
                           <div>
-                            <p className="body-sm text-charcoal/60 mb-1">Total</p>
-                            <p className="heading-5 text-brown">₹{order.totalAmount.toFixed(2)}</p>
+                            <p className="text-xs sm:text-sm text-charcoal/60 mb-1">Total</p>
+                            <p className="text-base sm:text-lg font-bold text-brown">₹{order.totalAmount.toFixed(2)}</p>
                           </div>
                           <div>
-                            <p className="body-sm text-charcoal/60 mb-1">Date</p>
-                            <p className="body-sm font-medium text-charcoal">
+                            <p className="text-xs sm:text-sm text-charcoal/60 mb-1">Date</p>
+                            <p className="text-xs sm:text-sm font-medium text-charcoal">
                               {new Date(order.createdAt).toLocaleDateString()}
                             </p>
                           </div>
@@ -259,7 +260,7 @@ const Orders = () => {
 
                         <Link
                           to={`/admin/orders/${order._id}`}
-                          className="btn btn-outline btn-md w-full text-center inline-block"
+                          className="btn btn-outline btn-md w-full text-center inline-flex items-center justify-center text-sm sm:text-base mt-6 sm:mt-0"
                         >
                           View Details
                         </Link>
@@ -275,7 +276,7 @@ const Orders = () => {
         {/* Pagination */}
         {totalPages > 1 && orders.length > 0 && (
           <motion.div
-            className="mt-8"
+            className="mt-6 sm:mt-8"
             variants={fadeInUp}
             initial="hidden"
             animate="visible"

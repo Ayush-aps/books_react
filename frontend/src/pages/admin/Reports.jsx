@@ -29,6 +29,7 @@ const Reports = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     fetchReports();
   }, []);
 
@@ -149,16 +150,16 @@ const Reports = () => {
   };
 
   return (
-    <div className="min-h-screen bg-cream py-12">
-      <div className="container-custom">
+    <div className="min-h-screen bg-cream py-6 sm:py-8 md:py-12">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-12"
+          className="mb-8 sm:mb-12"
         >
-          <h1 className="heading-1 mb-3">System Reports & Analytics</h1>
-          <p className="body-xl text-text-secondary">Comprehensive insights and performance metrics</p>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 sm:mb-3">System Reports & Analytics</h1>
+          <p className="text-sm sm:text-base md:text-lg text-text-secondary">Comprehensive insights and performance metrics</p>
         </motion.div>
 
         {/* User Activity Stats */}
@@ -166,44 +167,44 @@ const Reports = () => {
           variants={staggerContainer}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12"
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-12"
         >
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">New Users This Month</p>
-                <p className="text-3xl font-bold text-gray-900">{reports.userActivity.newUsersThisMonth}</p>
+                <p className="text-xs sm:text-sm text-gray-600 mb-1">New Users This Month</p>
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900">{reports.userActivity.newUsersThisMonth}</p>
               </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                 </svg>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">Active Users</p>
-                <p className="text-3xl font-bold text-gray-900">{reports.userActivity.activeUsers}</p>
+                <p className="text-xs sm:text-sm text-gray-600 mb-1">Active Users</p>
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900">{reports.userActivity.activeUsers}</p>
               </div>
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-full flex items-center justify-center">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 sm:col-span-2 md:col-span-1">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">Total Orders</p>
-                <p className="text-3xl font-bold text-gray-900">{reports.userActivity.totalOrders}</p>
+                <p className="text-xs sm:text-sm text-gray-600 mb-1">Total Orders</p>
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900">{reports.userActivity.totalOrders}</p>
               </div>
-              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                 </svg>
               </div>
@@ -217,15 +218,15 @@ const Reports = () => {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="mb-12"
+          className="mb-8 sm:mb-12"
         >
-          <h2 className="heading-2 mb-8">Data Distribution Analytics</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-6 sm:mb-8">Data Distribution Analytics</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
             {/* User Roles Distribution */}
             {userRoleData.filter(d => d.value > 0).length > 0 && (
               <Card elevated padding="lg">
-                <h3 className="heading-4 mb-6 text-center">Users by Role</h3>
-                <ResponsiveContainer width="100%" height={300}>
+                <h3 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6 text-center">Users by Role</h3>
+                <ResponsiveContainer width="100%" height={250}>
                   <PieChart>
                     <Pie
                       data={userRoleData.filter(d => d.value > 0)}
@@ -233,7 +234,7 @@ const Reports = () => {
                       cy="50%"
                       labelLine={false}
                       label={renderCustomLabel}
-                      outerRadius={100}
+                      outerRadius={80}
                       fill="#8884d8"
                       dataKey="value"
                     >
@@ -246,7 +247,7 @@ const Reports = () => {
                       verticalAlign="bottom" 
                       height={36}
                       formatter={(value, entry) => (
-                        <span className="text-sm text-text-primary">{value}: {entry.payload.value}</span>
+                        <span className="text-xs sm:text-sm text-text-primary">{value}: {entry.payload.value}</span>
                       )}
                     />
                   </PieChart>
@@ -257,8 +258,8 @@ const Reports = () => {
             {/* Book Status Distribution */}
             {bookStatusData.length > 0 && (
               <Card elevated padding="lg">
-                <h3 className="heading-4 mb-6 text-center">Books by Status</h3>
-                <ResponsiveContainer width="100%" height={300}>
+                <h3 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6 text-center">Books by Status</h3>
+                <ResponsiveContainer width="100%" height={250}>
                   <PieChart>
                     <Pie
                       data={bookStatusData}
@@ -266,7 +267,7 @@ const Reports = () => {
                       cy="50%"
                       labelLine={false}
                       label={renderCustomLabel}
-                      outerRadius={100}
+                      outerRadius={80}
                       fill="#8884d8"
                       dataKey="value"
                     >
@@ -279,7 +280,7 @@ const Reports = () => {
                       verticalAlign="bottom" 
                       height={36}
                       formatter={(value, entry) => (
-                        <span className="text-sm text-text-primary">{value}: {entry.payload.value}</span>
+                        <span className="text-xs sm:text-sm text-text-primary">{value}: {entry.payload.value}</span>
                       )}
                     />
                   </PieChart>
@@ -290,8 +291,8 @@ const Reports = () => {
             {/* Order Status Distribution */}
             {orderStatusData.length > 0 && (
               <Card elevated padding="lg">
-                <h3 className="heading-4 mb-6 text-center">Orders by Status</h3>
-                <ResponsiveContainer width="100%" height={300}>
+                <h3 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6 text-center">Orders by Status</h3>
+                <ResponsiveContainer width="100%" height={250}>
                   <PieChart>
                     <Pie
                       data={orderStatusData}
@@ -299,7 +300,7 @@ const Reports = () => {
                       cy="50%"
                       label={renderCustomLabel}
                       labelLine={false}
-                      outerRadius={100}
+                      outerRadius={80}
                       fill="#8884d8"
                       dataKey="value"
                     >
@@ -312,7 +313,7 @@ const Reports = () => {
                       verticalAlign="bottom" 
                       height={36}
                       formatter={(value, entry) => (
-                        <span className="text-sm text-text-primary">{value}: {entry.payload.value}</span>
+                        <span className="text-xs sm:text-sm text-text-primary">{value}: {entry.payload.value}</span>
                       )}
                     />
                   </PieChart>
@@ -323,8 +324,8 @@ const Reports = () => {
             {/* Sales by Genre */}
             {genreData.length > 0 && (
               <Card elevated padding="lg">
-                <h3 className="heading-4 mb-6 text-center">Sales by Genre</h3>
-                <ResponsiveContainer width="100%" height={300}>
+                <h3 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6 text-center">Sales by Genre</h3>
+                <ResponsiveContainer width="100%" height={250}>
                   <PieChart>
                     <Pie
                       data={genreData}
@@ -332,7 +333,7 @@ const Reports = () => {
                       cy="50%"
                       labelLine={false}
                       label={renderCustomLabel}
-                      outerRadius={100}
+                      outerRadius={80}
                       fill="#8884d8"
                       dataKey="value"
                     >
@@ -345,7 +346,7 @@ const Reports = () => {
                       verticalAlign="bottom" 
                       height={36}
                       formatter={(value, entry) => (
-                        <span className="text-sm text-text-primary">{value}: {entry.payload.value}</span>
+                        <span className="text-xs sm:text-sm text-text-primary">{value}: {entry.payload.value}</span>
                       )}
                     />
                   </PieChart>
@@ -362,34 +363,34 @@ const Reports = () => {
           whileInView="visible"
           viewport={{ once: true }}
         >
-          <h2 className="heading-2 mb-8">Detailed Reports</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-6 sm:mb-8">Detailed Reports</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mb-6 sm:mb-8">
             {/* Top Selling Books */}
             <Card elevated padding="lg">
-              <h3 className="heading-4 mb-6">Top Selling Books</h3>
+              <h3 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6">Top Selling Books</h3>
               {reports.topSellingBooks.length === 0 ? (
-                <p className="text-text-secondary text-center py-8">No sales data available</p>
+                <p className="text-text-secondary text-center py-6 sm:py-8 text-sm sm:text-base">No sales data available</p>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {reports.topSellingBooks.map((book, index) => (
-                    <div key={index} className="flex items-center gap-4 pb-4 border-b border-border-light last:border-0">
-                      <div className="w-8 h-8 bg-accent-brown/10 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-accent-brown font-bold text-sm">#{index + 1}</span>
+                    <div key={index} className="flex items-center gap-3 sm:gap-4 pb-3 sm:pb-4 border-b border-border-light last:border-0">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-accent-brown/10 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-accent-brown font-bold text-xs sm:text-sm">#{index + 1}</span>
                       </div>
                       {book.coverImage && (
                         <img 
                           src={book.coverImage} 
                           alt={book.title}
-                          className="w-12 h-16 object-cover rounded shadow-sm"
+                          className="w-10 h-14 sm:w-12 sm:h-16 object-cover rounded shadow-sm"
                         />
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-text-primary truncate">{book.title}</p>
-                        <p className="text-xs text-text-secondary">{book.author}</p>
+                        <p className="text-xs sm:text-sm font-medium text-text-primary truncate">{book.title}</p>
+                        <p className="text-[10px] sm:text-xs text-text-secondary">{book.author}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-semibold text-text-primary">{book.soldCount} sold</p>
-                        <p className="text-xs text-success">₹{book.revenue?.toFixed(2) || '0.00'}</p>
+                        <p className="text-xs sm:text-sm font-semibold text-text-primary">{book.soldCount} sold</p>
+                        <p className="text-[10px] sm:text-xs text-success">₹{book.revenue?.toFixed(2) || '0.00'}</p>
                       </div>
                     </div>
                   ))}
@@ -399,28 +400,28 @@ const Reports = () => {
 
             {/* Top Sellers */}
             <Card elevated padding="lg">
-              <h3 className="heading-4 mb-6">Top Sellers</h3>
+              <h3 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6">Top Sellers</h3>
               {reports.topSellers.length === 0 ? (
-                <p className="text-text-secondary text-center py-8">No seller data available</p>
+                <p className="text-text-secondary text-center py-6 sm:py-8 text-sm sm:text-base">No seller data available</p>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {reports.topSellers.slice(0, 5).map((seller, index) => (
-                    <div key={index} className="flex items-center gap-4 pb-4 border-b border-border-light last:border-0">
-                      <div className="w-8 h-8 bg-accent-green/10 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-accent-green font-bold text-sm">#{index + 1}</span>
+                    <div key={index} className="flex items-center gap-3 sm:gap-4 pb-3 sm:pb-4 border-b border-border-light last:border-0">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-accent-green/10 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-accent-green font-bold text-xs sm:text-sm">#{index + 1}</span>
                       </div>
-                      <div className="w-10 h-10 bg-accent-brown/10 rounded-full flex items-center justify-center">
-                        <span className="text-accent-brown font-semibold">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-accent-brown/10 rounded-full flex items-center justify-center">
+                        <span className="text-accent-brown font-semibold text-sm sm:text-base">
                           {seller.name?.charAt(0).toUpperCase() || 'S'}
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-text-primary truncate">{seller.name}</p>
-                        <p className="text-xs text-text-secondary">{seller.booksListed || 0} books listed</p>
+                        <p className="text-xs sm:text-sm font-medium text-text-primary truncate">{seller.name}</p>
+                        <p className="text-[10px] sm:text-xs text-text-secondary">{seller.booksListed || 0} books listed</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-semibold text-text-primary">{seller.totalSales || 0} sales</p>
-                        <p className="text-xs text-success">₹{seller.revenue?.toFixed(2) || '0.00'}</p>
+                        <p className="text-xs sm:text-sm font-semibold text-text-primary">{seller.totalSales || 0} sales</p>
+                        <p className="text-[10px] sm:text-xs text-success">₹{seller.revenue?.toFixed(2) || '0.00'}</p>
                       </div>
                     </div>
                   ))}

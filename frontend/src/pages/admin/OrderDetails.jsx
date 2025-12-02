@@ -43,6 +43,7 @@ const OrderDetails = () => {
   });
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     fetchOrderDetails();
   }, [id]);
 
@@ -141,31 +142,32 @@ const OrderDetails = () => {
   }
 
   return (
-    <div className="min-h-screen bg-cream py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-cream py-6 sm:py-8 md:py-12">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
         {/* Header */}
         <motion.div
-          className="mb-8"
+          className="mb-6 sm:mb-8"
           variants={fadeInUp}
           initial="hidden"
           animate="visible"
         >
-          <div className="flex items-center gap-4 mb-4">
+          <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
             <Button
               onClick={() => navigate('/admin/orders')}
               variant="ghost"
               size="sm"
+              className="text-xs sm:text-sm"
             >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
               Back to Orders
             </Button>
           </div>
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex flex-col gap-3 sm:gap-4">
             <div>
-              <h1 className="heading-1 text-charcoal mb-2">Order #{order.orderId || order._id.slice(-8)}</h1>
-              <p className="body text-charcoal/70">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-charcoal mb-1 sm:mb-2">Order #{order.orderId || order._id.slice(-8)}</h1>
+              <p className="text-xs sm:text-sm text-charcoal/70">
                 Placed on {new Date(order.createdAt).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',
@@ -175,12 +177,12 @@ const OrderDetails = () => {
                 })}
               </p>
             </div>
-            <div className="flex gap-3">
-              <Badge variant={getStatusVariant(order.orderStatus || order.status)} size="lg">
+            <div className="flex flex-wrap gap-2 sm:gap-3">
+              <Badge variant={getStatusVariant(order.orderStatus || order.status)} size="lg" className="text-xs sm:text-sm">
                 {(order.orderStatus || order.status || 'ordered').charAt(0).toUpperCase() +
                   (order.orderStatus || order.status || 'ordered').slice(1)}
               </Badge>
-              <Badge variant={getPaymentStatusVariant(order.paymentStatus)} size="lg">
+              <Badge variant={getPaymentStatusVariant(order.paymentStatus)} size="lg" className="text-xs sm:text-sm">
                 Payment: {order.paymentStatus?.charAt(0).toUpperCase() + order.paymentStatus?.slice(1)}
               </Badge>
             </div>
@@ -189,7 +191,7 @@ const OrderDetails = () => {
 
         {error && (
           <motion.div
-            className="mb-6"
+            className="mb-4 sm:mb-6"
             variants={fadeInUp}
             initial="hidden"
             animate="visible"
@@ -198,9 +200,9 @@ const OrderDetails = () => {
           </motion.div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
           {/* Left Column - Order Details */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
             {/* Order Items */}
             <motion.div
               variants={fadeInUp}
@@ -209,53 +211,53 @@ const OrderDetails = () => {
             >
               <Card>
                 <Card.Header>
-                  <h2 className="heading-3 text-charcoal">Order Items</h2>
+                  <h2 className="text-lg sm:text-xl font-bold text-charcoal">Order Items</h2>
                 </Card.Header>
-                <Card.Body>
-                  <div className="space-y-4">
+                <Card.Body className="p-3 sm:p-6">
+                  <div className="space-y-3 sm:space-y-4">
                     {order.items.map((item, index) => (
-                      <div key={index} className="flex gap-4 pb-4 border-b border-surface last:border-0 last:pb-0">
+                      <div key={index} className="flex gap-3 sm:gap-4 pb-3 sm:pb-4 border-b border-surface last:border-0 last:pb-0">
                         <img
                           src={item.coverImage || '/img/books/default-book.jpg'}
                           alt={item.title}
-                          className="w-20 h-28 object-cover rounded-lg"
+                          className="w-16 h-20 sm:w-20 sm:h-28 object-cover rounded-lg"
                         />
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-charcoal mb-1">{item.title}</h4>
-                          <p className="body-sm text-charcoal/70 mb-2">by {item.author}</p>
-                          <div className="flex items-center gap-4">
-                            <p className="body-sm text-charcoal/60">Qty: {item.quantity}</p>
-                            <p className="body-sm text-charcoal/60">•</p>
-                            <p className="body-sm font-medium text-brown">₹{item.price.toFixed(2)} each</p>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-charcoal mb-1 text-sm sm:text-base">{item.title}</h4>
+                          <p className="text-xs sm:text-sm text-charcoal/70 mb-2">by {item.author}</p>
+                          <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm">
+                            <p className="text-charcoal/60">Qty: {item.quantity}</p>
+                            <p className="text-charcoal/60">•</p>
+                            <p className="font-medium text-brown">₹{item.price.toFixed(2)} each</p>
                           </div>
                           {item.seller && (
-                            <p className="body-sm text-charcoal/50 mt-2">
+                            <p className="text-xs sm:text-sm text-charcoal/50 mt-2">
                               Seller: {item.seller.name} ({item.seller.email})
                             </p>
                           )}
                         </div>
                         <div className="text-right">
-                          <p className="heading-5 text-brown">₹{(item.price * item.quantity).toFixed(2)}</p>
+                          <p className="text-base sm:text-lg font-bold text-brown">₹{(item.price * item.quantity).toFixed(2)}</p>
                         </div>
                       </div>
                     ))}
                   </div>
 
                   {/* Order Summary */}
-                  <div className="mt-6 pt-6 border-t-2 border-surface space-y-2">
-                    <div className="flex justify-between body text-charcoal/70">
+                  <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t-2 border-surface space-y-2">
+                    <div className="flex justify-between text-sm sm:text-base text-charcoal/70">
                       <span>Subtotal</span>
                       <span>₹{order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between body text-charcoal/70">
+                    <div className="flex justify-between text-sm sm:text-base text-charcoal/70">
                       <span>Tax</span>
                       <span>₹{(order.totalAmount * 0.08).toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between body text-charcoal/70">
+                    <div className="flex justify-between text-sm sm:text-base text-charcoal/70">
                       <span>Shipping</span>
                       <span>₹5.99</span>
                     </div>
-                    <div className="flex justify-between heading-4 text-charcoal pt-2 border-t border-surface">
+                    <div className="flex justify-between text-lg sm:text-xl font-bold text-charcoal pt-2 border-t border-surface">
                       <span>Total</span>
                       <span className="text-brown">₹{order.totalAmount.toFixed(2)}</span>
                     </div>
@@ -264,7 +266,7 @@ const OrderDetails = () => {
               </Card>
             </motion.div>
 
-            {/* Customer Information */}
+            {/* Customer Information - Mobile Optimized */}
             <motion.div
               variants={fadeInUp}
               initial="hidden"
@@ -272,23 +274,23 @@ const OrderDetails = () => {
             >
               <Card>
                 <Card.Header>
-                  <h2 className="heading-3 text-charcoal">Customer Information</h2>
+                  <h2 className="text-lg sm:text-xl font-bold text-charcoal">Customer Information</h2>
                 </Card.Header>
-                <Card.Body>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card.Body className="p-3 sm:p-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     <div>
-                      <h4 className="font-semibold text-charcoal mb-3">Buyer Details</h4>
-                      <p className="body text-charcoal">{order.buyer?.name || 'N/A'}</p>
-                      <p className="body-sm text-charcoal/70">{order.buyer?.email || 'N/A'}</p>
+                      <h4 className="font-semibold text-charcoal mb-2 sm:mb-3 text-sm sm:text-base">Buyer Details</h4>
+                      <p className="text-sm sm:text-base text-charcoal">{order.buyer?.name || 'N/A'}</p>
+                      <p className="text-xs sm:text-sm text-charcoal/70">{order.buyer?.email || 'N/A'}</p>
                     </div>
                     <div>
-                      <h4 className="font-semibold text-charcoal mb-3">Shipping Address</h4>
-                      <p className="body text-charcoal">{order.shippingAddress.name}</p>
-                      <p className="body-sm text-charcoal/70">{order.shippingAddress.address}</p>
-                      <p className="body-sm text-charcoal/70">
+                      <h4 className="font-semibold text-charcoal mb-2 sm:mb-3 text-sm sm:text-base">Shipping Address</h4>
+                      <p className="text-sm sm:text-base text-charcoal">{order.shippingAddress.name}</p>
+                      <p className="text-xs sm:text-sm text-charcoal/70">{order.shippingAddress.address}</p>
+                      <p className="text-xs sm:text-sm text-charcoal/70">
                         {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.pincode}
                       </p>
-                      <p className="body-sm text-charcoal/70 mt-2">Phone: {order.shippingAddress.phone}</p>
+                      <p className="text-xs sm:text-sm text-charcoal/70 mt-2">Phone: {order.shippingAddress.phone}</p>
                     </div>
                   </div>
                 </Card.Body>
@@ -303,26 +305,26 @@ const OrderDetails = () => {
             >
               <Card>
                 <Card.Header>
-                  <h2 className="heading-3 text-charcoal">Payment Information</h2>
+                  <h2 className="text-lg sm:text-xl font-bold text-charcoal">Payment Information</h2>
                 </Card.Header>
-                <Card.Body>
-                  <div className="grid grid-cols-2 gap-4">
+                <Card.Body className="p-3 sm:p-6">
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4">
                     <div>
-                      <p className="body-sm text-charcoal/60 mb-1">Payment Method</p>
-                      <p className="body font-medium text-charcoal">
+                      <p className="text-xs sm:text-sm text-charcoal/60 mb-1">Payment Method</p>
+                      <p className="text-sm sm:text-base font-medium text-charcoal">
                         {order.paymentMethod?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                       </p>
                     </div>
                     <div>
-                      <p className="body-sm text-charcoal/60 mb-1">Payment Status</p>
-                      <Badge variant={getPaymentStatusVariant(order.paymentStatus)}>
+                      <p className="text-xs sm:text-sm text-charcoal/60 mb-1">Payment Status</p>
+                      <Badge variant={getPaymentStatusVariant(order.paymentStatus)} className="text-xs sm:text-sm">
                         {order.paymentStatus?.charAt(0).toUpperCase() + order.paymentStatus?.slice(1)}
                       </Badge>
                     </div>
                     {order.paymentDetails?.paymentId && (
                       <div className="col-span-2">
-                        <p className="body-sm text-charcoal/60 mb-1">Transaction ID</p>
-                        <p className="body-sm font-mono text-charcoal">{order.paymentDetails.paymentId}</p>
+                        <p className="text-xs sm:text-sm text-charcoal/60 mb-1">Transaction ID</p>
+                        <p className="text-xs sm:text-sm font-mono text-charcoal break-all">{order.paymentDetails.paymentId}</p>
                       </div>
                     )}
                   </div>
@@ -340,10 +342,10 @@ const OrderDetails = () => {
             >
               <Card>
                 <Card.Header>
-                  <h2 className="heading-3 text-charcoal">Update Order</h2>
+                  <h2 className="text-lg sm:text-xl font-bold text-charcoal">Update Order</h2>
                 </Card.Header>
-                <Card.Body>
-                  <form onSubmit={handleSubmit(handleUpdateOrder)} className="space-y-4">
+                <Card.Body className="p-3 sm:p-6">
+                  <form onSubmit={handleSubmit(handleUpdateOrder)} className="space-y-3 sm:space-y-4">
                     <div>
                       <Input.Select
                         id="orderStatus"
@@ -407,6 +409,7 @@ const OrderDetails = () => {
                       fullWidth
                       isLoading={updating}
                       disabled={updating}
+                      className="text-sm sm:text-base"
                     >
                       Update Order
                     </Button>
@@ -414,21 +417,21 @@ const OrderDetails = () => {
 
                   {/* Order Timeline */}
                   {order.statusHistory && order.statusHistory.length > 0 && (
-                    <div className="mt-6 pt-6 border-t border-surface">
-                      <h3 className="font-semibold text-charcoal mb-4">Order Timeline</h3>
-                      <div className="space-y-3">
+                    <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-surface">
+                      <h3 className="font-semibold text-charcoal mb-3 sm:mb-4 text-sm sm:text-base">Order Timeline</h3>
+                      <div className="space-y-2 sm:space-y-3">
                         {order.statusHistory.map((history, index) => (
-                          <div key={index} className="flex gap-3">
+                          <div key={index} className="flex gap-2 sm:gap-3">
                             <div className="w-2 h-2 rounded-full bg-brown mt-2 flex-shrink-0"></div>
                             <div className="flex-1">
-                              <p className="body-sm font-medium text-charcoal">
+                              <p className="text-xs sm:text-sm font-medium text-charcoal">
                                 {history.status?.charAt(0).toUpperCase() + history.status?.slice(1)}
                               </p>
-                              <p className="body-sm text-charcoal/60">
+                              <p className="text-xs sm:text-sm text-charcoal/60">
                                 {new Date(history.date).toLocaleString()}
                               </p>
                               {history.note && (
-                                <p className="body-sm text-charcoal/70 mt-1">{history.note}</p>
+                                <p className="text-xs sm:text-sm text-charcoal/70 mt-1">{history.note}</p>
                               )}
                             </div>
                           </div>

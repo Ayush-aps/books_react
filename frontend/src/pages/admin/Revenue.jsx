@@ -32,6 +32,7 @@ const Revenue = () => {
   });
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     fetchRevenueData();
   }, []);
 
@@ -157,35 +158,37 @@ const Revenue = () => {
   const deliveryPercentage = totalCategoryRevenue > 0 ? (revenueByCategory.deliveryCharges / totalCategoryRevenue) * 100 : 0;
 
   return (
-    <div className="min-h-screen bg-background-primary py-12">
-      <div className="container-custom">
-        {/* Header */}
+    <div className="min-h-screen bg-background-primary py-6 sm:py-8 md:py-12">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+        {/* Header - Mobile Responsive */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8 flex items-center justify-between"
+          className="mb-6 sm:mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4"
         >
           <div>
-            <h1 className="heading-1 mb-2">Revenue Analytics</h1>
-            <p className="body-lg text-text-secondary">Detailed revenue statistics and transaction history</p>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2">Revenue Analytics</h1>
+            <p className="text-sm sm:text-base md:text-lg text-text-secondary">Detailed revenue statistics and transaction history</p>
           </div>
           <Button
             variant="outline"
             onClick={() => navigate('/admin/dashboard')}
+            size="sm"
+            className="w-full sm:w-auto text-xs sm:text-sm"
           >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
             Back to Dashboard
           </Button>
         </motion.div>
 
-        {/* Revenue Summary Cards */}
+        {/* Revenue Summary Cards - Responsive Grid */}
         <motion.div
           variants={staggerContainer}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+          className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8"
         >
           {[
             { label: 'Total Revenue', value: `₹${totalRevenue.toFixed(2)}`, icon: '💰', color: 'bg-success/10 text-success' },
@@ -195,21 +198,21 @@ const Revenue = () => {
           ].map((stat, index) => (
             <motion.div key={index} variants={staggerItem}>
               <Card elevated padding="lg">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-2xl">{stat.icon}</span>
-                  <div className={`px-3 py-1 rounded-full text-xs font-semibold ${stat.color}`}>
+                <div className="flex items-center justify-between mb-2 sm:mb-3">
+                  <span className="text-xl sm:text-2xl">{stat.icon}</span>
+                  <div className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold ${stat.color}`}>
                     Revenue
                   </div>
                 </div>
-                <p className="text-sm text-text-secondary mb-1">{stat.label}</p>
-                <h3 className="heading-2">{stat.value}</h3>
+                <p className="text-xs sm:text-sm text-text-secondary mb-0.5 sm:mb-1">{stat.label}</p>
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold">{stat.value}</h3>
               </Card>
             </motion.div>
           ))}
         </motion.div>
 
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        {/* Charts Section - Responsive Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8 mb-6 sm:mb-8">
           {/* Revenue Trend Chart */}
           <motion.div
             variants={fadeInUp}
@@ -218,18 +221,18 @@ const Revenue = () => {
             className="lg:col-span-2"
           >
             <Card elevated padding="lg">
-              <h2 className="heading-3 mb-6">Revenue Trend (Last 6 Months)</h2>
-              <div className="space-y-4">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6">Revenue Trend (Last 6 Months)</h2>
+              <div className="space-y-3 sm:space-y-4">
                 {revenueByMonth.map((data, index) => {
                   const maxRevenue = Math.max(...revenueByMonth.map(m => m.revenue), 1);
                   const barWidth = (data.revenue / maxRevenue) * 100;
                   return (
                     <div key={index}>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-text-primary">{data.month}</span>
-                        <span className="text-sm font-semibold text-accent-brown">₹{data.revenue.toFixed(2)}</span>
+                      <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+                        <span className="text-xs sm:text-sm font-medium text-text-primary">{data.month}</span>
+                        <span className="text-xs sm:text-sm font-semibold text-accent-brown">₹{data.revenue.toFixed(2)}</span>
                       </div>
-                      <div className="w-full bg-background-secondary rounded-full h-3 overflow-hidden">
+                      <div className="w-full bg-background-secondary rounded-full h-2 sm:h-3 overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${barWidth}%` }}
@@ -244,7 +247,7 @@ const Revenue = () => {
             </Card>
           </motion.div>
 
-          {/* Revenue Breakdown Pie Chart */}
+          {/* Revenue Breakdown Pie Chart - Mobile Optimized */}
           <motion.div
             variants={fadeInUp}
             initial="hidden"
@@ -252,10 +255,10 @@ const Revenue = () => {
             transition={{ delay: 0.2 }}
           >
             <Card elevated padding="lg">
-              <h2 className="heading-3 mb-6">Revenue Breakdown</h2>
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6">Revenue Breakdown</h2>
               <div className="flex flex-col items-center">
                 {/* Simple Pie Chart */}
-                <div className="relative w-48 h-48 mb-6">
+                <div className="relative w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 mb-4 sm:mb-6">
                   <svg viewBox="0 0 100 100" className="transform -rotate-90">
                     {/* Commission slice */}
                     <circle
@@ -283,27 +286,27 @@ const Revenue = () => {
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
-                      <p className="text-2xl font-bold text-text-primary">100%</p>
-                      <p className="text-xs text-text-secondary">Revenue</p>
+                      <p className="text-xl sm:text-2xl font-bold text-text-primary">100%</p>
+                      <p className="text-[10px] sm:text-xs text-text-secondary">Revenue</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Legend */}
-                <div className="w-full space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-background-secondary rounded-lg">
+                <div className="w-full space-y-2 sm:space-y-3">
+                  <div className="flex items-center justify-between p-2 sm:p-3 bg-background-secondary rounded-lg">
                     <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded-full bg-accent-brown"></div>
-                      <span className="text-sm font-medium">Commission (5%)</span>
+                      <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-accent-brown"></div>
+                      <span className="text-xs sm:text-sm font-medium">Commission (5%)</span>
                     </div>
-                    <span className="text-sm font-semibold text-accent-brown">₹{revenueByCategory.commission.toFixed(2)}</span>
+                    <span className="text-xs sm:text-sm font-semibold text-accent-brown">₹{revenueByCategory.commission.toFixed(2)}</span>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-background-secondary rounded-lg">
+                  <div className="flex items-center justify-between p-2 sm:p-3 bg-background-secondary rounded-lg">
                     <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded-full bg-accent-green"></div>
-                      <span className="text-sm font-medium">Delivery Charges</span>
+                      <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-accent-green"></div>
+                      <span className="text-xs sm:text-sm font-medium">Delivery Charges</span>
                     </div>
-                    <span className="text-sm font-semibold text-accent-green">₹{revenueByCategory.deliveryCharges.toFixed(2)}</span>
+                    <span className="text-xs sm:text-sm font-semibold text-accent-green">₹{revenueByCategory.deliveryCharges.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -311,7 +314,7 @@ const Revenue = () => {
           </motion.div>
         </div>
 
-        {/* Recent Transactions */}
+        {/* Recent Transactions - Mobile Responsive */}
         <motion.div
           variants={fadeInUp}
           initial="hidden"
@@ -319,49 +322,51 @@ const Revenue = () => {
           transition={{ delay: 0.3 }}
         >
           <Card elevated padding="lg">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="heading-3">Recent Transactions</h2>
-              <Badge variant="info">{transactions.length} transactions</Badge>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-2">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold">Recent Transactions</h2>
+              <Badge variant="info" className="text-xs sm:text-sm">{transactions.length} transactions</Badge>
             </div>
 
             {transactions.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-text-secondary">No transactions found</p>
+              <div className="text-center py-8 sm:py-12">
+                <p className="text-sm sm:text-base text-text-secondary">No transactions found</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-border-primary">
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-text-secondary">Order ID</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-text-secondary">Buyer</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-text-secondary">Commission</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-text-secondary">Delivery</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-text-secondary">Total</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-text-secondary">Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {transactions.map((transaction, index) => (
-                      <motion.tr
-                        key={transaction.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        className="border-b border-border-primary hover:bg-background-secondary transition-colors"
-                      >
-                        <td className="py-3 px-4">
-                          <span className="font-mono text-sm font-medium text-accent-brown">#{transaction.orderId}</span>
-                        </td>
-                        <td className="py-3 px-4 text-sm text-text-primary">{transaction.buyerName}</td>
-                        <td className="py-3 px-4 text-sm font-semibold text-success">₹{transaction.commission.toFixed(2)}</td>
-                        <td className="py-3 px-4 text-sm font-semibold text-info">₹{transaction.deliveryCharge.toFixed(2)}</td>
-                        <td className="py-3 px-4 text-sm font-bold text-accent-brown">₹{transaction.amount.toFixed(2)}</td>
-                        <td className="py-3 px-4 text-sm text-text-secondary">{transaction.date}</td>
-                      </motion.tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="overflow-x-auto -mx-3 sm:mx-0">
+                <div className="inline-block min-w-full align-middle">
+                  <table className="min-w-full">
+                    <thead>
+                      <tr className="border-b border-border-primary">
+                        <th className="text-left py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold text-text-secondary">Order ID</th>
+                        <th className="text-left py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold text-text-secondary hidden sm:table-cell">Buyer</th>
+                        <th className="text-left py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold text-text-secondary">Commission</th>
+                        <th className="text-left py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold text-text-secondary hidden md:table-cell">Delivery</th>
+                        <th className="text-left py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold text-text-secondary">Total</th>
+                        <th className="text-left py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold text-text-secondary hidden lg:table-cell">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {transactions.map((transaction, index) => (
+                        <motion.tr
+                          key={transaction.id}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                          className="border-b border-border-primary hover:bg-background-secondary transition-colors"
+                        >
+                          <td className="py-2 sm:py-3 px-2 sm:px-4">
+                            <span className="font-mono text-xs sm:text-sm font-medium text-accent-brown">#{transaction.orderId}</span>
+                          </td>
+                          <td className="py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm text-text-primary hidden sm:table-cell">{transaction.buyerName}</td>
+                          <td className="py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold text-success">₹{transaction.commission.toFixed(2)}</td>
+                          <td className="py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold text-info hidden md:table-cell">₹{transaction.deliveryCharge.toFixed(2)}</td>
+                          <td className="py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-bold text-accent-brown">₹{transaction.amount.toFixed(2)}</td>
+                          <td className="py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm text-text-secondary hidden lg:table-cell">{transaction.date}</td>
+                        </motion.tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </Card>

@@ -379,19 +379,19 @@ exports.createBook = async (req, res) => {
           ? coverImage.trim()
           : "https://nnpdev.wustl.edu/img/BookCovers/genericBookCover.jpg";
 
-    // Handle ePub file upload if provided
+    // Handle book file upload if provided
     let epubFile = null;
     if (req.file) {
-      console.log('📚 ePub file received:', req.file.originalname);
-      console.log('📤 Uploading ePub to Cloudinary...');
-      const { uploadEpub } = require('../config/cloudinary');
-      const uploadResult = await uploadEpub(req.file.path, {
+      console.log('📚 Book file received:', req.file.originalname);
+      console.log('📤 Uploading file to Cloudinary...');
+      const { uploadBookFile } = require('../config/cloudinary');
+      const uploadResult = await uploadBookFile(req.file.path, {
         original_filename: req.file.originalname
       });
       epubFile = uploadResult.url;
-      console.log('✅ ePub uploaded successfully!');
+      console.log('✅ File uploaded successfully!');
       console.log('   URL:', epubFile);
-      
+
       // Clean up local file
       const fs = require('fs');
       fs.unlinkSync(req.file.path);
@@ -481,13 +481,13 @@ exports.getBookDetails = async (req, res) => {
 // @access  Private (Seller)
 exports.updateBook = async (req, res) => {
   try {
-    const { 
-      title, 
-      author, 
-      description, 
-      price, 
-      discountPrice, 
-      stock, 
+    const {
+      title,
+      author,
+      description,
+      price,
+      discountPrice,
+      stock,
       isAvailable,
       isbn,
       genre,
@@ -495,7 +495,7 @@ exports.updateBook = async (req, res) => {
       publicationYear,
       coverImage,
       discountPercentage,
-      resubmit 
+      resubmit
     } = req.body;
 
     const book = await Book.findOne({
@@ -514,18 +514,18 @@ exports.updateBook = async (req, res) => {
     const wasRejected = book.rejectionReason !== null && book.rejectionReason !== undefined;
     const isResubmission = resubmit === true || (wasRejected && !book.isApproved);
 
-    // Handle ePub file upload if provided
+    // Handle book file upload if provided
     if (req.file) {
-      console.log('📚 ePub file received:', req.file.originalname);
-      console.log('📤 Uploading ePub to Cloudinary...');
-      const { uploadEpub } = require('../config/cloudinary');
-      const uploadResult = await uploadEpub(req.file.path, {
+      console.log('📚 Book file received:', req.file.originalname);
+      console.log('📤 Uploading file to Cloudinary...');
+      const { uploadBookFile } = require('../config/cloudinary');
+      const uploadResult = await uploadBookFile(req.file.path, {
         original_filename: req.file.originalname
       });
       book.epubFile = uploadResult.url;
-      console.log('✅ ePub uploaded successfully!');
+      console.log('✅ File uploaded successfully!');
       console.log('   URL:', book.epubFile);
-      
+
       // Clean up local file
       const fs = require('fs');
       fs.unlinkSync(req.file.path);
@@ -539,7 +539,7 @@ exports.updateBook = async (req, res) => {
     book.discountPrice = discountPrice || (discountPercentage ? price * (1 - discountPercentage / 100) : price) || book.discountPrice;
     book.stock = stock !== undefined ? stock : book.stock;
     book.isAvailable = isAvailable !== undefined ? isAvailable : book.isAvailable;
-    
+
     // Update additional fields if provided
     if (isbn) book.isbn = isbn;
     if (genre) book.genres = Array.isArray(genre) ? genre : [genre];
@@ -559,8 +559,8 @@ exports.updateBook = async (req, res) => {
 
     res.json({
       success: true,
-      message: isResubmission 
-        ? "Book resubmitted successfully and is pending admin approval" 
+      message: isResubmission
+        ? "Book resubmitted successfully and is pending admin approval"
         : "Book updated successfully",
       data: { book, isResubmission },
     });
