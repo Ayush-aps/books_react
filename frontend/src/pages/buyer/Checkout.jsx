@@ -278,7 +278,7 @@ const Checkout = () => {
           </motion.div>
         ) : (
           <div className="grid lg:grid-cols-3 gap-8">
-            {/* Left Column - Address & Payment */}
+            {/* Left Column - Address & Payment Divs*/}
             <motion.div
               className="lg:col-span-2 space-y-6"
               variants={staggerContainer}
