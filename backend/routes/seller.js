@@ -13,10 +13,13 @@ const upload = multer({
   dest: 'uploads/',
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
   fileFilter: (req, file, cb) => {
-    if (file.mimetype === 'application/epub+zip' || file.originalname.endsWith('.epub')) {
+    if (file.mimetype === 'application/epub+zip' ||
+      file.mimetype === 'application/pdf' ||
+      file.originalname.endsWith('.epub') ||
+      file.originalname.endsWith('.pdf')) {
       cb(null, true);
     } else {
-      cb(new Error('Only .epub files are allowed'), false);
+      cb(new Error('Only .epub and .pdf files are allowed'), false);
     }
   }
 });

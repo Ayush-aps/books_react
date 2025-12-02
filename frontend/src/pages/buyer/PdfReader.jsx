@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
@@ -14,7 +14,9 @@ import {
   BookOpen,
   Scroll,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  List,
+  AlignLeft
 } from 'lucide-react';
 
 // Worker configuration for pdf.js (Using Unpkg for reliable CDN link)
@@ -53,6 +55,11 @@ const PdfReader = () => {
   const [selectedText, setSelectedText] = useState('');
   const [selectionMenu, setSelectionMenu] = useState({ show: false, x: 0, y: 0 });
   const [highlights, setHighlights] = useState([]);
+  const [showHighlightsSidebar, setShowHighlightsSidebar] = useState(false);
+  const [selectionRange, setSelectionRange] = useState(null);
+  
+  // Ref to store highlight application status to prevent infinite loop/re-application
+  const highlightsAppliedRef = useRef({});
 
   // Page Tracking States
   const [currentPage, setCurrentPage] = useState(1); // Page currently visible (for Scroll Mode)
@@ -64,6 +71,7 @@ const PdfReader = () => {
   // View mode: 'scroll' or 'page'
   const [viewMode, setViewMode] = useState('scroll');
   const [isPageTransitioning, setIsPageTransitioning] = useState(false);
+  const [isReady, setIsReady] = useState(false); // Track if initial restoration is done
 
   // Swipe detection for vertical scrolling
   const touchStartY = useRef(0);
@@ -73,12 +81,20 @@ const PdfReader = () => {
   useEffect(() => {
     if (bookId) {
       const savedHighlights = localStorage.getItem(`book_${bookId}_highlights`);
+      console.log('[Highlight Debug] Loading highlights for bookId:', bookId);
       const savedPage = localStorage.getItem(`book_${bookId}_lastPage`);
       const savedViewMode = localStorage.getItem(`book_${bookId}_viewMode`);
       const savedBookmark = localStorage.getItem(`book_${bookId}_manualBookmark`);
 
       if (savedHighlights) {
-        setHighlights(JSON.parse(savedHighlights));
+        // Ensure highlights is an array, fallback to empty array if parsing fails or result is null
+        try {
+          const parsedHighlights = JSON.parse(savedHighlights);
+          setHighlights(Array.isArray(parsedHighlights) ? parsedHighlights : []);
+        } catch (e) {
+          console.error("Failed to parse saved highlights:", e);
+          setHighlights([]);
+        }
       }
 
       // Initialize the tracking states from local storage
@@ -112,8 +128,10 @@ const PdfReader = () => {
     }
   }, [viewMode, bookId]);
 
+  // **CRUCIAL:** Save highlights immediately when the state changes.
   useEffect(() => {
     if (bookId && highlights.length >= 0) {
+      console.log('[Highlight Debug] Saving highlights to localStorage for bookId:', bookId);
       localStorage.setItem(`book_${bookId}_highlights`, JSON.stringify(highlights));
     }
   }, [highlights, bookId]);
@@ -185,22 +203,33 @@ const PdfReader = () => {
 
     // Priority: Manual Bookmark > Last Read Page > 1
     const targetPage = bookmarkedPage || lastReadPage;
+    let shouldScroll = false;
 
     if (targetPage > 1 && targetPage <= numPages) {
       // Set the page states to the persisted value
       setCurrentPage(targetPage);
       setPageNumber(targetPage);
+
+      // We only need to wait for scroll if we are in scroll mode
+      if (viewMode === 'scroll') {
+        shouldScroll = true;
+      }
     } else {
       // If no saved page or invalid page, ensure we start at 1
       setCurrentPage(1);
       setPageNumber(1);
     }
+
+    // If we don't need to scroll, we are ready immediately
+    if (!shouldScroll) {
+      setIsReady(true);
+    }
   };
 
-  // --- PERSISTENCE: INITIAL SCROLL HANDLER (THE FIX) ---
+  // --- PERSISTENCE: INITIAL SCROLL HANDLER ---
   useEffect(() => {
     // This runs after numPages is set and the PDF is rendered
-    if (numPages && containerRef.current) {
+    if (numPages && containerRef.current && !isReady) {
       const targetPage = bookmarkedPage || lastReadPage;
 
       // Only scroll if we are in 'scroll' mode AND the target page is not the first page.
@@ -216,11 +245,32 @@ const PdfReader = () => {
               top: targetElement.offsetTop - 70, // Offset by header height
               behavior: 'instant'
             });
+            setIsReady(true);
           }, 300);
+        } else {
+          // Fallback if element not found, try again in 100ms or give up
+          setTimeout(() => {
+            setIsReady(true);
+          }, 500);
         }
+      } else {
+        // If not scrolling, mark as ready immediately
+        setTimeout(() => {
+          setIsReady(true);
+        }, 300);
       }
     }
-  }, [numPages, viewMode, lastReadPage, bookmarkedPage]);
+  }, [numPages, viewMode, lastReadPage, bookmarkedPage, isReady]);
+
+  // Failsafe: Ensure we don't get stuck on the loading screen
+  useEffect(() => {
+    if (!isReady) {
+      const timeout = setTimeout(() => {
+        setIsReady(true);
+      }, 3000); // 3 second max wait time for restoration
+      return () => clearTimeout(timeout);
+    }
+  }, [isReady]);
 
   // Zoom functions
   const zoomIn = () => {
@@ -289,6 +339,8 @@ const PdfReader = () => {
         setPageNumber(prev => prev + 1);
         setCurrentPage(prev => prev + 1);
         setIsPageTransitioning(false);
+        // Important: Reset applied highlight state for new page
+        highlightsAppliedRef.current[pageNumber + 1] = false;
       }, 150);
     }
   };
@@ -300,6 +352,8 @@ const PdfReader = () => {
         setPageNumber(prev => prev - 1);
         setCurrentPage(prev => prev - 1);
         setIsPageTransitioning(false);
+        // Important: Reset applied highlight state for new page
+        highlightsAppliedRef.current[pageNumber - 1] = false;
       }, 150);
     }
   };
@@ -346,38 +400,73 @@ const PdfReader = () => {
     }
   };
 
-  // Handle text selection
-  const handleTextSelection = () => {
+  // Handle text selection - wrapped in useCallback to prevent recreation
+  const handleTextSelection = useCallback(() => {
+    console.log('[Highlight Debug] handleTextSelection called');
     const selection = window.getSelection();
     const text = selection.toString().trim();
 
-    // If selection menu is already visible, clear selection on subsequent click
+    // Clear selection menu if text is empty and menu is open
     if (!text && selectionMenu.show) {
       setSelectionMenu({ show: false, x: 0, y: 0, isHighlighted: false });
+      setSelectionRange(null);
       return;
     }
 
-    if (text.length > 0) {
+    if (text.length > 0 && selection.rangeCount > 0) {
       setSelectedText(text);
 
-      // Get selection position
+      // Get selection range and position
       const range = selection.getRangeAt(0);
       const rect = range.getBoundingClientRect();
+      
+      // Check if selection is within the PDF container
+      const containerRect = containerRef.current.getBoundingClientRect();
+      if (rect.bottom < containerRect.top || rect.top > containerRect.bottom) {
+          // Selection is outside of the visible PDF area, ignore it
+          setSelectionMenu({ show: false, x: 0, y: 0, isHighlighted: false });
+          setSelectionRange(null);
+          return;
+      }
 
-      // Check if this text is already highlighted
-      const isHighlighted = highlights.some(h => h.text === text);
+      // Store the range for precise highlighting
+      setSelectionRange({
+        startContainer: range.startContainer,
+        startOffset: range.startOffset,
+        endContainer: range.endContainer,
+        endOffset: range.endOffset,
+        // Store bounding box relative to the viewport
+        boundingRect: {
+          top: rect.top,
+          left: rect.left,
+          width: rect.width,
+          height: rect.height
+        }
+      });
+
+      // Normalize text for comparison
+      const normalizedText = text.trim().replace(/\s+/g, ' ');
+
+      // Check if this text is already highlighted (with normalized comparison)
+      const isHighlighted = highlights.some(h => {
+        const normalizedHighlight = h.text.trim().replace(/\s+/g, ' ');
+        // Only check highlights on the current page for faster lookups
+        return h.page === currentPage && normalizedHighlight === normalizedText;
+      });
 
       // Position menu near selection
       setSelectionMenu({
         show: true,
         x: rect.left + rect.width / 2,
-        y: rect.top - 10,
+        // Adjust menu position to be above the selection
+        y: rect.top - 10, 
         isHighlighted
       });
     } else {
       setSelectionMenu({ show: false, x: 0, y: 0, isHighlighted: false });
+      setSelectionRange(null);
     }
-  };
+  }, [highlights, selectionMenu.show, currentPage]);
 
   // Search word meaning on Google
   const searchMeaning = () => {
@@ -391,22 +480,87 @@ const PdfReader = () => {
 
   // Highlight selected text
   const highlightText = () => {
-    if (selectedText) {
+    console.log('[Highlight Debug] highlightText called with selectedText:', selectedText);
+    if (selectedText && selectionRange) {
+      // Find the text layer for the current page
+      const textLayer = document.querySelector(`#page_${currentPage} .react-pdf__Page__textContent`);
+      if (!textLayer) {
+        console.error('[Highlight Debug] Text layer not found');
+        return;
+      }
+
+      // **CRITICAL FIX**: Calculate character offsets relative to the entire text layer content
+      let fullText = '';
+      const textSpans = textLayer.querySelectorAll('span');
+      let startOffset = -1;
+      let endOffset = -1;
+      let foundStartContainer = false;
+
+      // Iterate through all spans to rebuild the full text and find the offsets
+      for (let i = 0; i < textSpans.length; i++) {
+          const span = textSpans[i];
+          const spanText = span.textContent;
+
+          // Find start offset
+          if (!foundStartContainer && span.contains(selectionRange.startContainer)) {
+              startOffset = fullText.length + selectionRange.startOffset;
+              foundStartContainer = true;
+          }
+
+          // Find end offset
+          if (span.contains(selectionRange.endContainer)) {
+              // We need to check if the endContainer is the same as startContainer but a different offset,
+              // or if it's a new container. We must break *after* calculating the end offset.
+              endOffset = fullText.length + selectionRange.endOffset;
+              break; 
+          }
+
+          fullText += spanText;
+      }
+
+      // Fallback check to ensure the end offset is correct if selection spans multiple elements
+      if (startOffset !== -1 && endOffset === -1) {
+          endOffset = startOffset + selectedText.length;
+          // This fallback is extremely unreliable but serves as a last resort if the DOM traversal failed.
+      }
+
+
       const newHighlight = {
         text: selectedText,
         id: Date.now(),
         page: currentPage,
-        color: 'rgba(147, 197, 253, 0.3)' // Light blue with 30% opacity
+        color: 'rgba(255, 248, 220, 0.6)',
+        position: {
+          startOffset,
+          endOffset,
+          // We don't strictly need to save boundingRect for persistence, 
+          // but we keep it for debugging or if we later implement DOM re-rendering based on coordinates.
+          boundingRect: selectionRange.boundingRect 
+        }
       };
+      
+      // Reset the application status for the current page to force re-render
+      highlightsAppliedRef.current[currentPage] = false;
 
       setHighlights(prev => [...prev, newHighlight]);
       setSelectionMenu({ show: false, x: 0, y: 0, isHighlighted: false });
-      window.getSelection().removeAllRanges(); // Clear browser selection
+      setSelectionRange(null);
+      window.getSelection().removeAllRanges();
+      console.log('[Highlight Debug] Highlight created and saved successfully');
+    } else {
+      console.log('[Highlight Debug] No selected text or range to highlight');
     }
   };
 
   // Remove highlight
   const removeHighlight = (highlightId) => {
+    // Reset the application status for *all* pages to clear the highlight
+    highlights.forEach(h => {
+        if (h.id === highlightId) {
+            highlightsAppliedRef.current[h.page] = false;
+        }
+    });
+
     setHighlights(prev => prev.filter(h => h.id !== highlightId));
     setSelectionMenu({ show: false, x: 0, y: 0, isHighlighted: false });
     window.getSelection().removeAllRanges();
@@ -415,15 +569,132 @@ const PdfReader = () => {
   // Remove selected highlight
   const removeSelectedHighlight = () => {
     if (selectedText) {
-      const highlight = highlights.find(h => h.text === selectedText);
+      const normalizedSelected = selectedText.trim().replace(/\s+/g, ' ');
+      // Find the highlight on the current page that matches the selected text
+      const highlight = highlights.find(h => {
+        const normalizedHighlight = h.text.trim().replace(/\s+/g, ' ');
+        return h.page === currentPage && normalizedHighlight === normalizedSelected;
+      });
       if (highlight) {
         removeHighlight(highlight.id);
       }
     }
   };
 
+  // --- APPLY HIGHLIGHTS TO DOM (FIXED VERSION FOR PERSISTENCE) ---
+  useEffect(() => {
+    if (numPages === null || highlights.length === 0) return;
+
+    // Apply highlights with a short delay to ensure text layer is rendered
+    const timer = setTimeout(() => {
+      const textLayers = document.querySelectorAll('.react-pdf__Page__textContent');
+      
+      if (textLayers.length === 0) {
+        // Retry if no text layers are found yet
+        return;
+      }
+
+      textLayers.forEach((textLayer, pageIndex) => {
+        const pageNum = pageIndex + 1;
+
+        // Skip re-application if highlights were already applied for this page in this render cycle
+        if (highlightsAppliedRef.current[pageNum]) {
+            return;
+        }
+
+        const pageHighlights = highlights.filter(h => h.page === pageNum);
+
+        // **CRITICAL:** Always clear existing background colors before applying new ones
+        const textSpans = textLayer.querySelectorAll('span');
+        textSpans.forEach(span => {
+          span.style.backgroundColor = '';
+        });
+
+        if (pageHighlights.length === 0) {
+            highlightsAppliedRef.current[pageNum] = true;
+            return; // No highlights for this page
+        }
+
+        // Build a character-level map of the text
+        let fullText = '';
+        const charToSpanMap = [];
+
+        textSpans.forEach((span) => {
+          const text = span.textContent;
+          for (let i = 0; i < text.length; i++) {
+            charToSpanMap.push({
+              span,
+              char: text[i],
+              charIndex: fullText.length + i
+            });
+          }
+          fullText += text;
+        });
+
+        // Apply each highlight using stored offsets
+        pageHighlights.forEach(highlight => {
+          const { position } = highlight;
+
+          if (position && typeof position.startOffset === 'number' && typeof position.endOffset === 'number') {
+            const startIdx = position.startOffset;
+            const endIdx = position.endOffset;
+            const spansToHighlight = new Set();
+
+            // Find all spans within the offset range
+            for (let i = startIdx; i < endIdx && i < charToSpanMap.length; i++) {
+              if (charToSpanMap[i]) {
+                spansToHighlight.add(charToSpanMap[i].span);
+              }
+            }
+
+            // Apply highlight color
+            spansToHighlight.forEach(span => {
+              span.style.backgroundColor = highlight.color || 'rgba(255, 248, 220, 0.6)';
+              span.style.transition = 'background-color 0.2s';
+            });
+            
+          } 
+          // NOTE: Removed fallback to text matching as it's unreliable and should be fixed with offsets.
+        });
+        
+        // Mark this page as applied only after processing all its highlights
+        highlightsAppliedRef.current[pageNum] = true;
+      });
+    }, 100); // Reduced timeout to apply highlights faster
+
+    return () => clearTimeout(timer);
+  }, [highlights, numPages, rotation, scale, isReady, viewMode]); 
+  // Dependency array includes everything that changes the DOM size/position
+
+  // Navigate to highlight
+  const navigateToHighlight = (highlight) => {
+    // Switch to the correct page
+    if (viewMode === 'scroll') {
+      // In scroll mode, we need to scroll to the page
+      const targetElement = document.getElementById(`page_${highlight.page}`);
+      if (targetElement) {
+        targetElement.scrollIntoView({ behavior: 'smooth' });
+        setCurrentPage(highlight.page);
+      } else {
+        // If element not found (maybe not rendered yet?), just set page
+        setCurrentPage(highlight.page);
+      }
+    } else {
+      // In page mode, just set the page number
+      setPageNumber(highlight.page);
+      setCurrentPage(highlight.page);
+      // Reset applied flag for the new page
+      highlightsAppliedRef.current[highlight.page] = false;
+    }
+    
+    if (window.innerWidth < 640) {
+      setShowHighlightsSidebar(false);
+    }
+  };
+
   // Listen for text selection
   useEffect(() => {
+    // Event listeners are set up for mouseup and touchend, which is correct for selection.
     document.addEventListener('mouseup', handleTextSelection);
     document.addEventListener('touchend', handleTextSelection);
 
@@ -431,7 +702,7 @@ const PdfReader = () => {
       document.removeEventListener('mouseup', handleTextSelection);
       document.removeEventListener('touchend', handleTextSelection);
     };
-  }, [highlights, currentPage, viewMode]);
+  }, [handleTextSelection]);
 
   // Auto-hide controls on mouse inactivity
   const resetControlsTimeout = () => {
@@ -505,7 +776,7 @@ const PdfReader = () => {
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [selectionMenu.show, viewMode, pageNumber, numPages]);
+  }, [selectionMenu.show, viewMode, pageNumber, numPages, goToPrevPage, goToNextPage]);
 
   if (loading) {
     return (
@@ -524,23 +795,49 @@ const PdfReader = () => {
   }
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+    <div className="fixed inset-0 z-50 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       {/* Header Controls - Auto-hide - Responsive */}
       <div
         className={`fixed top-0 left-0 right-0 z-50 bg-gray-800/95 backdrop-blur-sm border-b border-gray-700 shadow-lg transition-transform duration-300 ${showControls ? 'translate-y-0' : '-translate-y-full'
           }`}
       >
+        {/* Initial Restoration Loading Overlay */}
+        {!isReady && (
+          <div className="absolute inset-0 z-[60] flex flex-col items-center justify-center bg-gray-900 text-white">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+            <p className="text-lg font-medium mb-4">Restoring your place...</p>
+            {/* Manual Dismiss Button (appears after delay via CSS animation or just always visible as fallback) */}
+            <button
+              onClick={() => setIsReady(true)}
+              className="text-sm text-gray-400 hover:text-white underline"
+            >
+              Skip
+            </button>
+          </div>
+        )}
         <div className="w-full px-2 sm:px-4 py-2 sm:py-3">
           <div className="flex items-center justify-between gap-2 sm:gap-4">
-            {/* Left Section - Close Button */}
-            <button
-              onClick={closeReader}
-              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-all duration-200 hover:shadow-lg text-sm sm:text-base"
-              title="Close (Esc)"
-            >
-              <X size={18} className="sm:w-5 sm:h-5" />
-              <span className="hidden sm:inline">Close</span>
-            </button>
+            {/* Left Section - Close Button & Sidebar Toggle */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={closeReader}
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-all duration-200 hover:shadow-lg text-sm sm:text-base"
+                title="Close (Esc)"
+              >
+                <X size={18} className="sm:w-5 sm:h-5" />
+                <span className="hidden sm:inline">Close</span>
+              </button>
+
+              <button
+                onClick={() => setShowHighlightsSidebar(!showHighlightsSidebar)}
+                className={`p-2 rounded-lg transition-all duration-200 ${showHighlightsSidebar
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-700 hover:bg-gray-600 text-gray-300'}`}
+                title="Toggle Highlights"
+              >
+                <List size={20} />
+              </button>
+            </div>
 
             {/* Center Section - Page Info */}
             <div className="flex items-center gap-2 bg-gray-700/50 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg">
@@ -612,6 +909,69 @@ const PdfReader = () => {
                 )}
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Highlights Sidebar */}
+      <div
+        className={`fixed top-[60px] right-0 bottom-0 w-80 bg-gray-800 border-l border-gray-700 shadow-2xl transform transition-transform duration-300 z-40 ${showHighlightsSidebar ? 'translate-x-0' : 'translate-x-full'
+          }`}
+      >
+        <div className="p-4 h-full flex flex-col">
+          <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-700">
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <AlignLeft size={20} />
+              Highlights
+            </h3>
+            <span className="text-xs text-gray-400 bg-gray-700 px-2 py-1 rounded-full">
+              {highlights.length}
+            </span>
+          </div>
+
+          <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar">
+            {highlights.length === 0 ? (
+              <div className="text-center text-gray-500 mt-10">
+                <p>No highlights yet.</p>
+                <p className="text-sm mt-2">Select text to add highlights.</p>
+              </div>
+            ) : (
+              highlights.map((highlight) => (
+                <div
+                  key={highlight.id}
+                  className="bg-gray-700/50 rounded-lg p-3 hover:bg-gray-700 transition-colors group"
+                >
+                  <div
+                    onClick={() => navigateToHighlight(highlight)}
+                    className="cursor-pointer"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-xs text-blue-400 font-medium">
+                        Page {highlight.page}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {new Date(highlight.id).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-300 line-clamp-3 border-l-2 border-blue-500 pl-2">
+                      "{highlight.text}"
+                    </p>
+                  </div>
+                  <div className="mt-2 flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeHighlight(highlight.id);
+                      }}
+                      className="text-gray-500 hover:text-red-400 p-1 rounded hover:bg-gray-600"
+                      title="Delete highlight"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
@@ -688,6 +1048,7 @@ const PdfReader = () => {
                   <div className="text-red-600 text-base sm:text-lg">Failed to load PDF. Please try again.</div>
                 </div>
               }
+              onLoadError={() => setIsReady(true)}
             >
               {/* Render all pages for continuous scrolling */}
               {numPages && Array.from(new Array(numPages), (el, index) => (
@@ -725,6 +1086,7 @@ const PdfReader = () => {
                   <div className="text-red-600 text-base sm:text-lg">Failed to load PDF. Please try again.</div>
                 </div>
               }
+              onLoadError={() => setIsReady(true)}
             >
               {/* Render single page */}
               <div

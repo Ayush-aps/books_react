@@ -799,6 +799,60 @@ const UploadBook = () => {
                     placeholder="Provide a detailed description of the book..."
                   />
 
+                  {/* Book File Upload */}
+                  <div className="space-y-2">
+                    <label className="body-sm font-semibold text-charcoal">
+                      Upload Book File (PDF or EPUB)
+                    </label>
+                    <div className="flex items-center justify-center w-full">
+                      <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-taupe/30 border-dashed rounded-lg cursor-pointer bg-taupe/5 hover:bg-taupe/10 transition-colors">
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                          <svg className="w-8 h-8 mb-4 text-charcoal/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                          </svg>
+                          <p className="mb-2 text-sm text-charcoal/70">
+                            <span className="font-semibold">Click to upload</span> or drag and drop
+                          </p>
+                          <p className="text-xs text-charcoal/50">EPUB or PDF (MAX. 50MB)</p>
+                        </div>
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept=".epub,.pdf,application/epub+zip,application/pdf"
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              if (file.size > 50 * 1024 * 1024) {
+                                setError('File size must be less than 50MB');
+                                e.target.value = null;
+                                return;
+                              }
+                              setEpubFile(file);
+                              setError(null);
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
+                    {epubFile && (
+                      <div className="flex items-center gap-2 p-2 bg-green/10 rounded text-sm text-green">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="truncate">{epubFile.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => setEpubFile(null)}
+                          className="ml-auto text-charcoal/50 hover:text-red-500"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="space-y-4">
                     <Input
                       type="url"
