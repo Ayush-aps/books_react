@@ -288,7 +288,23 @@ export const complaintCommentSchema = z.object({
   message: z.string()
     .min(1, "Comment cannot be empty")
     .max(1000, "Comment cannot exceed 1000 characters")
-    .trim(),
+    .trim()
+    .refine(
+      (val) => /[a-zA-Z]/.test(val),
+      { message: "Comment must contain at least one alphabetic character" }
+    )
+    .refine(
+      (val) => !/^\d+$/.test(val),
+      { message: "Comment cannot contain only numbers" }
+    )
+    .refine(
+      (val) => !/^[^a-zA-Z0-9\s]+$/.test(val),
+      { message: "Comment cannot contain only special characters" }
+    )
+    .refine(
+      (val) => !/^[\d\s!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]+$/.test(val),
+      { message: "Comment must contain at least one alphabetic character" }
+    ),
 });
 
 export const complaintResolutionSchema = z.object({
@@ -298,14 +314,46 @@ export const complaintResolutionSchema = z.object({
   details: z.string()
     .min(10, "Please provide detailed resolution information")
     .max(1000, "Details cannot exceed 1000 characters")
-    .trim(),
+    .trim()
+    .refine(
+      (val) => /[a-zA-Z]/.test(val),
+      { message: "Details must contain at least one alphabetic character" }
+    )
+    .refine(
+      (val) => !/^\d+$/.test(val),
+      { message: "Details cannot contain only numbers" }
+    )
+    .refine(
+      (val) => !/^[^a-zA-Z0-9\s]+$/.test(val),
+      { message: "Details cannot contain only special characters" }
+    )
+    .refine(
+      (val) => !/^[\d\s!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]+$/.test(val),
+      { message: "Details must contain at least one alphabetic character" }
+    ),
 });
 
 export const bookRejectionSchema = z.object({
   reason: z.string()
     .min(10, "Please provide a detailed reason (minimum 10 characters)")
     .max(500, "Reason cannot exceed 500 characters")
-    .trim(),
+    .trim()
+    .refine(
+      (val) => /[a-zA-Z]/.test(val),
+      { message: "Reason must contain at least one alphabetic character" }
+    )
+    .refine(
+      (val) => !/^\d+$/.test(val),
+      { message: "Reason cannot contain only numbers" }
+    )
+    .refine(
+      (val) => !/^[^a-zA-Z0-9\s]+$/.test(val),
+      { message: "Reason cannot contain only special characters" }
+    )
+    .refine(
+      (val) => !/^[\d\s!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]+$/.test(val),
+      { message: "Reason must contain at least one alphabetic character" }
+    ),
 });
 
 // --- BUYER FORM SCHEMAS ---
@@ -362,12 +410,44 @@ export const complaintSchema = z.object({
   subject: z.string()
     .min(5, 'Subject must be at least 5 characters')
     .max(100, 'Subject cannot exceed 100 characters')
-    .trim(),
+    .trim()
+    .refine(
+      (val) => /[a-zA-Z]/.test(val),
+      { message: "Subject must contain at least one alphabetic character" }
+    )
+    .refine(
+      (val) => !/^\d+$/.test(val),
+      { message: "Subject cannot contain only numbers" }
+    )
+    .refine(
+      (val) => !/^[^a-zA-Z0-9\s]+$/.test(val),
+      { message: "Subject cannot contain only special characters" }
+    )
+    .refine(
+      (val) => !/^[\d\s!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]+$/.test(val),
+      { message: "Subject must contain at least one alphabetic character" }
+    ),
   category: requiredString('Category'),
   description: z.string()
     .min(20, 'Please provide a detailed description (minimum 20 characters)')
     .max(2000, 'Description cannot exceed 2000 characters')
-    .trim(),
+    .trim()
+    .refine(
+      (val) => /[a-zA-Z]/.test(val),
+      { message: "Description must contain at least one alphabetic character" }
+    )
+    .refine(
+      (val) => !/^\d+$/.test(val),
+      { message: "Description cannot contain only numbers" }
+    )
+    .refine(
+      (val) => !/^[^a-zA-Z0-9\s]+$/.test(val),
+      { message: "Description cannot contain only special characters" }
+    )
+    .refine(
+      (val) => !/^[\d\s!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]+$/.test(val),
+      { message: "Description must contain at least one alphabetic character" }
+    ),
   orderId: z.string().optional().or(z.literal('')),
   bookId: z.string().optional().or(z.literal('')),
 });
@@ -384,9 +464,87 @@ export const contactSchema = z.object({
   subject: z.string()
     .min(5, 'Subject must be at least 5 characters')
     .max(100, 'Subject cannot exceed 100 characters')
-    .trim(),
+    .trim()
+    .refine(
+      (val) => /[a-zA-Z]/.test(val),
+      { message: "Subject must contain at least one alphabetic character" }
+    )
+    .refine(
+      (val) => !/^\d+$/.test(val),
+      { message: "Subject cannot contain only numbers" }
+    )
+    .refine(
+      (val) => !/^[^a-zA-Z0-9\s]+$/.test(val),
+      { message: "Subject cannot contain only special characters" }
+    )
+    .refine(
+      (val) => !/^[\d\s!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]+$/.test(val),
+      { message: "Subject must contain at least one alphabetic character" }
+    ),
   message: z.string()
     .min(20, 'Message must be at least 20 characters')
     .max(2000, 'Message cannot exceed 2000 characters')
-    .trim(),
+    .trim()
+    .refine(
+      (val) => /[a-zA-Z]/.test(val),
+      { message: "Message must contain at least one alphabetic character" }
+    )
+    .refine(
+      (val) => !/^\d+$/.test(val),
+      { message: "Message cannot contain only numbers" }
+    )
+    .refine(
+      (val) => !/^[^a-zA-Z0-9\s]+$/.test(val),
+      { message: "Message cannot contain only special characters" }
+    )
+    .refine(
+      (val) => !/^[\d\s!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]+$/.test(val),
+      { message: "Message must contain at least one alphabetic character" }
+    ),
 });
+
+// --- PROFILE UPDATE SCHEMA ---
+
+export const profileUpdateSchema = z.object({
+  name: nameSchema,
+  email: emailSchema,
+  phone: z.string()
+    .regex(PHONE_REGEX, 'Phone number must be exactly 10 digits starting with 6-9')
+    .trim()
+    .optional()
+    .or(z.literal('')),
+  currentPassword: z.string().optional().or(z.literal('')),
+  newPassword: z.string().optional().or(z.literal('')),
+  confirmPassword: z.string().optional().or(z.literal('')),
+})
+  .refine((data) => {
+    // If any password field is filled, all must be filled
+    const hasAnyPassword = data.currentPassword || data.newPassword || data.confirmPassword;
+    if (hasAnyPassword) {
+      return data.currentPassword && data.newPassword && data.confirmPassword;
+    }
+    return true;
+  }, {
+    message: 'Please fill all password fields',
+    path: ['currentPassword'],
+  })
+  .refine((data) => {
+    // If changing password, new passwords must match
+    if (data.newPassword || data.confirmPassword) {
+      return data.newPassword === data.confirmPassword;
+    }
+    return true;
+  }, {
+    message: 'New passwords do not match',
+    path: ['confirmPassword'],
+  })
+  .refine((data) => {
+    // If changing password, validate new password strength
+    if (data.newPassword) {
+      return data.newPassword.length >= 8;
+    }
+    return true;
+  }, {
+    message: 'New password must be at least 8 characters',
+    path: ['newPassword'],
+  });

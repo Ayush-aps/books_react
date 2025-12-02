@@ -6,8 +6,11 @@
 import { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { fetchSubscriptionStatus } from '../../redux/actions/subscriptionActions';
 import { checkAuth } from '../../redux/actions/authActions';
+import { profileUpdateSchema } from '../../schemas/allFormSchemas';
 import api from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
@@ -37,13 +40,18 @@ const Profile = () => {
   const [editLoading, setEditLoading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [avatarFile, setAvatarFile] = useState(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
+  
+  // React Hook Form
+  const { register, handleSubmit, formState: { errors }, setValue, reset } = useForm({
+    resolver: zodResolver(profileUpdateSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      phone: '',
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    }
   });
 
   useEffect(() => {
@@ -53,16 +61,11 @@ const Profile = () => {
   useEffect(() => {
     // Initialize form data when user data is available
     if (user) {
-      setFormData({
-        name: user.name || '',
-        email: user.email || '',
-        phone: user.phone || '',
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      });
+      setValue('name', user.name || '');
+      setValue('email', user.email || '');
+      setValue('phone', user.phone || '');
     }
-  }, [user]);
+  }, [user, setValue]);
 
   const fetchData = async () => {
     try {
@@ -81,13 +84,6 @@ const Profile = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
   };
 
   const handleEditProfile = () => {
@@ -110,51 +106,27 @@ const Profile = () => {
     setShowEditModal(false);
     setAvatarPreview(null);
     setAvatarFile(null);
-    // Reset password fields
-    setFormData({
-      ...formData,
+    // Reset form
+    reset({
+      name: user?.name || '',
+      email: user?.email || '',
+      phone: user?.phone || '',
       currentPassword: '',
       newPassword: '',
       confirmPassword: ''
     });
   };
 
-  const handleSubmitProfile = async (e) => {
-    e.preventDefault();
-    
-    // Validate passwords if changing
-    if (formData.newPassword || formData.confirmPassword) {
-      if (!formData.currentPassword) {
-        setToastMessage('Please enter your current password');
-        setToastType('error');
-        setShowToast(true);
-        return;
-      }
-      
-      if (formData.newPassword !== formData.confirmPassword) {
-        setToastMessage('New passwords do not match');
-        setToastType('error');
-        setShowToast(true);
-        return;
-      }
-      
-      if (formData.newPassword.length < 6) {
-        setToastMessage('New password must be at least 6 characters');
-        setToastType('error');
-        setShowToast(true);
-        return;
-      }
-    }
-
+  const handleSubmitProfile = async (data) => {
     try {
       setEditLoading(true);
       
       // Use FormData to support file upload
       const formDataToSend = new FormData();
-      formDataToSend.append('name', formData.name);
-      formDataToSend.append('email', formData.email);
-      if (formData.phone) {
-        formDataToSend.append('phone', formData.phone);
+      formDataToSend.append('name', data.name);
+      formDataToSend.append('email', data.email);
+      if (data.phone) {
+        formDataToSend.append('phone', data.phone);
       }
 
       // Add avatar if selected
@@ -163,10 +135,10 @@ const Profile = () => {
       }
 
       // Only include password fields if user is changing password AND they're not empty
-      if (formData.currentPassword && formData.currentPassword.trim() !== '' && 
-          formData.newPassword && formData.newPassword.trim() !== '') {
-        formDataToSend.append('currentPassword', formData.currentPassword);
-        formDataToSend.append('newPassword', formData.newPassword);
+      if (data.currentPassword && data.currentPassword.trim() !== '' && 
+          data.newPassword && data.newPassword.trim() !== '') {
+        formDataToSend.append('currentPassword', data.currentPassword);
+        formDataToSend.append('newPassword', data.newPassword);
       }
 
       const response = await api.put('/buyer/profile', formDataToSend, {
@@ -187,8 +159,10 @@ const Profile = () => {
         // Reset fields
         setAvatarPreview(null);
         setAvatarFile(null);
-        setFormData({
-          ...formData,
+        reset({
+          name: response.data.data.user.name,
+          email: response.data.data.user.email,
+          phone: response.data.data.user.phone || '',
           currentPassword: '',
           newPassword: '',
           confirmPassword: ''
@@ -559,7 +533,7 @@ const Profile = () => {
         title="Edit Profile"
         size="lg"
       >
-        <form onSubmit={handleSubmitProfile} className="space-y-6">
+        <form onSubmit={handleSubmit(handleSubmitProfile)} className="space-y-6">
           {/* Personal Information */}
           <div className="space-y-4">
             <h3 className="heading-5 text-charcoal">Personal Information</h3>
@@ -620,36 +594,37 @@ const Profile = () => {
               <label className="form-label">Full Name</label>
               <input
                 type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                className="form-control"
-                required
+                {...register('name')}
+                className={`form-control ${errors.name ? 'border-red-500' : ''}`}
               />
+              {errors.name && (
+                <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
+              )}
             </div>
 
             <div>
               <label className="form-label">Email</label>
               <input
                 type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                className="form-control"
-                required
+                {...register('email')}
+                className={`form-control ${errors.email ? 'border-red-500' : ''}`}
               />
+              {errors.email && (
+                <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+              )}
             </div>
 
             <div>
               <label className="form-label">Phone</label>
               <input
                 type="tel"
-                name="phone"
-                value={formData.phone}
-                onChange={handleInputChange}
-                className="form-control"
-                placeholder="Optional"
+                {...register('phone')}
+                className={`form-control ${errors.phone ? 'border-red-500' : ''}`}
+                placeholder="10-digit mobile number (optional)"
               />
+              {errors.phone && (
+                <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>
+              )}
             </div>
           </div>
 
@@ -662,36 +637,39 @@ const Profile = () => {
               <label className="form-label">Current Password</label>
               <input
                 type="password"
-                name="currentPassword"
-                value={formData.currentPassword}
-                onChange={handleInputChange}
-                className="form-control"
+                {...register('currentPassword')}
+                className={`form-control ${errors.currentPassword ? 'border-red-500' : ''}`}
                 placeholder="Enter current password"
               />
+              {errors.currentPassword && (
+                <p className="text-red-500 text-sm mt-1">{errors.currentPassword.message}</p>
+              )}
             </div>
 
             <div>
               <label className="form-label">New Password</label>
               <input
                 type="password"
-                name="newPassword"
-                value={formData.newPassword}
-                onChange={handleInputChange}
-                className="form-control"
-                placeholder="Enter new password (min 6 characters)"
+                {...register('newPassword')}
+                className={`form-control ${errors.newPassword ? 'border-red-500' : ''}`}
+                placeholder="Enter new password (min 8 characters)"
               />
+              {errors.newPassword && (
+                <p className="text-red-500 text-sm mt-1">{errors.newPassword.message}</p>
+              )}
             </div>
 
             <div>
               <label className="form-label">Confirm New Password</label>
               <input
                 type="password"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleInputChange}
-                className="form-control"
+                {...register('confirmPassword')}
+                className={`form-control ${errors.confirmPassword ? 'border-red-500' : ''}`}
                 placeholder="Confirm new password"
               />
+              {errors.confirmPassword && (
+                <p className="text-red-500 text-sm mt-1">{errors.confirmPassword.message}</p>
+              )}
             </div>
           </div>
 

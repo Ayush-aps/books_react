@@ -475,11 +475,11 @@ const BookDetails = () => {
                   </div>
                   <div>
                     <h4 className="text-sm font-medium text-text-tertiary mb-1">Publication Year</h4>
-                    <p className="text-text-primary">{book.publicationYear || 'N/A'}</p>
+                    <p className="text-text-primary">{book.publishedDate ? new Date(book.publishedDate).getFullYear() : 'N/A'}</p>
                   </div>
                   <div>
                     <h4 className="text-sm font-medium text-text-tertiary mb-1">Seller</h4>
-                    <p className="text-text-primary">{book.sellerId?.name || 'Unknown Seller'}</p>
+                    <p className="text-text-primary">{book.seller?.name || 'Unknown Seller'}</p>
                   </div>
                 </motion.div>
               )}

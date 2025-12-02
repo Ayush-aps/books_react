@@ -113,6 +113,33 @@ const ReviewForm = ({ bookId, onReviewSubmit, onCancel }) => {
       return;
     }
 
+    // Validate review text if provided
+    if (reviewText && reviewText.trim().length > 0) {
+      // Must contain at least one alphabetic character
+      if (!/[a-zA-Z]/.test(reviewText)) {
+        setError('Review must contain at least one alphabetic character');
+        return;
+      }
+
+      // Cannot be only numbers
+      if (/^\d+$/.test(reviewText.trim())) {
+        setError('Review cannot contain only numbers');
+        return;
+      }
+
+      // Cannot be only special characters
+      if (/^[^a-zA-Z0-9\s]+$/.test(reviewText.trim())) {
+        setError('Review cannot contain only special characters');
+        return;
+      }
+
+      // Cannot be only numbers and special characters (no alphabets)
+      if (/^[\d\s!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]+$/.test(reviewText.trim())) {
+        setError('Review must contain at least one alphabetic character');
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     setUploadProgress(0);
 
