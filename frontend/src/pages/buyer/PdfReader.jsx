@@ -61,6 +61,9 @@ const PdfReader = () => {
   // Ref to store highlight application status to prevent infinite loop/re-application
   const highlightsAppliedRef = useRef({});
 
+  // Ref to track blob URL for proper cleanup
+  const blobUrlRef = useRef(null);
+
   // Page Tracking States
   const [currentPage, setCurrentPage] = useState(1); // Page currently visible (for Scroll Mode)
   const [pageNumber, setPageNumber] = useState(1); // Page currently displayed (for Page Mode)
@@ -224,6 +227,9 @@ const PdfReader = () => {
         const objectUrl = URL.createObjectURL(blob);
 
         console.log('[PDF Reader] PDF loaded successfully as blob');
+
+        // Store in ref for cleanup
+        blobUrlRef.current = objectUrl;
         setPdfUrl(objectUrl);
         setLoading(false);
 
@@ -241,17 +247,26 @@ const PdfReader = () => {
       setLoading(false);
     }
 
-    // Cleanup: Revoke object URL when component unmounts
+    // Cleanup: Revoke object URL when component unmounts or bookId changes
     return () => {
-      if (pdfUrl && pdfUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(pdfUrl);
+      // Use ref to get the current blob URL for cleanup
+      if (blobUrlRef.current && blobUrlRef.current.startsWith('blob:')) {
+        console.log('[PDF Reader] Revoking blob URL on cleanup');
+        URL.revokeObjectURL(blobUrlRef.current);
+        blobUrlRef.current = null;
       }
     };
-  }, [bookId]);
+  }, [bookId]); // Removed pdfUrl from dependencies to prevent cleanup loop
+
 
   // --- DOCUMENT LOAD SUCCESS HANDLER ---
   const onDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
+
+    // Save total pages to localStorage for progress tracking in Library
+    if (bookId) {
+      localStorage.setItem(`book_${bookId}_numPages`, numPages.toString());
+    }
 
     // Priority: Manual Bookmark > Last Read Page > 1
     const targetPage = bookmarkedPage || lastReadPage;
@@ -293,10 +308,12 @@ const PdfReader = () => {
         if (targetElement) {
           // Use a slight delay to ensure the pages have been fully measured by the browser
           setTimeout(() => {
-            containerRef.current.scrollTo({
-              top: targetElement.offsetTop - 70, // Offset by header height
-              behavior: 'instant'
-            });
+            if (containerRef.current) {
+              containerRef.current.scrollTo({
+                top: targetElement.offsetTop - 70, // Offset by header height
+                behavior: 'instant'
+              });
+            }
             setIsReady(true);
           }, 300);
         } else {
@@ -606,13 +623,57 @@ const PdfReader = () => {
 
   // Remove highlight
   const removeHighlight = (highlightId) => {
-    // Reset the application status for *all* pages to clear the highlight
-    highlights.forEach(h => {
-      if (h.id === highlightId) {
-        highlightsAppliedRef.current[h.page] = false;
-      }
-    });
+    // Find the highlight to be removed
+    const highlightToRemove = highlights.find(h => h.id === highlightId);
 
+    if (highlightToRemove) {
+      // Immediately clear the DOM highlight for this specific highlight
+      const textLayer = document.querySelector(`#page_${highlightToRemove.page} .react-pdf__Page__textContent`);
+      if (textLayer) {
+        const textSpans = textLayer.querySelectorAll('span');
+
+        // Build character map to find the exact spans to clear
+        let fullText = '';
+        const charToSpanMap = [];
+
+        textSpans.forEach((span) => {
+          const text = span.textContent;
+          for (let i = 0; i < text.length; i++) {
+            charToSpanMap.push({
+              span,
+              char: text[i],
+              charIndex: fullText.length + i
+            });
+          }
+          fullText += text;
+        });
+
+        // Clear the background color for the specific highlight range
+        const { position } = highlightToRemove;
+        if (position && typeof position.startOffset === 'number' && typeof position.endOffset === 'number') {
+          const startIdx = position.startOffset;
+          const endIdx = position.endOffset;
+          const spansToClear = new Set();
+
+          // Find all spans within the offset range
+          for (let i = startIdx; i < endIdx && i < charToSpanMap.length; i++) {
+            if (charToSpanMap[i]) {
+              spansToClear.add(charToSpanMap[i].span);
+            }
+          }
+
+          // Clear background color from these spans
+          spansToClear.forEach(span => {
+            span.style.backgroundColor = '';
+          });
+        }
+      }
+
+      // Reset the application status for the page to force re-application of remaining highlights
+      highlightsAppliedRef.current[highlightToRemove.page] = false;
+    }
+
+    // Remove from state
     setHighlights(prev => prev.filter(h => h.id !== highlightId));
     setSelectionMenu({ show: false, x: 0, y: 0, isHighlighted: false });
     window.getSelection().removeAllRanges();
@@ -1095,23 +1156,28 @@ const PdfReader = () => {
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        {viewMode === 'scroll' ? (
+        {!pdfUrl ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-gray-400 text-lg">Preparing PDF...</div>
+          </div>
+        ) : viewMode === 'scroll' ? (
           // Continuous Scroll Mode
           <div className="flex flex-col items-center py-4 sm:py-8 px-2 sm:px-4 gap-2 sm:gap-4">
             <Document
+              key={pdfUrl} // Force remount when PDF URL changes
               file={pdfFileConfig}
               onLoadSuccess={onDocumentLoadSuccess}
+              onLoadError={(error) => {
+                console.error('[PDF Reader] Document load error:', error);
+                setError('Failed to load PDF document. Please try refreshing.');
+                setIsReady(true);
+              }}
               loading={
                 <div className="flex items-center justify-center p-10 sm:p-20 bg-gray-100 rounded-lg">
                   <div className="text-gray-600 text-base sm:text-lg">Loading PDF document...</div>
                 </div>
               }
-              error={
-                <div className="flex items-center justify-center p-10 sm:p-20 bg-red-50 rounded-lg">
-                  <div className="text-red-600 text-base sm:text-lg">Failed to load PDF. Please try again.</div>
-                </div>
-              }
-              onLoadError={() => setIsReady(true)}
+
             >
               {/* Render all pages for continuous scrolling */}
               {numPages && Array.from(new Array(numPages), (el, index) => (
@@ -1137,19 +1203,20 @@ const PdfReader = () => {
           // Page-Fill Mode
           <div className="relative w-full h-full flex items-center justify-center pt-4 sm:pt-8 pb-4 sm:pb-8">
             <Document
+              key={pdfUrl} // Force remount when PDF URL changes
               file={pdfFileConfig}
               onLoadSuccess={onDocumentLoadSuccess}
+              onLoadError={(error) => {
+                console.error('[PDF Reader] Document load error:', error);
+                setError('Failed to load PDF document. Please try refreshing.');
+                setIsReady(true);
+              }}
               loading={
                 <div className="flex items-center justify-center p-10 sm:p-20 bg-gray-100 rounded-lg">
                   <div className="text-gray-600 text-base sm:text-lg">Loading PDF document...</div>
                 </div>
               }
-              error={
-                <div className="flex items-center justify-center p-10 sm:p-20 bg-red-50 rounded-lg">
-                  <div className="text-red-600 text-base sm:text-lg">Failed to load PDF. Please try again.</div>
-                </div>
-              }
-              onLoadError={() => setIsReady(true)}
+
             >
               {/* Render single page */}
               <div

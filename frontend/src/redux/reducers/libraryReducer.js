@@ -92,7 +92,12 @@ const libraryReducer = (state = initialState, action) => {
       return {
         ...state,
         loading: false,
-        books: state.books.filter(book => book.bookId._id !== action.payload)
+        books: state.books.filter(item => {
+          // Handle different possible structures
+          const book = item.bookId || item.book;
+          const bookId = book?._id || book;
+          return bookId !== action.payload && bookId?.toString() !== action.payload;
+        })
       };
     case REMOVE_BOOK_FROM_LIBRARY_FAILURE:
       return {

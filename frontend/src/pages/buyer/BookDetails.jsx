@@ -30,6 +30,7 @@ const BookDetails = () => {
   const dispatch = useDispatch();
   const { currentBook, recommendedBooks, loading, error } = useSelector(state => state.books);
   const { user } = useSelector(state => state.auth);
+  const { books: libraryBooks } = useSelector(state => state.library);
   const [quantity, setQuantity] = useState(1);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -37,11 +38,25 @@ const BookDetails = () => {
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [canReview, setCanReview] = useState(false);
   const [existingReview, setExistingReview] = useState(null);
+  const [isInLibrary, setIsInLibrary] = useState(false);
 
   useEffect(() => {
     dispatch(fetchBookDetails(id));
     window.scrollTo(0, 0);
   }, [dispatch, id]);
+
+  // Check if book is already in library
+  useEffect(() => {
+    if (libraryBooks && currentBook) {
+      const bookInLibrary = libraryBooks.some(
+        (item) => {
+          const book = item.bookId || item.book;
+          return book && book._id === currentBook._id;
+        }
+      );
+      setIsInLibrary(bookInLibrary);
+    }
+  }, [libraryBooks, currentBook]);
 
   // Check if user can review
   useEffect(() => {
@@ -138,6 +153,7 @@ const BookDetails = () => {
 
     // Show success or error message
     if (result.success) {
+      setIsInLibrary(true); // Update state immediately
       setToastMessage('Successfully added book to your library!');
       setShowSuccessToast(true);
     } else {
@@ -353,13 +369,27 @@ const BookDetails = () => {
                     <Button
                       variant="outline"
                       size="lg"
-                      onClick={handleAddToLibrary}
-                      className="flex-1 justify-center border-accent-brown text-accent-brown hover:bg-accent-brown hover:text-white"
+                      onClick={isInLibrary ? () => navigate('/buyer/library') : handleAddToLibrary}
+                      className={`flex-1 justify-center ${isInLibrary
+                        ? 'border-green-600 text-green-600 hover:bg-green-600 hover:text-white'
+                        : 'border-accent-brown text-accent-brown hover:bg-accent-brown hover:text-white'
+                        }`}
                     >
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                      </svg>
-                      Add to Library
+                      {isInLibrary ? (
+                        <>
+                          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Already in Library
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                          </svg>
+                          Add to Library
+                        </>
+                      )}
                     </Button>
                     <Button
                       variant="outline"
@@ -416,8 +446,8 @@ const BookDetails = () => {
                     key={tab}
                     onClick={() => setActiveTab(tab)}
                     className={`pb-4 text-base font-medium capitalize transition-colors relative ${activeTab === tab
-                        ? 'text-accent-brown'
-                        : 'text-text-secondary hover:text-text-primary'
+                      ? 'text-accent-brown'
+                      : 'text-text-secondary hover:text-text-primary'
                       }`}
                   >
                     {tab}
