@@ -5,48 +5,13 @@
 
 const express = require("express");
 const router = express.Router();
-const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
 const { ensureAuthenticated } = require("../middleware/auth");
+const { reviewMediaUpload } = require("../middleware/upload");
 const { uploadImage, uploadVideo, deleteImage, deleteVideo } = require("../config/cloudinary");
 const Book = require("../models/Book");
 const BookReview = require("../models/BookReview");
 const Order = require("../models/Order");
 const Library = require("../models/Library");
-
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const dir = file.mimetype.startsWith("video/")
-      ? "public/uploads/review-videos"
-      : "public/uploads/review-images";
-    
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    cb(null, dir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  },
-});
-
-const upload = multer({
-  storage: storage,
-  limits: { 
-    fileSize: 50 * 1024 * 1024, // 50MB limit
-    files: 6 // Max 5 images + 1 video
-  },
-  fileFilter: function (req, file, cb) {
-    if (file.mimetype.startsWith("image/") || file.mimetype.startsWith("video/")) {
-      cb(null, true);
-    } else {
-      cb(new Error("Only image and video files are allowed!"), false);
-    }
-  },
-});
 
 /**
  * @route   GET /api/reviews/book/:bookId
@@ -143,8 +108,8 @@ router.get("/user/can-review/:bookId", ensureAuthenticated, async (req, res) => 
 
     res.json({
       success: true,
-      data: { 
-        canReview, 
+      data: {
+        canReview,
         isVerifiedPurchase,
         reason: canReview ? null : "not_purchased_or_not_delivered"
       }
@@ -164,12 +129,12 @@ router.get("/user/can-review/:bookId", ensureAuthenticated, async (req, res) => 
  * @desc    Create a new review with text, images, and/or video
  * @access  Private
  */
-router.post("/", ensureAuthenticated, upload.fields([
+router.post("/", ensureAuthenticated, reviewMediaUpload.fields([
   { name: 'images', maxCount: 5 },
   { name: 'video', maxCount: 1 }
 ]), async (req, res) => {
   const uploadedFiles = [];
-  
+
   try {
     const { bookId, rating, reviewText } = req.body;
     const userId = req.user._id;
@@ -229,12 +194,12 @@ router.post("/", ensureAuthenticated, upload.fields([
             { quality: 'auto', fetch_format: 'auto' }
           ]
         });
-        
+
         images.push({
           url: cloudinaryResult.url,
           publicId: cloudinaryResult.publicId
         });
-        
+
         // Clean up local file
         fs.unlinkSync(file.path);
       }
@@ -245,19 +210,19 @@ router.post("/", ensureAuthenticated, upload.fields([
     if (req.files && req.files.video && req.files.video[0]) {
       const videoFile = req.files.video[0];
       uploadedFiles.push(videoFile.path);
-      
+
       const cloudinaryResult = await uploadVideo(videoFile.path, {
         folder: 'book-reviews/videos',
         resource_type: 'video'
       });
-      
+
       video = {
         videoUrl: cloudinaryResult.url,
         thumbnailUrl: cloudinaryResult.thumbnail,
         publicId: cloudinaryResult.publicId,
         duration: Math.round(cloudinaryResult.duration) || 0
       };
-      
+
       // Clean up local file
       fs.unlinkSync(videoFile.path);
     }
@@ -284,14 +249,14 @@ router.post("/", ensureAuthenticated, upload.fields([
     });
   } catch (err) {
     console.error("Error creating review:", err);
-    
+
     // Clean up uploaded files on error
     for (const filePath of uploadedFiles) {
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
       }
     }
-    
+
     res.status(500).json({
       success: false,
       message: "Error creating review",

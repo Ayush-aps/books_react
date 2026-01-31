@@ -4,6 +4,7 @@
 
 const passport = require("passport");
 const User = require("../models/User");
+const { securityLogger } = require("../middleware/logger");
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
@@ -61,6 +62,13 @@ exports.register = async (req, res) => {
 
     await newUser.save();
 
+    // Log successful registration
+    securityLogger('USER_REGISTERED', req, {
+      userId: newUser._id,
+      email: newUser.email,
+      role: newUser.role
+    });
+
     return res.status(201).json({
       success: true,
       message: "You are now registered and can log in",
@@ -87,6 +95,12 @@ exports.login = (req, res, next) => {
     }
 
     if (!user) {
+      // Log failed login attempt
+      securityLogger('LOGIN_FAILED', req, {
+        email: req.body.email,
+        reason: info.message || 'Invalid credentials'
+      });
+
       return res.status(401).json({
         success: false,
         message: info.message || "Invalid credentials",
@@ -100,6 +114,13 @@ exports.login = (req, res, next) => {
           message: "An error occurred during login",
         });
       }
+
+      // Log successful login
+      securityLogger('LOGIN_SUCCESS', req, {
+        userId: user._id,
+        email: user.email,
+        role: user.role
+      });
 
       return res.status(200).json({
         success: true,
@@ -128,6 +149,12 @@ exports.logout = (req, res, next) => {
         message: "Error logging out",
       });
     }
+
+    // Log logout event
+    securityLogger('LOGOUT', req, {
+      userId: req.user?._id,
+      email: req.user?.email
+    });
 
     return res.status(200).json({
       success: true,
@@ -165,7 +192,7 @@ exports.checkAuth = async (req, res) => {
       // Fetch fresh user data from database to get updated avatar and other fields
       const User = require('../models/User');
       const freshUser = await User.findById(req.user._id).select('-password');
-      
+
       if (freshUser) {
         return res.status(200).json({
           success: true,
@@ -183,7 +210,7 @@ exports.checkAuth = async (req, res) => {
     } catch (error) {
       console.error('Error fetching fresh user data:', error);
     }
-    
+
     // Fallback to session user if database fetch fails
     return res.status(200).json({
       success: true,

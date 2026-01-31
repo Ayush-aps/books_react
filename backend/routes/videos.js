@@ -4,55 +4,20 @@
 
 const express = require("express");
 const router = express.Router();
-const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
-const { ensureAuthenticated } = require("../middleware/auth");
+const { ensureAuthenticated, ensureBuyerOnly } = require("../middleware/auth");
+const { videoUpload } = require("../middleware/upload");
 const { uploadVideo, deleteVideo } = require("../config/cloudinary");
 const Book = require("../models/Book");
 const BookVideo = require("../models/BookVideo");
 const VideoComment = require("../models/VideoComment");
-
-// Configure multer for video uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const dir = "public/uploads/videos";
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    cb(null, dir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  },
-});
-
-const upload = multer({
-  storage: storage,
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
-  fileFilter: function (req, file, cb) {
-    if (file.mimetype.startsWith("video/")) {
-      cb(null, true);
-    } else {
-      cb(new Error("Only video files are allowed!"), false);
-    }
-  },
-});
 
 /**
  * @route   GET /api/videos
  * @desc    Get all videos (video feed)
  * @access  Private
  */
-router.get("/", ensureAuthenticated, async (req, res) => {
+router.get("/", ensureAuthenticated, ensureBuyerOnly, async (req, res) => {
   try {
-    if (req.user.role !== "buyer") {
-      return res.status(403).json({
-        success: false,
-        message: "Only buyers can view videos",
-      });
-    }
 
     const { search, bookId, sort, page = 1, limit = 12 } = req.query;
 
@@ -124,7 +89,7 @@ router.get("/", ensureAuthenticated, async (req, res) => {
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     res.set('Pragma', 'no-cache');
     res.set('Expires', '0');
-    
+
     res.json({
       success: true,
       message: "Videos retrieved successfully",
@@ -153,14 +118,8 @@ router.get("/", ensureAuthenticated, async (req, res) => {
  * @desc    Get all books for video upload form
  * @access  Private
  */
-router.get("/books", ensureAuthenticated, async (req, res) => {
+router.get("/books", ensureAuthenticated, ensureBuyerOnly, async (req, res) => {
   try {
-    if (req.user.role !== "buyer") {
-      return res.status(403).json({
-        success: false,
-        message: "Only buyers can access this resource",
-      });
-    }
 
     const books = await Book.find({ isApproved: true }).select("title author coverImage").sort("title");
 
@@ -196,16 +155,10 @@ router.get("/upload", ensureAuthenticated, (req, res) => {
  * @desc    Process video upload to Cloudinary
  * @access  Private (Buyer)
  */
-router.post("/upload", ensureAuthenticated, upload.single("video"), async (req, res) => {
+router.post("/upload", ensureAuthenticated, ensureBuyerOnly, videoUpload.single("video"), async (req, res) => {
   let uploadedFilePath = null;
-  
+
   try {
-    if (req.user.role !== "buyer") {
-      return res.status(403).json({
-        success: false,
-        message: "Only buyers can upload videos",
-      });
-    }
 
     const { title, description, bookId, tags } = req.body;
 
@@ -270,12 +223,12 @@ router.post("/upload", ensureAuthenticated, upload.single("video"), async (req, 
     });
   } catch (err) {
     console.error("Error uploading video:", err);
-    
+
     // Clean up local file on error
     if (uploadedFilePath && fs.existsSync(uploadedFilePath)) {
       fs.unlinkSync(uploadedFilePath);
     }
-    
+
     res.status(500).json({
       success: false,
       message: "Error uploading video",
@@ -289,14 +242,8 @@ router.post("/upload", ensureAuthenticated, upload.single("video"), async (req, 
  * @desc    Get a specific video with details
  * @access  Private (Buyer)
  */
-router.get("/:id", ensureAuthenticated, async (req, res) => {
+router.get("/:id", ensureAuthenticated, ensureBuyerOnly, async (req, res) => {
   try {
-    if (req.user.role !== "buyer") {
-      return res.status(403).json({
-        success: false,
-        message: "Only buyers can view videos",
-      });
-    }
 
     const videoId = req.params.id;
 
@@ -361,11 +308,8 @@ router.get("/:id", ensureAuthenticated, async (req, res) => {
  * @desc    Like/unlike a video
  * @access  Private (Buyer)
  */
-router.post("/:id/like", ensureAuthenticated, async (req, res) => {
+router.post("/:id/like", ensureAuthenticated, ensureBuyerOnly, async (req, res) => {
   try {
-    if (req.user.role !== "buyer") {
-      return res.status(403).json({ success: false, message: "Only buyers can like videos" });
-    }
 
     const videoId = req.params.id;
     const userId = req.user._id;
@@ -407,11 +351,8 @@ router.post("/:id/like", ensureAuthenticated, async (req, res) => {
  * @desc    Add a comment to a video
  * @access  Private (Buyer)
  */
-router.post("/:id/comment", ensureAuthenticated, async (req, res) => {
+router.post("/:id/comment", ensureAuthenticated, ensureBuyerOnly, async (req, res) => {
   try {
-    if (req.user.role !== "buyer") {
-      return res.status(403).json({ success: false, message: "Only buyers can comment" });
-    }
 
     const { content } = req.body;
     const videoId = req.params.id;

@@ -13,7 +13,6 @@ const rateLimit = require("express-rate-limit");
 const methodOverride = require("method-override");
 const flash = require("connect-flash");
 const passport = require("passport");
-const morgan = require("morgan");
 const dotenv = require("dotenv");
 const cors = require("cors");
 
@@ -40,6 +39,9 @@ const connectDB = require("./config/db");
 // Import subscription cron jobs
 const { startSubscriptionJobs } = require("./config/subscriptionCron");
 
+// Import enhanced logger
+const { requestLogger, slowRequestLogger } = require("./middleware/logger");
+
 // Initialize Express app
 const app = express();
 
@@ -63,7 +65,10 @@ app.use('/uploads', express.static(path.join(__dirname, "uploads")));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(methodOverride("_method"));
-app.use(morgan("dev"));
+
+// Enhanced Morgan logging (replaces basic morgan)
+app.use(requestLogger);
+app.use(slowRequestLogger(1000)); // Log requests slower than 1 second
 
 // Security middleware
 app.use(helmet({

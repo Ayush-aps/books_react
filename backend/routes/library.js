@@ -7,43 +7,10 @@ const express = require("express");
 const router = express.Router();
 const axios = require("axios");
 const { ensureAuthenticated } = require("../middleware/auth");
+const { requireActiveSubscription } = require("../middleware/subscription");
 const Library = require("../models/Library");
 const Book = require("../models/Book");
 const Subscription = require("../models/Subscription");
-
-/**
- * Middleware to check active subscription (Netflix-like)
- * Blocks access if subscription expired or doesn't exist
- */
-const requireActiveSubscription = async (req, res, next) => {
-  try {
-    const subscription = await Subscription.findOne({
-      user: req.user._id,
-      isActive: true,
-      endDate: { $gt: new Date() },
-    });
-
-    if (!subscription || subscription.plan === 'free') {
-      return res.status(403).json({
-        success: false,
-        message: "Library access is only available for subscribed users. Please subscribe to access your library.",
-        requiresSubscription: true,
-        redirectTo: "/pricing"
-      });
-    }
-
-    // Attach subscription to request for use in route handlers
-    req.subscription = subscription;
-    next();
-  } catch (err) {
-    console.error("Subscription check error:", err);
-    res.status(500).json({
-      success: false,
-      message: "Error verifying subscription status",
-      error: err.message,
-    });
-  }
-};
 
 /**
  * @route   GET /api/library
