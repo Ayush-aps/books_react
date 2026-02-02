@@ -6,7 +6,7 @@ A full-stack web platform that connects **buyers**, **sellers**, and **administr
 
 ## 📺 Demo Video
 
-**Demo video (Unlisted):** `[VIDEO_LINK_PLACEHOLDER]`
+**Demo video (Unlisted):** `(https://youtu.be/u79hp5E6ZAY)`
 
 ---
 
@@ -241,7 +241,7 @@ VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/Ayush-aps/books.git
+git clone https://github.com/Ayush-aps/books_react.git
 cd books
 ```
 
@@ -429,31 +429,6 @@ The mid-review demo requires showing these flows:
 ## 🧾 License
 
 This project is released under the **MIT License**.
-
----
-
-## 🎬 Demo Video Timestamps (suggested)
-
-`[VIDEO_LINK_PLACEHOLDER]`
-
-```
-0:00  - Title slide & business case
-0:50  - Form validation demo (React Hook Form + Zod)
-2:00  - Dynamic UI updates (Redux state management)
-3:30  - Async flows: Load Books, Add to Cart, Submit Complaint (show DevTools)
-6:00  - Team contributions (10–20s per member)
-6:30  - Wrap-up & artifacts location
-```
-
----
-
-## 📚 Evidence Locations
-
-* **Git logs** - gitlogs.txt
-* **Network evidences** - Network Evidence Screenshot.pdf
-* **Test Plan** - Test_Plan.pdf
-* **Task Assignments** - Task Assignment.md
-* **Documentation pdf** - Group 53 Documentation.pdf
 
 ---
 
