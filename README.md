@@ -406,19 +406,6 @@ The mid-review demo requires showing these flows:
 
 ---
 
-## 📦 Submission artifacts (for mid-review)
-
-* `/source` — Full source code
-* `README.md` (this file)
-* `demo_link.txt` — Video URL + timestamps
-* `test_plan.md` — Validation & async tests with results
-* `network_evidence/` — Screenshots of network requests
-* `git-logs.txt` — Commit history per author
-* `mongo_dump/` — Database dump
-* `documentation.pdf` — Technical documentation
-
----
-
 ## 📞 Contact & Support
 
 * **SPOC / Team lead:** Ayush Pratap Singh — `ayushpratap.s23@iiits.in` — Roll: `S20230010033`
