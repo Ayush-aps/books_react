@@ -5,22 +5,8 @@
 
 const express = require("express");
 const router = express.Router();
-const multer = require('multer');
 const { ensureAuthenticated, ensureSeller } = require("../middleware/auth");
-
-// Multer config for file uploads (PDF files)
-const upload = multer({
-  dest: 'uploads/',
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype === 'application/pdf' ||
-      file.originalname.endsWith('.pdf')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only .pdf files are allowed'), false);
-    }
-  }
-});
+const { pdfUpload } = require("../middleware/upload");
 const {
   // Dashboard
   getDashboard,
@@ -61,9 +47,9 @@ router.get("/inventory", ensureAuthenticated, ensureSeller, getInventory);
 router.get("/books", ensureAuthenticated, ensureSeller, getAllBooks);
 router.get("/books/search", ensureAuthenticated, ensureSeller, searchBooks);
 router.get("/books/lookup/:isbn", ensureAuthenticated, ensureSeller, lookupBookByISBN);
-router.post("/books", ensureAuthenticated, ensureSeller, upload.single('epubFile'), createBook);
+router.post("/books", ensureAuthenticated, ensureSeller, pdfUpload.single('epubFile'), createBook);
 router.get("/books/:id", ensureAuthenticated, ensureSeller, getBookDetails);
-router.put("/books/:id", ensureAuthenticated, ensureSeller, upload.single('epubFile'), updateBook);
+router.put("/books/:id", ensureAuthenticated, ensureSeller, pdfUpload.single('epubFile'), updateBook);
 router.delete("/books/:id", ensureAuthenticated, ensureSeller, deleteBook);
 
 // ============================================
