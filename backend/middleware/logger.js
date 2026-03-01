@@ -172,6 +172,73 @@ module.exports.slowRequestLogger = (thresholdMs = 1000) => {
 };
 
 /**
+ * Error logging middleware for Express
+ * Should be registered after routes (app.use(errorLogger))
+ */
+module.exports.errorLogger = (err, req, res, next) => {
+    try {
+        const logEntry = {
+            timestamp: new Date().toISOString(),
+            level: 'ERROR',
+            message: err && err.message ? err.message : String(err),
+            stack: err && err.stack ? err.stack : undefined,
+            status: err && err.status ? err.status : (res && res.statusCode ? res.statusCode : 500),
+            method: req && req.method,
+            url: req && (req.originalUrl || req.url),
+            ip: req && (req.ip || (req.connection && req.connection.remoteAddress)),
+            user: req && req.user ? `${req.user.role}:${req.user._id}` : 'anonymous',
+            params: req && req.params ? req.params : undefined,
+            query: req && req.query ? req.query : undefined
+        };
+
+        errorLogStream.write(JSON.stringify(logEntry) + '\n');
+    } catch (writeErr) {
+        console.error('Failed to write to error log stream:', writeErr);
+    }
+
+    if (process.env.NODE_ENV !== 'production') {
+        console.error('\x1b[31m[ERROR]\x1b[0m', err);
+    }
+
+    // Pass control to the next error handler
+    next(err);
+};
+
+// Global handlers to capture uncaught exceptions and unhandled rejections
+process.on('uncaughtException', (err) => {
+    try {
+        const entry = {
+            timestamp: new Date().toISOString(),
+            level: 'FATAL',
+            message: err && err.message ? err.message : String(err),
+            stack: err && err.stack ? err.stack : undefined
+        };
+        errorLogStream.write(JSON.stringify(entry) + '\n');
+    } catch (writeErr) {
+        console.error('Failed to write fatal error to log stream:', writeErr);
+    }
+
+    console.error('Uncaught Exception:', err);
+    // Exit after logging to allow process managers to restart the app
+    process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+    try {
+        const entry = {
+            timestamp: new Date().toISOString(),
+            level: 'UNHANDLED_REJECTION',
+            reason: typeof reason === 'object' && reason !== null ? (reason.stack || reason.message) : String(reason)
+        };
+        errorLogStream.write(JSON.stringify(entry) + '\n');
+    } catch (writeErr) {
+        console.error('Failed to write unhandled rejection to log stream:', writeErr);
+    }
+
+    console.error('Unhandled Rejection:', reason);
+});
+
+/**
  * Skip logging for certain paths (health checks, static files)
  */
 module.exports.skipPaths = ['/api/health', '/favicon.ico'];
