@@ -72,7 +72,12 @@ import AdminViewBook from './pages/admin/ViewBook'
 import Revenue from './pages/admin/Revenue'
 
 // Moderator Pages
-import ModeratorDashboard from './pages/moderator/Dashboard'
+import ModeratorLayout from './pages/moderator/ModeratorLayout'
+import ModeratorOverview from './pages/moderator/Dashboard'
+import ModeratorVerification from './pages/moderator/Verification'
+import ModeratorBooks from './pages/moderator/Books'
+import ModeratorUsers from './pages/moderator/Users'
+import ModeratorLibrary from './pages/moderator/Library'
 
 // Employee Pages
 import EmployeeDashboard from './pages/employee/Dashboard'
@@ -172,8 +177,14 @@ function App() {
                 <Route path="/admin/complaints/:id" element={<PrivateRoute role="admin"><AdminComplaintDetails /></PrivateRoute>} />
                 <Route path="/admin/view-book/:id" element={<PrivateRoute role="admin"><AdminViewBook /></PrivateRoute>} />
 
-                {/* Moderator Routes */}
-                <Route path="/moderator/dashboard" element={<PrivateRoute role={['moderator', 'admin']}><ModeratorDashboard /></PrivateRoute>} />
+                {/* Moderator Routes - nested under shared layout */}
+                <Route element={<PrivateRoute role={['moderator', 'admin']}><ModeratorLayout /></PrivateRoute>}>
+                  <Route path="/moderator/dashboard" element={<ModeratorOverview />} />
+                  <Route path="/moderator/verification" element={<ModeratorVerification />} />
+                  <Route path="/moderator/books" element={<ModeratorBooks />} />
+                  <Route path="/moderator/users" element={<ModeratorUsers />} />
+                  <Route path="/moderator/library" element={<ModeratorLibrary />} />
+                </Route>
 
                 {/* Employee Routes */}
                 <Route path="/employee/dashboard" element={<PrivateRoute role={['employee', 'moderator', 'admin']}><EmployeeDashboard /></PrivateRoute>} />

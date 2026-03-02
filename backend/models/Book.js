@@ -114,6 +114,15 @@ const BookSchema = new mongoose.Schema({
     ref: 'User',
     default: null,
   },
+  lockedBy: {
+    type: mongoose.Schema.ObjectId,
+    ref: 'User',
+    default: null,
+  },
+  lockedAt: {
+    type: Date,
+    default: null,
+  },
   rating: {
     type: Number,
     min: 0,
@@ -143,5 +152,6 @@ BookSchema.index({
   genres: "text",
 });
 BookSchema.index({ approvalStatus: 1 });
+BookSchema.index({ lockedBy: 1 });
 
 module.exports = mongoose.model("Book", BookSchema);

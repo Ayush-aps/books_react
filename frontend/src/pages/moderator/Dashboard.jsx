@@ -1,480 +1,294 @@
 /**
- * Moderator Dashboard
- * User verification, staff performance, content oversight, and Verified Library
+ * Moderator — Overview Page
+ * Clickable platform stats · Revenue breakdown · Seller leaderboard
+ * Active buyers · Active subscribers
  */
-
-import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { moderatorAPI, employeeAPI } from '../../services/api';
-import LoadingSpinner from '../../components/LoadingSpinner';
-import ErrorMessage from '../../components/ErrorMessage';
 import Card from '../../components/Card';
 import Badge from '../../components/Badge';
-import Button from '../../components/Button';
-import { staggerContainer, staggerItem, fadeInUp } from '../../utils/animations';
+import LoadingSpinner from '../../components/LoadingSpinner';
+import ErrorMessage from '../../components/ErrorMessage';
+import { staggerContainer, staggerItem } from '../../utils/animations';
 
-const Dashboard = () => {
-    const [pendingUsers, setPendingUsers] = useState([]);
-    const [employeeStats, setEmployeeStats] = useState([]);
-    const [pendingBooksCount, setPendingBooksCount] = useState(0);
+// ─── Clickable Stat Card ────────────────────────────────────────────────────
+const StatCard = ({ label, value, icon, color, bg, note, onClick, clickLabel }) => (
+    <motion.div whileHover={onClick ? { scale: 1.02, y: -2 } : {}} whileTap={onClick ? { scale: 0.98 } : {}}>
+        <Card elevated padding="lg" className={`h-full ${onClick ? 'cursor-pointer hover:border-accent-brown/40 transition-colors' : ''}`} onClick={onClick}>
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${bg} ${color} mb-4`}>{icon}</div>
+            <p className="text-sm text-text-secondary mb-1">{label}</p>
+            <h3 className="heading-2 mb-1">{value ?? '—'}</h3>
+            {note && <p className="text-xs text-text-tertiary">{note}</p>}
+            {onClick && clickLabel && (
+                <p className="text-xs text-accent-brown font-medium mt-2 flex items-center gap-1">
+                    {clickLabel} <span>→</span>
+                </p>
+            )}
+        </Card>
+    </motion.div>
+);
+
+const Icon = ({ d }) => (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={d} />
+    </svg>
+);
+
+const fmtCurrency = (n) => n ? `₹${Number(n).toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : '₹0';
+const fmt = (n) => n?.toLocaleString('en-IN') ?? '0';
+
+const Overview = () => {
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [actionLoading, setActionLoading] = useState(null);
+    const [stats, setStats] = useState(null);
+    const [pendingUsersCount, setPendingUsersCount] = useState(0);
+    const [pendingBooksCount, setPendingBooksCount] = useState(0);
 
-    // Verified Library state
-    const [verifiedTab, setVerifiedTab] = useState('books');
-    const [searchQuery, setSearchQuery] = useState('');
-    const [approvedBooks, setApprovedBooks] = useState([]);
-    const [approvedUsers, setApprovedUsers] = useState([]);
-    const [approvedBooksTotal, setApprovedBooksTotal] = useState(0);
-    const [approvedUsersTotal, setApprovedUsersTotal] = useState(0);
-    const [approvedPage, setApprovedPage] = useState(1);
-    const [verifiedLoading, setVerifiedLoading] = useState(false);
-
-    useEffect(() => {
-        fetchDashboardData();
-    }, []);
-
-    const fetchDashboardData = async () => {
+    const fetchData = async () => {
         try {
             setLoading(true);
-            const [usersRes, statsRes, booksRes] = await Promise.all([
+            const [globalRes, usersRes, booksRes] = await Promise.all([
+                moderatorAPI.getGlobalStats(),
                 moderatorAPI.getPendingUsers(),
-                moderatorAPI.getEmployeeStats(),
                 employeeAPI.getPendingBooks({ limit: 1 }),
             ]);
-
-            setPendingUsers(usersRes.data?.data?.users || []);
-            setEmployeeStats(statsRes.data?.data?.employees || []);
+            setStats(globalRes.data?.data || null);
+            setPendingUsersCount(usersRes.data?.data?.users?.length || 0);
             setPendingBooksCount(booksRes.data?.data?.pagination?.totalBooks || 0);
             setError(null);
         } catch (err) {
-            setError(err.message || 'Failed to load dashboard data');
+            setError(err.message || 'Failed to load stats');
         } finally {
             setLoading(false);
         }
     };
 
-    const fetchApprovedBooks = useCallback(async (page = 1, search = '') => {
-        try {
-            setVerifiedLoading(true);
-            const res = await moderatorAPI.getApprovedBooks({ page, limit: 10, search });
-            setApprovedBooks(res.data?.data?.books || []);
-            setApprovedBooksTotal(res.data?.data?.pagination?.totalBooks || 0);
-        } catch (err) {
-            setError(err.message || 'Failed to load approved books');
-        } finally {
-            setVerifiedLoading(false);
-        }
-    }, []);
+    useEffect(() => { fetchData(); }, []);
 
-    const fetchApprovedUsers = useCallback(async (page = 1, search = '') => {
-        try {
-            setVerifiedLoading(true);
-            const res = await moderatorAPI.getApprovedUsers({ page, limit: 10, search });
-            setApprovedUsers(res.data?.data?.users || []);
-            setApprovedUsersTotal(res.data?.data?.pagination?.totalUsers || 0);
-        } catch (err) {
-            setError(err.message || 'Failed to load approved users');
-        } finally {
-            setVerifiedLoading(false);
-        }
-    }, []);
+    if (loading) return (
+        <div className="flex items-center justify-center py-32">
+            <LoadingSpinner size="lg" message="Loading overview..." />
+        </div>
+    );
 
-    // Fetch verified data when tab changes or on first mount
-    useEffect(() => {
-        if (verifiedTab === 'books') {
-            fetchApprovedBooks(1, searchQuery);
-        } else {
-            fetchApprovedUsers(1, searchQuery);
-        }
-        setApprovedPage(1);
-    }, [verifiedTab, fetchApprovedBooks, fetchApprovedUsers]);
-
-    const handleSearch = () => {
-        setApprovedPage(1);
-        if (verifiedTab === 'books') {
-            fetchApprovedBooks(1, searchQuery);
-        } else {
-            fetchApprovedUsers(1, searchQuery);
-        }
-    };
-
-    const handlePageChange = (newPage) => {
-        setApprovedPage(newPage);
-        if (verifiedTab === 'books') {
-            fetchApprovedBooks(newPage, searchQuery);
-        } else {
-            fetchApprovedUsers(newPage, searchQuery);
-        }
-    };
-
-    const handleVerifyUser = async (userId, action) => {
-        try {
-            setActionLoading(userId);
-            await moderatorAPI.verifyUser(userId, action);
-            setPendingUsers(prev => prev.filter(u => u._id !== userId));
-        } catch (err) {
-            setError(err.message || `Failed to ${action} user`);
-        } finally {
-            setActionLoading(null);
-        }
-    };
-
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-background-primary flex items-center justify-center">
-                <LoadingSpinner size="lg" message="Loading dashboard..." />
-            </div>
-        );
-    }
-
-    if (error && !pendingUsers.length && !employeeStats.length) {
-        return (
-            <div className="min-h-screen bg-background-primary py-12">
-                <div className="container-custom">
-                    <ErrorMessage message={error} onRetry={fetchDashboardData} />
-                </div>
-            </div>
-        );
-    }
-
-    const approvedTotal = verifiedTab === 'books' ? approvedBooksTotal : approvedUsersTotal;
-    const totalPages = Math.ceil(approvedTotal / 10);
+    const physical = stats?.revenue?.physical || 0;
+    const taxRev = stats?.revenue?.tax || 0;
+    const shippingRev = stats?.revenue?.shipping || 0;
+    const subscriptionRev = stats?.revenue?.subscriptions || 0;
+    const totalRev = stats?.revenue?.platform || stats?.totalRevenue || 0;
+    const physicalPct = totalRev > 0 ? Math.round((physical / totalRev) * 100) : 0;
+    const taxPct = totalRev > 0 ? Math.round((taxRev / totalRev) * 100) : 0;
+    const shippingPct = totalRev > 0 ? Math.round((shippingRev / totalRev) * 100) : 0;
+    const subPct = totalRev > 0 ? Math.round((subscriptionRev / totalRev) * 100) : 0;
 
     return (
-        <div className="min-h-screen bg-background-primary py-12">
-            <div className="container-custom">
-                {/* Header */}
-                <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-12">
-                    <h1 className="heading-1 mb-3">Moderator Dashboard</h1>
-                    <p className="body-xl text-text-secondary">User verification, staff oversight & content moderation</p>
-                </motion.div>
-
-                {/* Error banner */}
-                {error && (
-                    <div className="mb-8">
-                        <ErrorMessage message={error} onRetry={() => { fetchDashboardData(); setError(null); }} />
-                    </div>
-                )}
-
-                {/* Content Oversight Cards */}
-                <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                    <motion.div variants={staggerItem}>
-                        <Card elevated padding="lg" className="h-full">
-                            <div className="flex items-start justify-between mb-4">
-                                <div className="w-12 h-12 rounded-full flex items-center justify-center bg-warning/10 text-warning">
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                                    </svg>
-                                </div>
-                            </div>
-                            <p className="text-sm text-text-secondary mb-1">Pending Users</p>
-                            <h3 className="heading-2 mb-1">{pendingUsers.length}</h3>
-                            <p className="text-xs text-text-tertiary">Awaiting verification</p>
-                        </Card>
-                    </motion.div>
-
-                    <motion.div variants={staggerItem}>
-                        <Card elevated padding="lg" className="h-full">
-                            <div className="flex items-start justify-between mb-4">
-                                <div className="w-12 h-12 rounded-full flex items-center justify-center bg-info/10 text-info">
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                                    </svg>
-                                </div>
-                            </div>
-                            <p className="text-sm text-text-secondary mb-1">Pending Books</p>
-                            <h3 className="heading-2 mb-1">{pendingBooksCount}</h3>
-                            <p className="text-xs text-text-tertiary">Waiting for Employee review</p>
-                        </Card>
-                    </motion.div>
-
-                    <motion.div variants={staggerItem}>
-                        <Card elevated padding="lg" className="h-full">
-                            <div className="flex items-start justify-between mb-4">
-                                <div className="w-12 h-12 rounded-full flex items-center justify-center bg-accent-brown/10 text-accent-brown">
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                    </svg>
-                                </div>
-                            </div>
-                            <p className="text-sm text-text-secondary mb-1">Reported Reels</p>
-                            <h3 className="heading-2 mb-1">0</h3>
-                            <Badge variant="info" size="sm">Coming Soon</Badge>
-                        </Card>
-                    </motion.div>
-                </motion.div>
-
-                {/* Two Column Layout */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-                    {/* User Verification Table */}
-                    <motion.div variants={fadeInUp} initial="hidden" animate="visible">
-                        <Card elevated padding="lg">
-                            <h2 className="heading-3 mb-6">User Verification Queue</h2>
-                            {pendingUsers.length === 0 ? (
-                                <div className="text-center py-12">
-                                    <div className="w-16 h-16 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <svg className="w-8 h-8 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                        </svg>
-                                    </div>
-                                    <p className="text-text-secondary">All users have been verified!</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-4 max-h-[500px] overflow-y-auto">
-                                    {pendingUsers.map(user => (
-                                        <div key={user._id} className="flex items-center justify-between p-4 bg-background-secondary rounded-lg border border-border-primary">
-                                            <div className="flex items-center gap-3 min-w-0">
-                                                <div className="w-10 h-10 bg-accent-brown/10 rounded-full flex items-center justify-center text-accent-brown font-medium flex-shrink-0">
-                                                    {user.name?.charAt(0).toUpperCase()}
-                                                </div>
-                                                <div className="min-w-0">
-                                                    <p className="font-medium text-text-primary truncate">{user.name}</p>
-                                                    <p className="text-xs text-text-tertiary truncate">{user.email}</p>
-                                                    <Badge variant={user.role === 'seller' ? 'warning' : 'info'} size="sm" className="mt-1">
-                                                        {user.role}
-                                                    </Badge>
-                                                </div>
-                                            </div>
-                                            <div className="flex gap-2 flex-shrink-0 ml-4">
-                                                <Button
-                                                    size="sm"
-                                                    variant="success"
-                                                    onClick={() => handleVerifyUser(user._id, 'approve')}
-                                                    disabled={actionLoading === user._id}
-                                                >
-                                                    {actionLoading === user._id ? '...' : 'Approve'}
-                                                </Button>
-                                                <Button
-                                                    size="sm"
-                                                    variant="error"
-                                                    onClick={() => handleVerifyUser(user._id, 'reject')}
-                                                    disabled={actionLoading === user._id}
-                                                >
-                                                    Reject
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </Card>
-                    </motion.div>
-
-                    {/* Staff Performance */}
-                    <motion.div variants={fadeInUp} initial="hidden" animate="visible" transition={{ delay: 0.1 }}>
-                        <Card elevated padding="lg">
-                            <h2 className="heading-3 mb-6">Staff Performance</h2>
-                            {employeeStats.length === 0 ? (
-                                <div className="text-center py-12">
-                                    <p className="text-text-secondary">No employee data available yet.</p>
-                                </div>
-                            ) : (
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-sm">
-                                        <thead>
-                                            <tr className="border-b border-border-primary">
-                                                <th className="text-left py-3 px-2 font-semibold text-text-secondary">Employee</th>
-                                                <th className="text-center py-3 px-2 font-semibold text-text-secondary">Resolved</th>
-                                                <th className="text-center py-3 px-2 font-semibold text-text-secondary">Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {employeeStats.map(emp => (
-                                                <tr key={emp.employeeId} className="border-b border-border-primary last:border-0">
-                                                    <td className="py-3 px-2">
-                                                        <p className="font-medium text-text-primary">{emp.name}</p>
-                                                        <p className="text-xs text-text-tertiary">{emp.email}</p>
-                                                    </td>
-                                                    <td className="py-3 px-2 text-center">
-                                                        <span className="font-bold text-accent-brown text-lg">{emp.totalResolved}</span>
-                                                    </td>
-                                                    <td className="py-3 px-2 text-center">
-                                                        <Badge variant={emp.verificationStatus === 'approved' ? 'success' : 'warning'} size="sm">
-                                                            {emp.verificationStatus}
-                                                        </Badge>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-                        </Card>
-                    </motion.div>
-                </div>
-
-                {/* ===== VERIFIED LIBRARY ===== */}
-                <motion.div variants={fadeInUp} initial="hidden" animate="visible" transition={{ delay: 0.2 }}>
-                    <Card elevated padding="lg">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                            <h2 className="heading-3">Verified Library</h2>
-
-                            {/* Tabs */}
-                            <div className="flex gap-1 p-1 bg-background-secondary rounded-lg w-fit">
-                                <button
-                                    onClick={() => { setVerifiedTab('books'); setSearchQuery(''); }}
-                                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${verifiedTab === 'books'
-                                            ? 'bg-accent-brown text-white shadow-sm'
-                                            : 'text-text-secondary hover:text-text-primary'
-                                        }`}
-                                >
-                                    Approved Books
-                                </button>
-                                <button
-                                    onClick={() => { setVerifiedTab('users'); setSearchQuery(''); }}
-                                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${verifiedTab === 'users'
-                                            ? 'bg-accent-brown text-white shadow-sm'
-                                            : 'text-text-secondary hover:text-text-primary'
-                                        }`}
-                                >
-                                    Approved Users
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Search Bar */}
-                        <div className="flex gap-2 mb-6">
-                            <input
-                                type="text"
-                                placeholder={verifiedTab === 'books' ? 'Search by title, ISBN, or author...' : 'Search by name or email...'}
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                                className="flex-1 px-4 py-2 rounded-lg border border-border-primary bg-background-primary text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-brown text-sm"
-                            />
-                            <Button variant="primary" size="sm" onClick={handleSearch}>
-                                Search
-                            </Button>
-                        </div>
-
-                        {/* Results */}
-                        {verifiedLoading ? (
-                            <div className="flex justify-center py-12">
-                                <LoadingSpinner size="md" message="Loading..." />
-                            </div>
-                        ) : (
-                            <AnimatePresence mode="wait">
-                                {verifiedTab === 'books' && (
-                                    <motion.div key="vbooks" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-                                        {approvedBooks.length === 0 ? (
-                                            <div className="text-center py-12">
-                                                <p className="text-text-secondary">No approved books found.</p>
-                                            </div>
-                                        ) : (
-                                            <div className="overflow-x-auto">
-                                                <table className="w-full text-sm">
-                                                    <thead>
-                                                        <tr className="border-b border-border-primary">
-                                                            <th className="text-left py-3 px-2 font-semibold text-text-secondary">Book</th>
-                                                            <th className="text-left py-3 px-2 font-semibold text-text-secondary">ISBN</th>
-                                                            <th className="text-left py-3 px-2 font-semibold text-text-secondary">Seller</th>
-                                                            <th className="text-left py-3 px-2 font-semibold text-text-secondary">Reviewed By</th>
-                                                            <th className="text-center py-3 px-2 font-semibold text-text-secondary">Status</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {approvedBooks.map(book => (
-                                                            <tr key={book._id} className="border-b border-border-primary last:border-0 hover:bg-background-secondary transition-colors">
-                                                                <td className="py-3 px-2">
-                                                                    <p className="font-medium text-text-primary">{book.title}</p>
-                                                                    <p className="text-xs text-text-tertiary">{book.author}</p>
-                                                                </td>
-                                                                <td className="py-3 px-2 text-text-secondary text-xs font-mono">{book.isbn}</td>
-                                                                <td className="py-3 px-2 text-text-secondary text-xs">{book.seller?.name || '—'}</td>
-                                                                <td className="py-3 px-2 text-text-secondary text-xs">{book.reviewedBy?.name || 'System'}</td>
-                                                                <td className="py-3 px-2 text-center">
-                                                                    <Badge variant="success" size="sm">Approved</Badge>
-                                                                </td>
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        )}
-                                    </motion.div>
-                                )}
-
-                                {verifiedTab === 'users' && (
-                                    <motion.div key="vusers" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-                                        {approvedUsers.length === 0 ? (
-                                            <div className="text-center py-12">
-                                                <p className="text-text-secondary">No approved users found.</p>
-                                            </div>
-                                        ) : (
-                                            <div className="overflow-x-auto">
-                                                <table className="w-full text-sm">
-                                                    <thead>
-                                                        <tr className="border-b border-border-primary">
-                                                            <th className="text-left py-3 px-2 font-semibold text-text-secondary">User</th>
-                                                            <th className="text-left py-3 px-2 font-semibold text-text-secondary">Role</th>
-                                                            <th className="text-left py-3 px-2 font-semibold text-text-secondary">Managed By</th>
-                                                            <th className="text-left py-3 px-2 font-semibold text-text-secondary">Joined</th>
-                                                            <th className="text-center py-3 px-2 font-semibold text-text-secondary">Status</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {approvedUsers.map(user => (
-                                                            <tr key={user._id} className="border-b border-border-primary last:border-0 hover:bg-background-secondary transition-colors">
-                                                                <td className="py-3 px-2">
-                                                                    <p className="font-medium text-text-primary">{user.name}</p>
-                                                                    <p className="text-xs text-text-tertiary">{user.email}</p>
-                                                                </td>
-                                                                <td className="py-3 px-2">
-                                                                    <Badge variant={user.role === 'seller' ? 'warning' : user.role === 'admin' ? 'error' : 'info'} size="sm">
-                                                                        {user.role}
-                                                                    </Badge>
-                                                                </td>
-                                                                <td className="py-3 px-2 text-text-secondary text-xs">{user.managedBy?.name || 'System'}</td>
-                                                                <td className="py-3 px-2 text-text-secondary text-xs">
-                                                                    {new Date(user.createdAt).toLocaleDateString()}
-                                                                </td>
-                                                                <td className="py-3 px-2 text-center">
-                                                                    <Badge variant="success" size="sm">Approved</Badge>
-                                                                </td>
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        )}
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        )}
-
-                        {/* Pagination */}
-                        {totalPages > 1 && (
-                            <div className="flex items-center justify-between mt-6 pt-4 border-t border-border-primary">
-                                <p className="text-sm text-text-tertiary">
-                                    Showing page {approvedPage} of {totalPages} ({approvedTotal} total)
-                                </p>
-                                <div className="flex gap-2">
-                                    <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => handlePageChange(approvedPage - 1)}
-                                        disabled={approvedPage <= 1}
-                                    >
-                                        Previous
-                                    </Button>
-                                    <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => handlePageChange(approvedPage + 1)}
-                                        disabled={approvedPage >= totalPages}
-                                    >
-                                        Next
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
-                    </Card>
-                </motion.div>
+        <div className="container-custom py-10 space-y-12">
+            {/* Header */}
+            <div>
+                <h1 className="heading-1 mb-1">Platform Overview</h1>
+                <p className="body text-text-secondary">Real-time platform metrics — click a card to dive deeper</p>
             </div>
+
+            {error && <ErrorMessage message={error} onRetry={() => { fetchData(); setError(null); }} />}
+
+            {/* ── Global Metrics ─────────────────────────────────────────── */}
+            <section>
+                <h2 className="heading-3 mb-5">Global Metrics</h2>
+                <motion.div variants={staggerContainer} initial="hidden" animate="visible"
+                    className="grid grid-cols-2 md:grid-cols-4 gap-5">
+                    <motion.div variants={staggerItem}>
+                        <StatCard label="Total Books" value={fmt(stats?.totalBooks)} color="text-info" bg="bg-info/10"
+                            icon={<Icon d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />}
+                            note="All listings"
+                            onClick={() => navigate('/moderator/library')} clickLabel="View Verified Library" />
+                    </motion.div>
+                    <motion.div variants={staggerItem}>
+                        <StatCard label="Total Users" value={fmt(stats?.totalUsers)} color="text-accent-brown" bg="bg-accent-brown/10"
+                            icon={<Icon d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />}
+                            note="Buyers, sellers, employees"
+                            onClick={() => navigate('/moderator/users')} clickLabel="Manage Users" />
+                    </motion.div>
+                    <motion.div variants={staggerItem}>
+                        <StatCard label="Total Orders" value={fmt(stats?.totalOrders)} color="text-success" bg="bg-success/10"
+                            icon={<Icon d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />}
+                            note="Completed payments" />
+                    </motion.div>
+                    <motion.div variants={staggerItem}>
+                        <StatCard label="Total Revenue" value={fmtCurrency(totalRev)} color="text-warning" bg="bg-warning/10"
+                            icon={<Icon d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />}
+                            note="Gross sales" />
+                    </motion.div>
+                </motion.div>
+            </section>
+
+            {/* ── Revenue Breakdown ──────────────────────────────────────── */}
+            <section>
+                <h2 className="heading-3 mb-2">Revenue Breakdown</h2>
+                <p className="text-sm text-text-tertiary mb-5">Physical prices + Tax + Shipping + Subscriptions = Gross</p>
+
+                {/* Gross card — full width stacked bar */}
+                <Card elevated padding="lg" className="mb-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <p className="text-sm text-text-secondary mb-1">Gross Platform Revenue</p>
+                            <h3 className="heading-1 text-accent-brown">{fmtCurrency(totalRev)}</h3>
+                            <p className="text-xs text-text-tertiary mt-1">All completed orders + active subscriptions</p>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-sm text-text-secondary">Completed Orders</p>
+                            <p className="heading-3">{fmt(stats?.totalOrders)}</p>
+                        </div>
+                    </div>
+                    <div className="mt-5 h-3 rounded-full bg-background-secondary overflow-hidden flex">
+                        <div className="h-full bg-info transition-all" style={{ width: `${physicalPct}%` }} />
+                        <div className="h-full bg-warning transition-all" style={{ width: `${taxPct}%` }} />
+                        <div className="h-full bg-error/70 transition-all" style={{ width: `${shippingPct}%` }} />
+                        <div className="h-full bg-success transition-all" style={{ width: `${subPct}%` }} />
+                    </div>
+                    <div className="flex flex-wrap gap-4 mt-3">
+                        <span className="flex items-center gap-1.5 text-xs text-text-secondary"><span className="w-3 h-3 rounded-sm bg-info inline-block" />Book Prices ({physicalPct}%)</span>
+                        <span className="flex items-center gap-1.5 text-xs text-text-secondary"><span className="w-3 h-3 rounded-sm bg-warning inline-block" />Tax ({taxPct}%)</span>
+                        <span className="flex items-center gap-1.5 text-xs text-text-secondary"><span className="w-3 h-3 rounded-sm bg-error/70 inline-block" />Shipping ({shippingPct}%)</span>
+                        <span className="flex items-center gap-1.5 text-xs text-text-secondary"><span className="w-3 h-3 rounded-sm bg-success inline-block" />Subscriptions ({subPct}%)</span>
+                    </div>
+                </Card>
+
+                {/* 4 breakdown cards */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+                    <Card elevated padding="md">
+                        <div className="flex items-center justify-between mb-2">
+                            <p className="text-xs text-text-secondary">Book Prices</p>
+                            <Badge variant="info" size="sm">{physicalPct}%</Badge>
+                        </div>
+                        <h4 className="heading-3 text-info">{fmtCurrency(physical)}</h4>
+                        <p className="text-xs text-text-tertiary mt-1">Order subtotals</p>
+                        <div className="mt-3 h-1.5 rounded-full bg-background-secondary overflow-hidden">
+                            <div className="h-full rounded-full bg-info" style={{ width: `${physicalPct}%` }} />
+                        </div>
+                    </Card>
+                    <Card elevated padding="md">
+                        <div className="flex items-center justify-between mb-2">
+                            <p className="text-xs text-text-secondary">Tax Collected</p>
+                            <Badge variant="warning" size="sm">{taxPct}%</Badge>
+                        </div>
+                        <h4 className="heading-3 text-warning">{fmtCurrency(taxRev)}</h4>
+                        <p className="text-xs text-text-tertiary mt-1">GST on orders</p>
+                        <div className="mt-3 h-1.5 rounded-full bg-background-secondary overflow-hidden">
+                            <div className="h-full rounded-full bg-warning" style={{ width: `${taxPct}%` }} />
+                        </div>
+                    </Card>
+                    <Card elevated padding="md">
+                        <div className="flex items-center justify-between mb-2">
+                            <p className="text-xs text-text-secondary">Shipping Fees</p>
+                            <Badge variant="error" size="sm">{shippingPct}%</Badge>
+                        </div>
+                        <h4 className="heading-3 text-error">{fmtCurrency(shippingRev)}</h4>
+                        <p className="text-xs text-text-tertiary mt-1">Delivery charges</p>
+                        <div className="mt-3 h-1.5 rounded-full bg-background-secondary overflow-hidden">
+                            <div className="h-full rounded-full bg-error/70" style={{ width: `${shippingPct}%` }} />
+                        </div>
+                    </Card>
+                    <Card elevated padding="md">
+                        <div className="flex items-center justify-between mb-2">
+                            <p className="text-xs text-text-secondary">Subscriptions</p>
+                            <Badge variant="success" size="sm">{subPct}%</Badge>
+                        </div>
+                        <h4 className="heading-3 text-success">{fmtCurrency(subscriptionRev)}</h4>
+                        <p className="text-xs text-text-tertiary mt-1">{fmt(stats?.activeSubscribersCount)} active plans</p>
+                        <div className="mt-3 h-1.5 rounded-full bg-background-secondary overflow-hidden">
+                            <div className="h-full rounded-full bg-success" style={{ width: `${subPct}%` }} />
+                        </div>
+                    </Card>
+                </div>
+            </section>
+
+            {/* ── Activity ──────────────────────────────────────────────── */}
+            <section>
+                <h2 className="heading-3 mb-5">Platform Activity</h2>
+                <motion.div variants={staggerContainer} initial="hidden" animate="visible"
+                    className="grid grid-cols-2 md:grid-cols-4 gap-5">
+                    <motion.div variants={staggerItem}>
+                        <StatCard label="Active Buyers" value={fmt(stats?.activeBuyersCount)}
+                            color="text-success" bg="bg-success/10" note="Placed ≥ 1 order"
+                            icon={<Icon d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />}
+                            onClick={() => navigate('/moderator/users')} clickLabel="Manage Users" />
+                    </motion.div>
+                    <motion.div variants={staggerItem}>
+                        <StatCard label="Active Subscribers" value={fmt(stats?.activeSubscribersCount)}
+                            color="text-info" bg="bg-info/10" note="Premium/Plus plans"
+                            icon={<Icon d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />} />
+                    </motion.div>
+                    <motion.div variants={staggerItem}>
+                        <StatCard label="Pending Verifications" value={pendingUsersCount}
+                            color="text-warning" bg="bg-warning/10" note="Need approval"
+                            icon={<Icon d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />}
+                            onClick={() => navigate('/moderator/verification')} clickLabel="Go to Verification" />
+                    </motion.div>
+                    <motion.div variants={staggerItem}>
+                        <StatCard label="Pending Books" value={pendingBooksCount}
+                            color="text-error" bg="bg-error/10" note="Awaiting review"
+                            icon={<Icon d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />}
+                            onClick={() => navigate('/moderator/books')} clickLabel="Review Books" />
+                    </motion.div>
+                </motion.div>
+            </section>
+
+            {/* ── Seller Leaderboard ─────────────────────────────────────── */}
+            <section>
+                <h2 className="heading-3 mb-5">Seller Business Leaderboard</h2>
+                <Card elevated padding="lg">
+                    {!stats?.sellerLeaderboard?.length ? (
+                        <p className="text-center py-10 text-text-secondary">No seller data yet.</p>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="border-b border-border-primary">
+                                        <th className="text-left py-3 px-3 font-semibold text-text-secondary">#</th>
+                                        <th className="text-left py-3 px-3 font-semibold text-text-secondary">Seller</th>
+                                        <th className="text-right py-3 px-3 font-semibold text-text-secondary">Units Sold</th>
+                                        <th className="text-right py-3 px-3 font-semibold text-text-secondary">Revenue</th>
+                                        <th className="text-right py-3 px-3 font-semibold text-text-secondary">Share</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {stats.sellerLeaderboard.map((s, idx) => {
+                                        const share = totalRev > 0 ? ((s.totalRevenue / totalRev) * 100).toFixed(1) : 0;
+                                        return (
+                                            <tr key={s.sellerId} className="border-b border-border-primary last:border-0 hover:bg-background-secondary">
+                                                <td className="py-3 px-3">
+                                                    {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : (
+                                                        <span className="text-text-tertiary font-mono">{idx + 1}</span>
+                                                    )}
+                                                </td>
+                                                <td className="py-3 px-3">
+                                                    <p className="font-medium text-text-primary">{s.name || 'Unknown Seller'}</p>
+                                                    <p className="text-xs text-text-tertiary">{s.email || ''}</p>
+                                                </td>
+                                                <td className="py-3 px-3 text-right font-medium">{s.totalSales}</td>
+                                                <td className="py-3 px-3 text-right font-bold text-accent-brown">{fmtCurrency(s.totalRevenue)}</td>
+                                                <td className="py-3 px-3 text-right">
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        <div className="w-16 h-1.5 rounded-full bg-background-secondary overflow-hidden">
+                                                            <div className="h-full rounded-full bg-accent-brown" style={{ width: `${share}%` }} />
+                                                        </div>
+                                                        <span className="text-xs text-text-tertiary w-8 text-right">{share}%</span>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </Card>
+            </section>
         </div>
     );
 };
 
-export default Dashboard;
+export default Overview;

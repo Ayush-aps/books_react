@@ -240,6 +240,16 @@ export const moderatorAPI = {
   getEmployeeStats: () => api.get('/admin/moderator/employee-stats'),
   getApprovedBooks: (params) => api.get('/admin/moderator/approved-books', { params }),
   getApprovedUsers: (params) => api.get('/admin/moderator/approved-users', { params }),
+  // User Management
+  getUsers: (params) => api.get('/admin/moderator/users', { params }),
+  getUser: (userId) => api.get(`/admin/moderator/users/${userId}`),
+  deleteUser: (userId) => api.delete(`/admin/moderator/users/${userId}`),
+  promoteEmployee: (userId) => api.put(`/admin/moderator/users/${userId}/promote`),
+  // Global Stats
+  getGlobalStats: () => api.get('/admin/moderator/global-stats'),
+  // Book Locking
+  claimBook: (bookId) => api.patch(`/admin/moderator/books/${bookId}/claim`),
+  releaseBook: (bookId) => api.patch(`/admin/moderator/books/${bookId}/release`),
 };
 
 // =====================

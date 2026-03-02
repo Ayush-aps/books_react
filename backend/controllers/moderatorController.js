@@ -74,13 +74,14 @@ exports.getPendingUsers = async (req, res) => {
  */
 exports.verifyUser = async (req, res) => {
     try {
-        const { userId, action } = req.body;
+        const userId = req.body.userId || req.params.id;
+        const { action } = req.body;
 
         // Validate input
         if (!userId || !action) {
             return res.status(400).json({
                 success: false,
-                message: "userId and action ('approve' or 'reject') are required",
+                message: "User ID and action ('approve' or 'reject') are required",
             });
         }
 
@@ -338,6 +339,388 @@ exports.getApprovedUsers = async (req, res) => {
             message: "Error fetching approved users",
             error: err.message,
         });
+    }
+};
+
+// ============================================
+// USER MANAGEMENT (MODERATOR-SCOPED)
+// ============================================
+
+const Order = require("../models/Order");
+
+/**
+ * @desc    Get all manageable users (excludes Admin and Moderator accounts)
+ * @route   GET /api/admin/moderator/users
+ * @access  Private (Admin, Moderator)
+ */
+exports.getModeratorUsers = async (req, res) => {
+    try {
+        const { page = 1, limit = 20, search, role } = req.query;
+
+        // Moderators can only see and manage buyer/seller/employee
+        const query = {
+            role: { $in: ["buyer", "seller", "employee"] },
+        };
+
+        if (role && ["buyer", "seller", "employee"].includes(role)) {
+            query.role = role;
+        }
+
+        if (search && search.trim()) {
+            const regex = new RegExp(search.trim(), "i");
+            query.$or = [{ name: regex }, { email: regex }];
+        }
+
+        const totalUsers = await User.countDocuments(query);
+        const users = await User.find(query)
+            .select("name email role verificationStatus createdAt")
+            .sort({ createdAt: -1 })
+            .skip((parseInt(page) - 1) * parseInt(limit))
+            .limit(parseInt(limit));
+
+        res.json({
+            success: true,
+            message: "Users retrieved successfully",
+            data: {
+                users,
+                pagination: {
+                    currentPage: parseInt(page),
+                    totalPages: Math.ceil(totalUsers / parseInt(limit)),
+                    totalUsers,
+                    limit: parseInt(limit),
+                },
+            },
+        });
+    } catch (err) {
+        console.error("Error fetching users:", err);
+        res.status(500).json({ success: false, message: "Error fetching users", error: err.message });
+    }
+};
+
+/**
+ * @desc    Get a single user's full profile
+ * @route   GET /api/admin/moderator/users/:id
+ * @access  Private (Admin, Moderator)
+ */
+exports.getModeratorUser = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id)
+            .select("name email role verificationStatus avatar phone address managedBy createdAt isVerified")
+            .populate("managedBy", "name email role");
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        // Hierarchy guard
+        if (["moderator", "admin"].includes(user.role)) {
+            return res.status(403).json({
+                success: false,
+                message: "Cannot view Moderator or Admin profiles.",
+            });
+        }
+
+        res.json({ success: true, message: "User profile retrieved", data: { user } });
+    } catch (err) {
+        console.error("Error fetching user:", err);
+        res.status(500).json({ success: false, message: "Error fetching user", error: err.message });
+    }
+};
+
+/**
+ * @desc    Delete a user (Buyer, Seller, or Employee only — not Moderator/Admin)
+ * @route   DELETE /api/admin/moderator/users/:id
+ * @access  Private (Admin, Moderator)
+ */
+exports.moderatorDeleteUser = async (req, res) => {
+    try {
+        const target = await User.findById(req.params.id);
+
+        if (!target) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        // HIERARCHY GUARD: Moderators cannot remove other Moderators or Admins
+        if (["moderator", "admin"].includes(target.role)) {
+            return res.status(403).json({
+                success: false,
+                message: "Moderators cannot remove Admin or Moderator accounts. Only an Admin can do this.",
+            });
+        }
+
+        await User.deleteOne({ _id: req.params.id });
+
+        res.json({
+            success: true,
+            message: `User "${target.name}" (${target.role}) deleted successfully`,
+        });
+    } catch (err) {
+        console.error("Error deleting user:", err);
+        res.status(500).json({ success: false, message: "Error deleting user", error: err.message });
+    }
+};
+
+/**
+ * @desc    Promote an Employee to Moderator
+ * @route   PUT /api/admin/moderator/users/:id/promote
+ * @access  Private (Admin, Moderator)
+ */
+exports.moderatorPromoteEmployee = async (req, res) => {
+    try {
+        const target = await User.findById(req.params.id);
+
+        if (!target) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        if (target.role !== "employee") {
+            return res.status(400).json({
+                success: false,
+                message: `Only employees can be promoted to moderator. Target user is: ${target.role}`,
+            });
+        }
+
+        target.role = "moderator";
+        target.managedBy = req.user._id;
+        await target.save();
+
+        res.json({
+            success: true,
+            message: `"${target.name}" has been promoted to Moderator`,
+            data: { user: { _id: target._id, name: target.name, email: target.email, role: target.role } },
+        });
+    } catch (err) {
+        console.error("Error promoting user:", err);
+        res.status(500).json({ success: false, message: "Error promoting user", error: err.message });
+    }
+};
+
+// ============================================
+// GLOBAL ANALYTICS
+// ============================================
+
+/**
+ * @desc    Get platform-wide stats (total books, orders, revenue + breakdowns)
+ * @route   GET /api/admin/moderator/global-stats
+ * @access  Private (Admin, Moderator)
+ */
+exports.getGlobalStats = async (req, res) => {
+    try {
+        const Subscription = require("../models/Subscription");
+
+        const [
+            totalBooks,
+            totalUsers,
+            orderAgg,
+            subscriptionAgg,
+            sellerLeaderboard,
+            activeBuyers,
+            activeSubscribers,
+        ] = await Promise.all([
+            // Total books
+            Book.countDocuments(),
+            // Total manageable users
+            User.countDocuments({ role: { $in: ["buyer", "seller", "employee"] } }),
+            // Orders aggregate — total + physical revenue
+            Order.aggregate([
+                { $match: { paymentStatus: "completed" } },
+                {
+                    $group: {
+                        _id: null,
+                        totalOrders: { $sum: 1 },
+                        ordersRevenue: { $sum: "$totalAmount" },
+                        // Use $cond not $ifNull — schema defaults subtotal/tax/shipping to 0, not null
+                        physicalRevenue: {
+                            $sum: {
+                                $cond: [{ $gt: ["$subtotal", 0] }, "$subtotal", "$totalAmount"]
+                            }
+                        },
+                        taxRevenue: { $sum: { $ifNull: ["$tax", 0] } },
+                        shippingRevenue: { $sum: { $ifNull: ["$shippingCost", 0] } },
+                        // count orders that have a breakdown (subtotal > 0)
+                        ordersWithBreakdown: {
+                            $sum: { $cond: [{ $gt: ["$subtotal", 0] }, 1, 0] }
+                        },
+                    },
+                },
+            ]),
+            // Subscription revenue aggregate
+            Subscription.aggregate([
+                { $match: { isActive: true } },
+                {
+                    $group: {
+                        _id: null,
+                        activeSubscriptions: { $sum: 1 },
+                        subscriptionRevenue: { $sum: { $ifNull: ["$paymentDetails.amount", 0] } },
+                    },
+                },
+            ]),
+            // Top 10 sellers by order revenue
+            Order.aggregate([
+                { $match: { paymentStatus: "completed" } },
+                { $unwind: "$items" },
+                {
+                    $group: {
+                        _id: "$items.seller",
+                        totalRevenue: { $sum: { $multiply: ["$items.price", "$items.quantity"] } },
+                        totalSales: { $sum: "$items.quantity" },
+                    },
+                },
+                { $sort: { totalRevenue: -1 } },
+                { $limit: 10 },
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "_id",
+                        foreignField: "_id",
+                        as: "seller",
+                    },
+                },
+                { $unwind: { path: "$seller", preserveNullAndEmptyArrays: true } },
+                {
+                    $project: {
+                        sellerId: "$_id",
+                        name: "$seller.name",
+                        email: "$seller.email",
+                        totalRevenue: 1,
+                        totalSales: 1,
+                    },
+                },
+            ]),
+            // Active buyers (placed at least 1 order)
+            Order.distinct("buyer", { paymentStatus: "completed" }),
+            // Active subscribers
+            Subscription.countDocuments({ isActive: true }),
+        ]);
+
+        const {
+            totalOrders = 0,
+            ordersRevenue = 0,
+            physicalRevenue = 0,
+            taxRevenue = 0,
+            shippingRevenue = 0,
+        } = orderAgg[0] || {};
+
+        const {
+            activeSubscriptions = 0,
+            subscriptionRevenue = 0,
+        } = subscriptionAgg[0] || {};
+
+        // True gross = all completed order payments + all subscription payments
+        const platformRevenue = ordersRevenue + subscriptionRevenue;
+
+        res.json({
+            success: true,
+            message: "Global stats retrieved successfully",
+            data: {
+                totalBooks,
+                totalUsers,
+                totalOrders,
+                totalRevenue: platformRevenue,
+                // Revenue breakdown (all parts add up to totalRevenue)
+                revenue: {
+                    platform: platformRevenue,
+                    physical: physicalRevenue,
+                    tax: taxRevenue,
+                    shipping: shippingRevenue,
+                    subscriptions: subscriptionRevenue,
+                },
+                // Seller leaderboard
+                sellerLeaderboard,
+                // Activity
+                activeBuyersCount: activeBuyers.length,
+                activeSubscribersCount: activeSubscribers,
+            },
+        });
+    } catch (err) {
+        console.error("Error fetching global stats:", err);
+        res.status(500).json({ success: false, message: "Error fetching global stats", error: err.message });
+    }
+};
+
+
+// ============================================
+// BOOK LOCKING (CLAIM / RELEASE)
+// ============================================
+
+/**
+ * @desc    Claim/lock a pending book for review
+ * @route   PATCH /api/admin/moderator/books/:id/claim
+ * @access  Private (Admin, Moderator)
+ */
+exports.claimBook = async (req, res) => {
+    try {
+        const book = await Book.findById(req.params.id).populate("lockedBy", "name");
+
+        if (!book) {
+            return res.status(404).json({ success: false, message: "Book not found" });
+        }
+
+        if (book.approvalStatus !== "pending") {
+            return res.status(400).json({ success: false, message: "Book is not pending review" });
+        }
+
+        // Already claimed by another user
+        if (book.lockedBy && book.lockedBy._id.toString() !== req.user._id.toString()) {
+            return res.status(409).json({
+                success: false,
+                message: `This book is already under review by ${book.lockedBy.name}`,
+            });
+        }
+
+        book.lockedBy = req.user._id;
+        book.lockedAt = new Date();
+        await book.save();
+
+        res.json({
+            success: true,
+            message: `Book "${book.title}" claimed for review`,
+            data: { bookId: book._id, lockedBy: req.user._id, lockedAt: book.lockedAt },
+        });
+    } catch (err) {
+        console.error("Error claiming book:", err);
+        res.status(500).json({ success: false, message: "Error claiming book", error: err.message });
+    }
+};
+
+/**
+ * @desc    Release a book back to the general pool
+ * @route   PATCH /api/admin/moderator/books/:id/release
+ * @access  Private (Admin, Moderator)
+ */
+exports.releaseBook = async (req, res) => {
+    try {
+        const book = await Book.findById(req.params.id);
+
+        if (!book) {
+            return res.status(404).json({ success: false, message: "Book not found" });
+        }
+
+        if (!book.lockedBy) {
+            return res.status(400).json({ success: false, message: "Book is not currently claimed" });
+        }
+
+        // Only the claiming moderator or an Admin can release
+        const isOwner = book.lockedBy.toString() === req.user._id.toString();
+        const isAdmin = req.user.role === "admin";
+        if (!isOwner && !isAdmin) {
+            return res.status(403).json({
+                success: false,
+                message: "You can only release a book that you have claimed",
+            });
+        }
+
+        book.lockedBy = null;
+        book.lockedAt = null;
+        await book.save();
+
+        res.json({
+            success: true,
+            message: `Book "${book.title}" released back to the review pool`,
+        });
+    } catch (err) {
+        console.error("Error releasing book:", err);
+        res.status(500).json({ success: false, message: "Error releasing book", error: err.message });
     }
 };
 
