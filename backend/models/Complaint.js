@@ -15,10 +15,10 @@ const ComplaintSchema = new mongoose.Schema({
     type: String,
     enum: [
       // Buyer categories
-      'Product Quality', 'Delivery Issue', 'Wrong Item', 'Damaged Item', 
+      'Product Quality', 'Delivery Issue', 'Wrong Item', 'Damaged Item',
       'Missing Item', 'Seller Communication', 'Refund Issue',
       // Seller categories  
-      'Payment Issue', 'Platform Fee Dispute', 'Buyer Issue', 
+      'Payment Issue', 'Platform Fee Dispute', 'Buyer Issue',
       'Technical Problem', 'Account Issue', 'Policy Violation Report',
       // Common
       'Other', 'General Inquiry'
@@ -32,7 +32,7 @@ const ComplaintSchema = new mongoose.Schema({
   },
   userRole: {
     type: String,
-    enum: ['buyer', 'seller', 'guest'],
+    enum: ['buyer', 'seller', 'guest', 'moderator', 'employee'],
     required: true
   },
   // Guest user information (for non-authenticated users)
@@ -60,7 +60,7 @@ const ComplaintSchema = new mongoose.Schema({
   // Status workflow
   status: {
     type: String,
-    enum: ['pending', 'in-progress', 'resolved', 'rejected', 'closed'],
+    enum: ['open', 'pending', 'in-progress', 'resolved', 'escalated', 'rejected', 'closed'],
     default: 'pending'
   },
   priority: {
@@ -88,7 +88,7 @@ const ComplaintSchema = new mongoose.Schema({
     },
     userRole: {
       type: String,
-      enum: ['buyer', 'seller', 'admin', 'guest'],
+      enum: ['buyer', 'seller', 'admin', 'guest', 'moderator', 'employee'],
       required: true
     },
     message: {
@@ -126,7 +126,7 @@ const ComplaintSchema = new mongoose.Schema({
 });
 
 // Update the updatedAt timestamp before saving
-ComplaintSchema.pre('save', function(next) {
+ComplaintSchema.pre('save', function (next) {
   this.updatedAt = Date.now();
   next();
 });

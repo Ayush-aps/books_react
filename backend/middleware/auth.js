@@ -100,3 +100,44 @@ module.exports.forwardAuthenticated = function (req, res, next) {
     }
   });
 };
+
+/**
+ * Generic role-checking middleware factory
+ * Usage: checkRole('admin', 'moderator')
+ */
+module.exports.checkRole = function (...roles) {
+  return function (req, res, next) {
+    if (req.isAuthenticated() && roles.includes(req.user.role)) {
+      return next();
+    }
+    return res.status(403).json({
+      success: false,
+      message: `Access denied. Required role(s): ${roles.join(', ')}.`
+    });
+  };
+};
+
+/**
+ * Ensures user has moderator or admin role
+ */
+module.exports.ensureModeratorOrAdmin = module.exports.checkRole('admin', 'moderator');
+
+/**
+ * Ensures user's verificationStatus is 'approved'
+ * Only enforced for roles that require verification (seller, employee, moderator)
+ * Buyers and admins bypass this check.
+ */
+module.exports.ensureApprovedUser = function (req, res, next) {
+  const rolesRequiringApproval = ['seller', 'employee', 'moderator'];
+  if (
+    req.isAuthenticated() &&
+    rolesRequiringApproval.includes(req.user.role) &&
+    req.user.verificationStatus !== 'approved'
+  ) {
+    return res.status(403).json({
+      success: false,
+      message: 'Your account is pending verification. Please wait for approval.'
+    });
+  }
+  return next();
+};

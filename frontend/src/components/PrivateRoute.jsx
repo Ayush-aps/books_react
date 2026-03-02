@@ -1,6 +1,7 @@
 /**
  * Private Route Component
  * Protects routes that require authentication and specific roles
+ * Supports both single role (string) and multiple roles (array)
  */
 
 import { Navigate } from 'react-router-dom';
@@ -17,16 +18,23 @@ const PrivateRoute = ({ children, role }) => {
     return <Navigate to="/login" replace />;
   }
 
-  if (role && user.role !== role) {
-    // Redirect based on user's actual role
-    if (user.role === 'buyer') {
-      return <Navigate to="/buyer/browse" />;
-    } else if (user.role === 'seller') {
-      return <Navigate to="/seller/dashboard" />;
-    } else if (user.role === 'admin') {
-      return <Navigate to="/admin/dashboard" />;
+  // Support both string and array of roles
+  if (role) {
+    const hasRole = Array.isArray(role)
+      ? role.includes(user.role)
+      : user.role === role;
+
+    if (!hasRole) {
+      // Redirect based on user's actual role
+      const roleRedirects = {
+        buyer: '/buyer/browse',
+        seller: '/seller/dashboard',
+        admin: '/admin/dashboard',
+        moderator: '/moderator/dashboard',
+        employee: '/employee/dashboard',
+      };
+      return <Navigate to={roleRedirects[user.role] || '/'} />;
     }
-    return <Navigate to="/" />;
   }
 
   return children;

@@ -231,4 +231,37 @@ export const paymentAPI = {
   updateOrderStatus: (id, status) => api.put(`/orders/${id}/status`, { status }),
 };
 
+// =====================
+// Moderator API
+// =====================
+export const moderatorAPI = {
+  getPendingUsers: (params) => api.get('/admin/moderator/pending-users', { params }),
+  verifyUser: (userId, action) => api.post('/admin/moderator/verify-user', { userId, action }),
+  getEmployeeStats: () => api.get('/admin/moderator/employee-stats'),
+  getApprovedBooks: (params) => api.get('/admin/moderator/approved-books', { params }),
+  getApprovedUsers: (params) => api.get('/admin/moderator/approved-users', { params }),
+  // User Management
+  getUsers: (params) => api.get('/admin/moderator/users', { params }),
+  getUser: (userId) => api.get(`/admin/moderator/users/${userId}`),
+  deleteUser: (userId) => api.delete(`/admin/moderator/users/${userId}`),
+  promoteEmployee: (userId) => api.put(`/admin/moderator/users/${userId}/promote`),
+  // Global Stats
+  getGlobalStats: () => api.get('/admin/moderator/global-stats'),
+  // Book Locking
+  claimBook: (bookId) => api.patch(`/admin/moderator/books/${bookId}/claim`),
+  releaseBook: (bookId) => api.patch(`/admin/moderator/books/${bookId}/release`),
+};
+
+// =====================
+// Employee API
+// =====================
+export const employeeAPI = {
+  getPendingBooks: (params) => api.get('/employee/pending-books', { params }),
+  reviewBook: (data) => api.post('/employee/review-book', data),
+  getComplaints: (params) => api.get('/employee/complaints', { params }),
+  claimComplaint: (complaintId) => api.patch('/employee/claim-complaint', { complaintId }),
+  resolveComplaint: (data) => api.post('/employee/resolve-complaint', data),
+  escalateComplaint: (data) => api.post('/employee/escalate-complaint', data),
+};
+
 export default api;

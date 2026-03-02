@@ -71,6 +71,17 @@ import AdminComplaintDetails from './pages/admin/ComplaintDetails'
 import AdminViewBook from './pages/admin/ViewBook'
 import Revenue from './pages/admin/Revenue'
 
+// Moderator Pages
+import ModeratorLayout from './pages/moderator/ModeratorLayout'
+import ModeratorOverview from './pages/moderator/Dashboard'
+import ModeratorVerification from './pages/moderator/Verification'
+import ModeratorBooks from './pages/moderator/Books'
+import ModeratorUsers from './pages/moderator/Users'
+import ModeratorLibrary from './pages/moderator/Library'
+
+// Employee Pages
+import EmployeeDashboard from './pages/employee/Dashboard'
+
 // Subscription Pages
 import SubscriptionCheckout from './pages/subscription/SubscriptionCheckout'
 import SubscriptionSuccess from './pages/subscription/SubscriptionSuccess'
@@ -165,6 +176,18 @@ function App() {
                 <Route path="/admin/complaints" element={<PrivateRoute role="admin"><AdminComplaints /></PrivateRoute>} />
                 <Route path="/admin/complaints/:id" element={<PrivateRoute role="admin"><AdminComplaintDetails /></PrivateRoute>} />
                 <Route path="/admin/view-book/:id" element={<PrivateRoute role="admin"><AdminViewBook /></PrivateRoute>} />
+
+                {/* Moderator Routes - nested under shared layout */}
+                <Route element={<PrivateRoute role={['moderator', 'admin']}><ModeratorLayout /></PrivateRoute>}>
+                  <Route path="/moderator/dashboard" element={<ModeratorOverview />} />
+                  <Route path="/moderator/verification" element={<ModeratorVerification />} />
+                  <Route path="/moderator/books" element={<ModeratorBooks />} />
+                  <Route path="/moderator/users" element={<ModeratorUsers />} />
+                  <Route path="/moderator/library" element={<ModeratorLibrary />} />
+                </Route>
+
+                {/* Employee Routes */}
+                <Route path="/employee/dashboard" element={<PrivateRoute role={['employee', 'moderator', 'admin']}><EmployeeDashboard /></PrivateRoute>} />
 
                 {/* Subscription Routes */}
                 <Route path="/subscription/checkout" element={<PrivateRoute role="buyer"><SubscriptionCheckout /></PrivateRoute>} />
