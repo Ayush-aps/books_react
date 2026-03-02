@@ -71,6 +71,12 @@ import AdminComplaintDetails from './pages/admin/ComplaintDetails'
 import AdminViewBook from './pages/admin/ViewBook'
 import Revenue from './pages/admin/Revenue'
 
+// Moderator Pages
+import ModeratorDashboard from './pages/moderator/Dashboard'
+
+// Employee Pages
+import EmployeeDashboard from './pages/employee/Dashboard'
+
 // Subscription Pages
 import SubscriptionCheckout from './pages/subscription/SubscriptionCheckout'
 import SubscriptionSuccess from './pages/subscription/SubscriptionSuccess'
@@ -165,6 +171,12 @@ function App() {
                 <Route path="/admin/complaints" element={<PrivateRoute role="admin"><AdminComplaints /></PrivateRoute>} />
                 <Route path="/admin/complaints/:id" element={<PrivateRoute role="admin"><AdminComplaintDetails /></PrivateRoute>} />
                 <Route path="/admin/view-book/:id" element={<PrivateRoute role="admin"><AdminViewBook /></PrivateRoute>} />
+
+                {/* Moderator Routes */}
+                <Route path="/moderator/dashboard" element={<PrivateRoute role={['moderator', 'admin']}><ModeratorDashboard /></PrivateRoute>} />
+
+                {/* Employee Routes */}
+                <Route path="/employee/dashboard" element={<PrivateRoute role={['employee', 'moderator', 'admin']}><EmployeeDashboard /></PrivateRoute>} />
 
                 {/* Subscription Routes */}
                 <Route path="/subscription/checkout" element={<PrivateRoute role="buyer"><SubscriptionCheckout /></PrivateRoute>} />

@@ -231,4 +231,25 @@ export const paymentAPI = {
   updateOrderStatus: (id, status) => api.put(`/orders/${id}/status`, { status }),
 };
 
+// =====================
+// Moderator API
+// =====================
+export const moderatorAPI = {
+  getPendingUsers: (params) => api.get('/admin/moderator/pending-users', { params }),
+  verifyUser: (userId, action) => api.post('/admin/moderator/verify-user', { userId, action }),
+  getEmployeeStats: () => api.get('/admin/moderator/employee-stats'),
+};
+
+// =====================
+// Employee API
+// =====================
+export const employeeAPI = {
+  getPendingBooks: (params) => api.get('/employee/pending-books', { params }),
+  reviewBook: (data) => api.post('/employee/review-book', data),
+  getComplaints: (params) => api.get('/employee/complaints', { params }),
+  claimComplaint: (complaintId) => api.patch('/employee/claim-complaint', { complaintId }),
+  resolveComplaint: (data) => api.post('/employee/resolve-complaint', data),
+  escalateComplaint: (data) => api.post('/employee/escalate-complaint', data),
+};
+
 export default api;

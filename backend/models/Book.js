@@ -104,6 +104,16 @@ const BookSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
+  approvalStatus: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending',
+  },
+  reviewedBy: {
+    type: mongoose.Schema.ObjectId,
+    ref: 'User',
+    default: null,
+  },
   rating: {
     type: Number,
     min: 0,
@@ -116,6 +126,14 @@ const BookSchema = new mongoose.Schema({
   },
 }, { timestamps: true });
 
+// Keep isApproved in sync with approvalStatus for backward compatibility
+BookSchema.pre('save', function (next) {
+  if (this.isModified('approvalStatus')) {
+    this.isApproved = (this.approvalStatus === 'approved');
+  }
+  next();
+});
+
 // Create index for search functionality
 BookSchema.index({
   title: "text",
@@ -124,5 +142,6 @@ BookSchema.index({
   publisher: "text",
   genres: "text",
 });
+BookSchema.index({ approvalStatus: 1 });
 
 module.exports = mongoose.model("Book", BookSchema);

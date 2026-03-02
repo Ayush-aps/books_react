@@ -4,7 +4,7 @@
 
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
- 
+
 const UserSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -26,8 +26,18 @@ const UserSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ["buyer", "seller", "admin"],
+    enum: ["buyer", "seller", "admin", "moderator", "employee"],
     default: "buyer",
+  },
+  verificationStatus: {
+    type: String,
+    enum: ["pending", "approved", "rejected"],
+    default: "pending",
+  },
+  managedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    default: null,
   },
   avatar: {
     type: String,
@@ -36,7 +46,7 @@ const UserSchema = new mongoose.Schema({
   phone: {
     type: String,
     validate: {
-      validator: function(v) {
+      validator: function (v) {
         return !v || /^\d{10}$/.test(v);
       },
       message: "Please enter a valid 10-digit phone number"
@@ -47,9 +57,9 @@ const UserSchema = new mongoose.Schema({
     city: String,
     state: String,
     zipCode: String,
-    country: { 
+    country: {
       type: String,
-      default: "India" 
+      default: "India"
     },
   },
   isVerified: {

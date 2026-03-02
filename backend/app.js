@@ -32,6 +32,8 @@ const ordersRoutes = require("./routes/orders");
 const reviewsRoutes = require("./routes/reviews");
 const booksRoutes = require("./routes/books");
 const highlightRoutes = require("./routes/highlight");
+const moderatorRoutes = require("./routes/moderator");
+const employeeRoutes = require("./routes/employee");
 
 // Import database connection
 const connectDB = require("./config/db");
@@ -129,6 +131,8 @@ app.use("/api/highlights", highlightRoutes);
 app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/buyer", buyerRoutes);
 app.use("/api/seller", sellerRoutes);
+app.use("/api/employee", employeeRoutes);
+app.use("/api/admin/moderator", moderatorRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/orders", ordersRoutes);
 

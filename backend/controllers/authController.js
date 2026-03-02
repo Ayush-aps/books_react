@@ -29,7 +29,7 @@ exports.register = async (req, res) => {
   }
 
   // Validate role
-  const validRoles = ["buyer", "seller"];
+  const validRoles = ["buyer", "seller", "employee"];
   if (!validRoles.includes(role)) {
     errors.push({ msg: "Invalid role selected" });
   }

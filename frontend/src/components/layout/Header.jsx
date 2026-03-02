@@ -325,6 +325,17 @@ export default function Header() {
                               <DropdownLink to="/admin/users">Manage Users</DropdownLink>
                             </>
                           )}
+                          {user?.role === "moderator" && (
+                            <>
+                              <DropdownLink to="/moderator/dashboard">Dashboard</DropdownLink>
+                              <DropdownLink to="/employee/dashboard">Employee View</DropdownLink>
+                            </>
+                          )}
+                          {user?.role === "employee" && (
+                            <>
+                              <DropdownLink to="/employee/dashboard">Dashboard</DropdownLink>
+                            </>
+                          )}
                         </div>
                         <div className="pt-2 border-t border-border-light px-2">
                           <Button
@@ -450,6 +461,21 @@ export default function Header() {
                   <div className="my-4 border-t border-border-light"></div>
                   <MobileNavLink to="/admin/dashboard">Dashboard</MobileNavLink>
                   <MobileNavLink to="/admin/users">Manage Users</MobileNavLink>
+                </>
+              )}
+
+              {isAuthenticated && user?.role === "moderator" && (
+                <>
+                  <div className="my-4 border-t border-border-light"></div>
+                  <MobileNavLink to="/moderator/dashboard">Dashboard</MobileNavLink>
+                  <MobileNavLink to="/employee/dashboard">Employee View</MobileNavLink>
+                </>
+              )}
+
+              {isAuthenticated && user?.role === "employee" && (
+                <>
+                  <div className="my-4 border-t border-border-light"></div>
+                  <MobileNavLink to="/employee/dashboard">Dashboard</MobileNavLink>
                 </>
               )}
             </div>
