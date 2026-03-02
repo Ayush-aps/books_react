@@ -14,6 +14,8 @@ const {
     getPendingUsers,
     verifyUser,
     getEmployeeStats,
+    getApprovedBooks,
+    getApprovedUsers,
 } = require("../controllers/moderatorController");
 
 // ============================================
@@ -44,6 +46,23 @@ router.get(
     ensureAuthenticated,
     ensureModeratorOrAdmin,
     getEmployeeStats
+);
+
+// ============================================
+// VERIFIED LIBRARY
+// ============================================
+router.get(
+    "/approved-books",
+    ensureAuthenticated,
+    ensureModeratorOrAdmin,
+    getApprovedBooks
+);
+
+router.get(
+    "/approved-users",
+    ensureAuthenticated,
+    ensureModeratorOrAdmin,
+    getApprovedUsers
 );
 
 module.exports = router;

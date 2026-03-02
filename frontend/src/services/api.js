@@ -238,6 +238,8 @@ export const moderatorAPI = {
   getPendingUsers: (params) => api.get('/admin/moderator/pending-users', { params }),
   verifyUser: (userId, action) => api.post('/admin/moderator/verify-user', { userId, action }),
   getEmployeeStats: () => api.get('/admin/moderator/employee-stats'),
+  getApprovedBooks: (params) => api.get('/admin/moderator/approved-books', { params }),
+  getApprovedUsers: (params) => api.get('/admin/moderator/approved-users', { params }),
 };
 
 // =====================

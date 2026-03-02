@@ -6,6 +6,7 @@
 
 const User = require("../models/User");
 const Complaint = require("../models/Complaint");
+const Book = require("../models/Book");
 
 // ============================================
 // USER VERIFICATION QUEUE
@@ -223,3 +224,120 @@ exports.getEmployeeStats = async (req, res) => {
         });
     }
 };
+
+// ============================================
+// VERIFIED LIBRARY — APPROVED BOOKS
+// ============================================
+
+/**
+ * @desc    Get approved books (Verified Library) with search
+ * @route   GET /api/admin/moderator/approved-books
+ * @access  Private (Admin, Moderator)
+ */
+exports.getApprovedBooks = async (req, res) => {
+    try {
+        const { page = 1, limit = 20, search } = req.query;
+
+        const query = { approvalStatus: "approved" };
+
+        if (search && search.trim()) {
+            const regex = new RegExp(search.trim(), "i");
+            query.$or = [
+                { title: regex },
+                { isbn: regex },
+                { author: regex },
+            ];
+        }
+
+        const totalBooks = await Book.countDocuments(query);
+
+        const books = await Book.find(query)
+            .populate("seller", "name email")
+            .populate("reviewedBy", "name email")
+            .select("title author isbn coverImage approvalStatus approvalDate reviewedBy seller createdAt")
+            .sort({ approvalDate: -1, createdAt: -1 })
+            .skip((parseInt(page) - 1) * parseInt(limit))
+            .limit(parseInt(limit));
+
+        res.json({
+            success: true,
+            message: "Approved books retrieved successfully",
+            data: {
+                books,
+                pagination: {
+                    currentPage: parseInt(page),
+                    totalPages: Math.ceil(totalBooks / parseInt(limit)),
+                    totalBooks,
+                    limit: parseInt(limit),
+                },
+            },
+        });
+    } catch (err) {
+        console.error("Error fetching approved books:", err);
+        res.status(500).json({
+            success: false,
+            message: "Error fetching approved books",
+            error: err.message,
+        });
+    }
+};
+
+// ============================================
+// VERIFIED LIBRARY — APPROVED USERS
+// ============================================
+
+/**
+ * @desc    Get approved users (Verified Library) with search
+ * @route   GET /api/admin/moderator/approved-users
+ * @access  Private (Admin, Moderator)
+ */
+exports.getApprovedUsers = async (req, res) => {
+    try {
+        const { page = 1, limit = 20, search, role } = req.query;
+
+        const query = { verificationStatus: "approved" };
+
+        if (role && ["seller", "employee", "moderator", "buyer"].includes(role)) {
+            query.role = role;
+        }
+
+        if (search && search.trim()) {
+            const regex = new RegExp(search.trim(), "i");
+            query.$or = [
+                { name: regex },
+                { email: regex },
+            ];
+        }
+
+        const totalUsers = await User.countDocuments(query);
+
+        const users = await User.find(query)
+            .select("name email role verificationStatus managedBy createdAt")
+            .populate("managedBy", "name email")
+            .sort({ createdAt: -1 })
+            .skip((parseInt(page) - 1) * parseInt(limit))
+            .limit(parseInt(limit));
+
+        res.json({
+            success: true,
+            message: "Approved users retrieved successfully",
+            data: {
+                users,
+                pagination: {
+                    currentPage: parseInt(page),
+                    totalPages: Math.ceil(totalUsers / parseInt(limit)),
+                    totalUsers,
+                    limit: parseInt(limit),
+                },
+            },
+        });
+    } catch (err) {
+        console.error("Error fetching approved users:", err);
+        res.status(500).json({
+            success: false,
+            message: "Error fetching approved users",
+            error: err.message,
+        });
+    }
+};
+

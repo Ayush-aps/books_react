@@ -1,10 +1,10 @@
 /**
  * Moderator Dashboard
- * User verification, staff performance, and content oversight
+ * User verification, staff performance, content oversight, and Verified Library
  */
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { moderatorAPI, employeeAPI } from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
@@ -20,6 +20,16 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [actionLoading, setActionLoading] = useState(null);
+
+    // Verified Library state
+    const [verifiedTab, setVerifiedTab] = useState('books');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [approvedBooks, setApprovedBooks] = useState([]);
+    const [approvedUsers, setApprovedUsers] = useState([]);
+    const [approvedBooksTotal, setApprovedBooksTotal] = useState(0);
+    const [approvedUsersTotal, setApprovedUsersTotal] = useState(0);
+    const [approvedPage, setApprovedPage] = useState(1);
+    const [verifiedLoading, setVerifiedLoading] = useState(false);
 
     useEffect(() => {
         fetchDashboardData();
@@ -45,6 +55,60 @@ const Dashboard = () => {
         }
     };
 
+    const fetchApprovedBooks = useCallback(async (page = 1, search = '') => {
+        try {
+            setVerifiedLoading(true);
+            const res = await moderatorAPI.getApprovedBooks({ page, limit: 10, search });
+            setApprovedBooks(res.data?.data?.books || []);
+            setApprovedBooksTotal(res.data?.data?.pagination?.totalBooks || 0);
+        } catch (err) {
+            setError(err.message || 'Failed to load approved books');
+        } finally {
+            setVerifiedLoading(false);
+        }
+    }, []);
+
+    const fetchApprovedUsers = useCallback(async (page = 1, search = '') => {
+        try {
+            setVerifiedLoading(true);
+            const res = await moderatorAPI.getApprovedUsers({ page, limit: 10, search });
+            setApprovedUsers(res.data?.data?.users || []);
+            setApprovedUsersTotal(res.data?.data?.pagination?.totalUsers || 0);
+        } catch (err) {
+            setError(err.message || 'Failed to load approved users');
+        } finally {
+            setVerifiedLoading(false);
+        }
+    }, []);
+
+    // Fetch verified data when tab changes or on first mount
+    useEffect(() => {
+        if (verifiedTab === 'books') {
+            fetchApprovedBooks(1, searchQuery);
+        } else {
+            fetchApprovedUsers(1, searchQuery);
+        }
+        setApprovedPage(1);
+    }, [verifiedTab, fetchApprovedBooks, fetchApprovedUsers]);
+
+    const handleSearch = () => {
+        setApprovedPage(1);
+        if (verifiedTab === 'books') {
+            fetchApprovedBooks(1, searchQuery);
+        } else {
+            fetchApprovedUsers(1, searchQuery);
+        }
+    };
+
+    const handlePageChange = (newPage) => {
+        setApprovedPage(newPage);
+        if (verifiedTab === 'books') {
+            fetchApprovedBooks(newPage, searchQuery);
+        } else {
+            fetchApprovedUsers(newPage, searchQuery);
+        }
+    };
+
     const handleVerifyUser = async (userId, action) => {
         try {
             setActionLoading(userId);
@@ -65,7 +129,7 @@ const Dashboard = () => {
         );
     }
 
-    if (error) {
+    if (error && !pendingUsers.length && !employeeStats.length) {
         return (
             <div className="min-h-screen bg-background-primary py-12">
                 <div className="container-custom">
@@ -75,6 +139,9 @@ const Dashboard = () => {
         );
     }
 
+    const approvedTotal = verifiedTab === 'books' ? approvedBooksTotal : approvedUsersTotal;
+    const totalPages = Math.ceil(approvedTotal / 10);
+
     return (
         <div className="min-h-screen bg-background-primary py-12">
             <div className="container-custom">
@@ -83,6 +150,13 @@ const Dashboard = () => {
                     <h1 className="heading-1 mb-3">Moderator Dashboard</h1>
                     <p className="body-xl text-text-secondary">User verification, staff oversight & content moderation</p>
                 </motion.div>
+
+                {/* Error banner */}
+                {error && (
+                    <div className="mb-8">
+                        <ErrorMessage message={error} onRetry={() => { fetchDashboardData(); setError(null); }} />
+                    </div>
+                )}
 
                 {/* Content Oversight Cards */}
                 <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
@@ -230,6 +304,174 @@ const Dashboard = () => {
                         </Card>
                     </motion.div>
                 </div>
+
+                {/* ===== VERIFIED LIBRARY ===== */}
+                <motion.div variants={fadeInUp} initial="hidden" animate="visible" transition={{ delay: 0.2 }}>
+                    <Card elevated padding="lg">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                            <h2 className="heading-3">Verified Library</h2>
+
+                            {/* Tabs */}
+                            <div className="flex gap-1 p-1 bg-background-secondary rounded-lg w-fit">
+                                <button
+                                    onClick={() => { setVerifiedTab('books'); setSearchQuery(''); }}
+                                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${verifiedTab === 'books'
+                                            ? 'bg-accent-brown text-white shadow-sm'
+                                            : 'text-text-secondary hover:text-text-primary'
+                                        }`}
+                                >
+                                    Approved Books
+                                </button>
+                                <button
+                                    onClick={() => { setVerifiedTab('users'); setSearchQuery(''); }}
+                                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${verifiedTab === 'users'
+                                            ? 'bg-accent-brown text-white shadow-sm'
+                                            : 'text-text-secondary hover:text-text-primary'
+                                        }`}
+                                >
+                                    Approved Users
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Search Bar */}
+                        <div className="flex gap-2 mb-6">
+                            <input
+                                type="text"
+                                placeholder={verifiedTab === 'books' ? 'Search by title, ISBN, or author...' : 'Search by name or email...'}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                                className="flex-1 px-4 py-2 rounded-lg border border-border-primary bg-background-primary text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-brown text-sm"
+                            />
+                            <Button variant="primary" size="sm" onClick={handleSearch}>
+                                Search
+                            </Button>
+                        </div>
+
+                        {/* Results */}
+                        {verifiedLoading ? (
+                            <div className="flex justify-center py-12">
+                                <LoadingSpinner size="md" message="Loading..." />
+                            </div>
+                        ) : (
+                            <AnimatePresence mode="wait">
+                                {verifiedTab === 'books' && (
+                                    <motion.div key="vbooks" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                                        {approvedBooks.length === 0 ? (
+                                            <div className="text-center py-12">
+                                                <p className="text-text-secondary">No approved books found.</p>
+                                            </div>
+                                        ) : (
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-sm">
+                                                    <thead>
+                                                        <tr className="border-b border-border-primary">
+                                                            <th className="text-left py-3 px-2 font-semibold text-text-secondary">Book</th>
+                                                            <th className="text-left py-3 px-2 font-semibold text-text-secondary">ISBN</th>
+                                                            <th className="text-left py-3 px-2 font-semibold text-text-secondary">Seller</th>
+                                                            <th className="text-left py-3 px-2 font-semibold text-text-secondary">Reviewed By</th>
+                                                            <th className="text-center py-3 px-2 font-semibold text-text-secondary">Status</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {approvedBooks.map(book => (
+                                                            <tr key={book._id} className="border-b border-border-primary last:border-0 hover:bg-background-secondary transition-colors">
+                                                                <td className="py-3 px-2">
+                                                                    <p className="font-medium text-text-primary">{book.title}</p>
+                                                                    <p className="text-xs text-text-tertiary">{book.author}</p>
+                                                                </td>
+                                                                <td className="py-3 px-2 text-text-secondary text-xs font-mono">{book.isbn}</td>
+                                                                <td className="py-3 px-2 text-text-secondary text-xs">{book.seller?.name || '—'}</td>
+                                                                <td className="py-3 px-2 text-text-secondary text-xs">{book.reviewedBy?.name || 'System'}</td>
+                                                                <td className="py-3 px-2 text-center">
+                                                                    <Badge variant="success" size="sm">Approved</Badge>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        )}
+                                    </motion.div>
+                                )}
+
+                                {verifiedTab === 'users' && (
+                                    <motion.div key="vusers" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                                        {approvedUsers.length === 0 ? (
+                                            <div className="text-center py-12">
+                                                <p className="text-text-secondary">No approved users found.</p>
+                                            </div>
+                                        ) : (
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-sm">
+                                                    <thead>
+                                                        <tr className="border-b border-border-primary">
+                                                            <th className="text-left py-3 px-2 font-semibold text-text-secondary">User</th>
+                                                            <th className="text-left py-3 px-2 font-semibold text-text-secondary">Role</th>
+                                                            <th className="text-left py-3 px-2 font-semibold text-text-secondary">Managed By</th>
+                                                            <th className="text-left py-3 px-2 font-semibold text-text-secondary">Joined</th>
+                                                            <th className="text-center py-3 px-2 font-semibold text-text-secondary">Status</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {approvedUsers.map(user => (
+                                                            <tr key={user._id} className="border-b border-border-primary last:border-0 hover:bg-background-secondary transition-colors">
+                                                                <td className="py-3 px-2">
+                                                                    <p className="font-medium text-text-primary">{user.name}</p>
+                                                                    <p className="text-xs text-text-tertiary">{user.email}</p>
+                                                                </td>
+                                                                <td className="py-3 px-2">
+                                                                    <Badge variant={user.role === 'seller' ? 'warning' : user.role === 'admin' ? 'error' : 'info'} size="sm">
+                                                                        {user.role}
+                                                                    </Badge>
+                                                                </td>
+                                                                <td className="py-3 px-2 text-text-secondary text-xs">{user.managedBy?.name || 'System'}</td>
+                                                                <td className="py-3 px-2 text-text-secondary text-xs">
+                                                                    {new Date(user.createdAt).toLocaleDateString()}
+                                                                </td>
+                                                                <td className="py-3 px-2 text-center">
+                                                                    <Badge variant="success" size="sm">Approved</Badge>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        )}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        )}
+
+                        {/* Pagination */}
+                        {totalPages > 1 && (
+                            <div className="flex items-center justify-between mt-6 pt-4 border-t border-border-primary">
+                                <p className="text-sm text-text-tertiary">
+                                    Showing page {approvedPage} of {totalPages} ({approvedTotal} total)
+                                </p>
+                                <div className="flex gap-2">
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => handlePageChange(approvedPage - 1)}
+                                        disabled={approvedPage <= 1}
+                                    >
+                                        Previous
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => handlePageChange(approvedPage + 1)}
+                                        disabled={approvedPage >= totalPages}
+                                    >
+                                        Next
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </Card>
+                </motion.div>
             </div>
         </div>
     );

@@ -142,7 +142,7 @@ export const registerSchema = z.object({
   email: emailSchema,
   password: passwordBaseValidation,
   password2: z.string().min(1, 'Confirm Password is required'),
-  role: z.enum(['buyer', 'seller'], {
+  role: z.enum(['buyer', 'seller', 'employee'], {
     required_error: "Role selection is required"
   }),
 })

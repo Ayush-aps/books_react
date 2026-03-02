@@ -52,7 +52,14 @@ const Register = () => {
   useEffect(() => {
     if (isAuthenticated && user) {
       const role = user.role;
-      navigate(role === 'admin' ? '/admin/dashboard' : '/');
+      const redirects = {
+        admin: '/admin/dashboard',
+        moderator: '/moderator/dashboard',
+        employee: '/employee/dashboard',
+        seller: '/seller/dashboard',
+        buyer: '/buyer/browse',
+      };
+      navigate(redirects[role] || '/');
     }
   }, [isAuthenticated, user, navigate]);
 
@@ -158,8 +165,9 @@ const Register = () => {
                 >
                   {/* Keep the initial blank/default option */}
                   <option value="">Select your role</option>
-                  <option value="buyer">Buyer - Browse and purchase books</option>
-                  <option value="seller">Seller - List and sell books</option>
+                  <option value="buyer">Buyer — Browse and purchase books</option>
+                  <option value="seller">Seller — List and sell books</option>
+                  <option value="employee">Employee — Book approvals & support tickets</option>
                 </Input.Select>
               </div>
 
