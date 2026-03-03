@@ -7,6 +7,7 @@
 const User = require("../models/User");
 const Complaint = require("../models/Complaint");
 const Book = require("../models/Book");
+const Order = require("../models/Order");
 
 // ============================================
 // USER VERIFICATION QUEUE
@@ -346,7 +347,7 @@ exports.getApprovedUsers = async (req, res) => {
 // USER MANAGEMENT (MODERATOR-SCOPED)
 // ============================================
 
-const Order = require("../models/Order");
+
 
 /**
  * @desc    Get all manageable users (excludes Admin and Moderator accounts)
@@ -724,3 +725,175 @@ exports.releaseBook = async (req, res) => {
     }
 };
 
+
+// ============================================
+// ORDER MANAGEMENT
+// ============================================
+
+/**
+ * @desc    Get all orders for moderation
+ * @route   GET /api/admin/moderator/orders
+ * @access  Private (Admin, Moderator, Employee)
+ */
+exports.getModeratorOrders = async (req, res) => {
+    try {
+        const { status, search, page = 1, limit = 10 } = req.query;
+        let query = {};
+
+        if (status && status !== "all") query.orderStatus = status;
+
+        if (search) {
+            query.$or = [
+                { orderId: { $regex: search, $options: "i" } },
+                { "shippingAddress.name": { $regex: search, $options: "i" } }
+            ];
+        }
+
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+        const totalOrders = await Order.countDocuments(query);
+
+        const orders = await Order.find(query)
+            .populate("buyer", "name email")
+            .populate("items.book", "title author coverImage")
+            .populate("items.seller", "name email")
+            .sort({ orderDate: -1 })
+            .skip(skip)
+            .limit(parseInt(limit));
+
+        res.json({
+            success: true,
+            message: "Orders retrieved successfully",
+            data: {
+                orders,
+                pagination: {
+                    currentPage: parseInt(page),
+                    totalPages: Math.ceil(totalOrders / parseInt(limit)),
+                    totalOrders,
+                    limit: parseInt(limit),
+                },
+            },
+        });
+    } catch (err) {
+        console.error("Error fetching moderator orders:", err);
+        res.status(500).json({ success: false, message: "Error fetching orders", error: err.message });
+    }
+};
+
+/**
+ * @desc    Update order status
+ * @route   PATCH /api/admin/moderator/orders/:id/status
+ * @access  Private (Admin, Moderator, Employee)
+ */
+exports.updateModeratorOrderStatus = async (req, res) => {
+    try {
+        const { orderStatus, adminNotes } = req.body;
+        const order = await Order.findById(req.params.id);
+
+        if (!order) {
+            return res.status(404).json({ success: false, message: "Order not found" });
+        }
+
+        if (orderStatus) order.orderStatus = orderStatus;
+        if (adminNotes) order.adminNotes = adminNotes;
+
+        await order.save();
+
+        res.json({
+            success: true,
+            message: "Order status updated successfully",
+            data: { order },
+        });
+    } catch (err) {
+        console.error("Error updating order status:", err);
+        res.status(500).json({ success: false, message: "Error updating order status", error: err.message });
+    }
+};
+
+// ============================================
+// REPORTS & ANALYTICS
+// ============================================
+
+/**
+ * @desc    Get platform reports and analytics
+ * @route   GET /api/admin/moderator/reports
+ * @access  Private (Admin, Moderator, Employee)
+ */
+exports.getModeratorReports = async (req, res) => {
+    try {
+        const userCount = await User.countDocuments();
+        const bookCount = await Book.countDocuments();
+        const orderCount = await Order.countDocuments();
+
+        // Role distribution
+        const buyerCount = await User.countDocuments({ role: "buyer" });
+        const sellerCount = await User.countDocuments({ role: "seller" });
+        const employeeCount = await User.countDocuments({ role: "employee" });
+
+        // Order distribution
+        const processingOrderCount = await Order.countDocuments({ orderStatus: "processing" });
+        const deliveredOrderCount = await Order.countDocuments({ orderStatus: "delivered" });
+        const cancelledOrderCount = await Order.countDocuments({ orderStatus: "cancelled" });
+
+        // Recent activity
+        const recentOrders = await Order.find()
+            .populate("buyer", "name email")
+            .sort({ orderDate: -1 })
+            .limit(10);
+
+        // Revenue by month (last 6 months)
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+        const revenueByMonth = await Order.aggregate([
+            {
+                $match: {
+                    orderStatus: { $in: ["delivered", "shipped", "processing"] },
+                    orderDate: { $gte: sixMonthsAgo },
+                },
+            },
+            {
+                $group: {
+                    _id: {
+                        year: { $year: "$orderDate" },
+                        month: { $month: "$orderDate" },
+                    },
+                    revenue: { $sum: "$totalAmount" },
+                    orders: { $sum: 1 },
+                },
+            },
+            { $sort: { "_id.year": 1, "_id.month": 1 } },
+            {
+                $project: {
+                    _id: 0,
+                    month: {
+                        $arrayElemAt: [
+                            ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+                            { $subtract: ["$_id.month", 1] },
+                        ],
+                    },
+                    revenue: 1,
+                    orders: 1,
+                },
+            },
+        ]);
+
+        res.json({
+            success: true,
+            message: "Reports retrieved successfully",
+            data: {
+                counts: { users: userCount, books: bookCount, orders: orderCount },
+                userDistribution: { buyers: buyerCount, sellers: sellerCount, employees: employeeCount },
+                orderDistribution: {
+                    processing: processingOrderCount,
+                    delivered: deliveredOrderCount,
+                    cancelled: cancelledOrderCount,
+                },
+                recentOrders,
+                revenueByMonth,
+            },
+        });
+    } catch (err) {
+        console.error("Error fetching moderator reports:", err);
+        res.status(500).json({ success: false, message: "Error fetching reports", error: err.message });
+    }
+};

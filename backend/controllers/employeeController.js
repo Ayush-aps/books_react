@@ -10,6 +10,7 @@
 
 const Book = require("../models/Book");
 const Complaint = require("../models/Complaint");
+const Order = require("../models/Order");
 
 // ============================================
 // BOOK VERIFICATION
@@ -403,3 +404,87 @@ exports.escalateComplaint = async (req, res) => {
         });
     }
 };
+
+// ============================================
+// ORDER MANAGEMENT
+// ============================================
+
+/**
+ * @desc    Get all orders for employee management
+ * @route   GET /api/employee/orders
+ * @access  Private (Employee, Moderator, Admin)
+ */
+exports.getOrders = async (req, res) => {
+    try {
+        const { status, search, page = 1, limit = 10 } = req.query;
+        let query = {};
+
+        if (status && status !== "all") query.orderStatus = status;
+
+        if (search) {
+            query.$or = [
+                { orderId: { $regex: search, $options: "i" } },
+                { "shippingAddress.name": { $regex: search, $options: "i" } },
+            ];
+        }
+
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+        const totalOrders = await Order.countDocuments(query);
+
+        const orders = await Order.find(query)
+            .populate("buyer", "name email")
+            .populate("items.book", "title author coverImage")
+            .populate("items.seller", "name email")
+            .sort({ orderDate: -1 })
+            .skip(skip)
+            .limit(parseInt(limit));
+
+        res.json({
+            success: true,
+            message: "Orders retrieved successfully",
+            data: {
+                orders,
+                pagination: {
+                    currentPage: parseInt(page),
+                    totalPages: Math.ceil(totalOrders / parseInt(limit)),
+                    totalOrders,
+                    limit: parseInt(limit),
+                },
+            },
+        });
+    } catch (err) {
+        console.error("Error fetching employee orders:", err);
+        res.status(500).json({ success: false, message: "Error fetching orders", error: err.message });
+    }
+};
+
+/**
+ * @desc    Update order status
+ * @route   PATCH /api/employee/orders/:id/status
+ * @access  Private (Employee, Moderator, Admin)
+ */
+exports.updateOrderStatus = async (req, res) => {
+    try {
+        const { orderStatus, adminNotes } = req.body;
+        const order = await Order.findById(req.params.id);
+
+        if (!order) {
+            return res.status(404).json({ success: false, message: "Order not found" });
+        }
+
+        if (orderStatus) order.orderStatus = orderStatus;
+        if (adminNotes) order.adminNotes = adminNotes;
+
+        await order.save();
+
+        res.json({
+            success: true,
+            message: "Order status updated successfully",
+            data: { order },
+        });
+    } catch (err) {
+        console.error("Error updating order status:", err);
+        res.status(500).json({ success: false, message: "Error updating order status", error: err.message });
+    }
+};
+

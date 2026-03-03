@@ -1,21 +1,16 @@
 /**
- * Moderator Layout — shared tab navigation for all /moderator/* pages
+ * Employee Layout — shared tab navigation for all /employee/* pages
  */
-import { NavLink, Outlet, Navigate } from 'react-router-dom';
+import { NavLink, Outlet } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
 const TABS = [
-    { label: 'Overview', to: '/moderator/dashboard', icon: '📊' },
-    { label: 'Verification', to: '/moderator/verification', icon: '✅' },
-    { label: 'Pending Books', to: '/moderator/books', icon: '📚' },
-    { label: 'Orders', to: '/moderator/orders', icon: '📦' },
-    { label: 'Complaints', to: '/moderator/complaints', icon: '⚠️' },
-    { label: 'Reports', to: '/moderator/reports', icon: '📈' },
-    { label: 'User Management', to: '/moderator/users', icon: '👥' },
-    { label: 'Verified Library', to: '/moderator/library', icon: '🏛️' },
+    { label: 'Dashboard', to: '/employee/dashboard', icon: '📊' },
+    { label: 'Orders', to: '/employee/orders', icon: '📦' },
+    { label: 'Complaints', to: '/employee/complaints', icon: '⚠️' },
 ];
 
-const ModeratorLayout = () => (
+const EmployeeLayout = () => (
     <div className="min-h-screen bg-background-primary">
         {/* Tab Bar */}
         <div className="sticky top-0 z-40 bg-background-primary/95 backdrop-blur-md border-b border-border-primary shadow-sm">
@@ -48,4 +43,4 @@ const ModeratorLayout = () => (
     </div>
 );
 
-export default ModeratorLayout;
+export default EmployeeLayout;

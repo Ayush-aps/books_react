@@ -1,6 +1,6 @@
 /**
  * Employee Routes
- * Routes for employee operations: book verification and complaint management.
+ * Routes for employee operations: book verification, complaint management, and order management.
  * All routes require employee, moderator, or admin role.
  */
 
@@ -17,6 +17,8 @@ const {
     claimComplaint,
     resolveComplaint,
     escalateComplaint,
+    getOrders,
+    updateOrderStatus,
 } = require("../controllers/employeeController");
 
 // Shared middleware: employee, moderator, or admin
@@ -27,6 +29,12 @@ const ensureEmployeeAccess = checkRole("employee", "moderator", "admin");
 // ============================================
 router.get("/pending-books", ensureAuthenticated, ensureEmployeeAccess, getPendingBooks);
 router.post("/review-book", ensureAuthenticated, ensureEmployeeAccess, reviewBook);
+
+// ============================================
+// ORDER MANAGEMENT ROUTES
+// ============================================
+router.get("/orders", ensureAuthenticated, ensureEmployeeAccess, getOrders);
+router.patch("/orders/:id/status", ensureAuthenticated, ensureEmployeeAccess, updateOrderStatus);
 
 // ============================================
 // COMPLAINT MANAGEMENT ROUTES

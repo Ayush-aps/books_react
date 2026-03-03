@@ -78,9 +78,15 @@ import ModeratorVerification from './pages/moderator/Verification'
 import ModeratorBooks from './pages/moderator/Books'
 import ModeratorUsers from './pages/moderator/Users'
 import ModeratorLibrary from './pages/moderator/Library'
+import ModeratorOrders from './pages/moderator/Orders'
+import ModeratorReports from './pages/moderator/Reports'
+import ModeratorComplaints from './pages/moderator/Complaints'
 
 // Employee Pages
+import EmployeeLayout from './pages/employee/EmployeeLayout'
 import EmployeeDashboard from './pages/employee/Dashboard'
+import EmployeeOrders from './pages/employee/Orders'
+import EmployeeComplaints from './pages/employee/Complaints'
 
 // Subscription Pages
 import SubscriptionCheckout from './pages/subscription/SubscriptionCheckout'
@@ -178,16 +184,23 @@ function App() {
                 <Route path="/admin/view-book/:id" element={<PrivateRoute role="admin"><AdminViewBook /></PrivateRoute>} />
 
                 {/* Moderator Routes - nested under shared layout */}
-                <Route element={<PrivateRoute role={['moderator', 'admin']}><ModeratorLayout /></PrivateRoute>}>
+                <Route element={<PrivateRoute role={['moderator', 'admin', 'employee']}><ModeratorLayout /></PrivateRoute>}>
                   <Route path="/moderator/dashboard" element={<ModeratorOverview />} />
                   <Route path="/moderator/verification" element={<ModeratorVerification />} />
                   <Route path="/moderator/books" element={<ModeratorBooks />} />
+                  <Route path="/moderator/orders" element={<ModeratorOrders />} />
+                  <Route path="/moderator/reports" element={<ModeratorReports />} />
+                  <Route path="/moderator/complaints" element={<ModeratorComplaints />} />
                   <Route path="/moderator/users" element={<ModeratorUsers />} />
                   <Route path="/moderator/library" element={<ModeratorLibrary />} />
                 </Route>
 
-                {/* Employee Routes */}
-                <Route path="/employee/dashboard" element={<PrivateRoute role={['employee', 'moderator', 'admin']}><EmployeeDashboard /></PrivateRoute>} />
+                {/* Employee Routes — nested under shared layout */}
+                <Route element={<PrivateRoute role={['employee', 'moderator', 'admin']}><EmployeeLayout /></PrivateRoute>}>
+                  <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
+                  <Route path="/employee/orders" element={<EmployeeOrders />} />
+                  <Route path="/employee/complaints" element={<EmployeeComplaints />} />
+                </Route>
 
                 {/* Subscription Routes */}
                 <Route path="/subscription/checkout" element={<PrivateRoute role="buyer"><SubscriptionCheckout /></PrivateRoute>} />
