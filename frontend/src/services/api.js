@@ -250,6 +250,10 @@ export const moderatorAPI = {
   // Book Locking
   claimBook: (bookId) => api.patch(`/admin/moderator/books/${bookId}/claim`),
   releaseBook: (bookId) => api.patch(`/admin/moderator/books/${bookId}/release`),
+  // Orders & Reports
+  getOrders: (params) => api.get('/admin/moderator/orders', { params }),
+  updateOrderStatus: (orderId, data) => api.patch(`/admin/moderator/orders/${orderId}/status`, data),
+  getReports: () => api.get('/admin/moderator/reports'),
 };
 
 // =====================
@@ -258,6 +262,10 @@ export const moderatorAPI = {
 export const employeeAPI = {
   getPendingBooks: (params) => api.get('/employee/pending-books', { params }),
   reviewBook: (data) => api.post('/employee/review-book', data),
+  // Orders
+  getOrders: (params) => api.get('/employee/orders', { params }),
+  updateOrderStatus: (orderId, data) => api.patch(`/employee/orders/${orderId}/status`, data),
+  // Complaints
   getComplaints: (params) => api.get('/employee/complaints', { params }),
   claimComplaint: (complaintId) => api.patch('/employee/claim-complaint', { complaintId }),
   resolveComplaint: (data) => api.post('/employee/resolve-complaint', data),

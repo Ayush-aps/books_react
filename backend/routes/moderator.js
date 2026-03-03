@@ -7,6 +7,7 @@ const router = express.Router();
 const {
     ensureAuthenticated,
     ensureModeratorOrAdmin,
+    checkRole,
 } = require("../middleware/auth");
 const {
     // Existing
@@ -25,6 +26,10 @@ const {
     // New — Book Locking
     claimBook,
     releaseBook,
+    // New — Orders & Reports
+    getModeratorOrders,
+    updateModeratorOrderStatus,
+    getModeratorReports,
 } = require("../controllers/moderatorController");
 
 // ============================================
@@ -63,6 +68,15 @@ router.get("/global-stats", ensureAuthenticated, ensureModeratorOrAdmin, getGlob
 // ============================================
 router.patch("/books/:id/claim", ensureAuthenticated, ensureModeratorOrAdmin, claimBook);
 router.patch("/books/:id/release", ensureAuthenticated, ensureModeratorOrAdmin, releaseBook);
+
+// ============================================
+// ORDER MANAGEMENT & REPORTS (Admin, Moderator, Employee)
+// ============================================
+const ensureStaffAccess = checkRole("admin", "moderator", "employee");
+
+router.get("/orders", ensureAuthenticated, ensureStaffAccess, getModeratorOrders);
+router.patch("/orders/:id/status", ensureAuthenticated, ensureStaffAccess, updateModeratorOrderStatus);
+router.get("/reports", ensureAuthenticated, ensureStaffAccess, getModeratorReports);
 
 module.exports = router;
 
