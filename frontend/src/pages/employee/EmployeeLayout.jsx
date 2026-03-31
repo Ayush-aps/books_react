@@ -13,7 +13,7 @@ const TABS = [
 const EmployeeLayout = () => (
     <div className="min-h-screen bg-background-primary">
         {/* Tab Bar */}
-        <div className="sticky top-0 z-40 bg-background-primary/95 backdrop-blur-md border-b border-border-primary shadow-sm">
+        <div className="sticky top-0 z-30 bg-background-primary/95 backdrop-blur-md border-b border-border-primary shadow-sm">
             <div className="container-custom">
                 <div className="flex items-center justify-center gap-1 overflow-x-auto py-1 scrollbar-hide">
                     {TABS.map(tab => (

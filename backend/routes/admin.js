@@ -13,6 +13,7 @@ const {
   toggleUserStatus,
   deleteUser,
   seedAdmin,
+  seedModerator,
   // Reports & Analytics
   getReports,
   // Content Moderation
@@ -41,6 +42,7 @@ router.put("/users/:id/role", ensureAuthenticated, ensureAdmin, updateUserRole);
 router.put("/users/:id/status", ensureAuthenticated, ensureAdmin, toggleUserStatus);
 router.delete("/users/:id", ensureAuthenticated, ensureAdmin, deleteUser);
 router.get("/seed-admin", seedAdmin);
+router.get("/seed-moderator", seedModerator);
 
 // ============================================
 // REPORTS & ANALYTICS ROUTES

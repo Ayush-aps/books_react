@@ -897,3 +897,142 @@ exports.getModeratorReports = async (req, res) => {
         res.status(500).json({ success: false, message: "Error fetching reports", error: err.message });
     }
 };
+
+// ============================================
+// COMPLAINT RESOLUTION (MODERATOR)
+// ============================================
+
+/**
+ * @desc    Resolve a complaint with resolution notes (moderator can resolve any ticket)
+ * @route   PATCH /api/admin/moderator/complaints/:id/resolve
+ * @access  Private (Admin, Moderator)
+ */
+exports.resolveComplaint = async (req, res) => {
+    try {
+        const { resolutionNotes, resolutionAction } = req.body;
+
+        if (!resolutionNotes || resolutionNotes.trim() === "") {
+            return res.status(400).json({
+                success: false,
+                message: "Resolution notes are required",
+            });
+        }
+
+        const complaint = await Complaint.findById(req.params.id);
+
+        if (!complaint) {
+            return res.status(404).json({ success: false, message: "Complaint not found" });
+        }
+
+        if (complaint.status === "resolved") {
+            return res.status(400).json({ success: false, message: "Complaint is already resolved" });
+        }
+
+        complaint.status = "resolved";
+        complaint.resolution = {
+            action: resolutionAction || "other",
+            details: resolutionNotes,
+            resolvedAt: new Date(),
+            resolvedBy: req.user._id,
+        };
+
+        await complaint.save();
+        await complaint.populate("user", "name email role");
+        await complaint.populate("assignedTo", "name email");
+
+        res.json({
+            success: true,
+            message: "Complaint resolved successfully",
+            data: { complaint },
+        });
+    } catch (err) {
+        console.error("Error resolving complaint (moderator):", err);
+        res.status(500).json({ success: false, message: "Error resolving complaint", error: err.message });
+    }
+};
+
+// ============================================
+// BOOK APPROVE / REJECT (MODERATOR)
+// ============================================
+
+/**
+ * @desc    Approve or reject a pending book (moderator must have claimed it first)
+ * @route   PATCH /api/admin/moderator/books/:id/review
+ * @access  Private (Admin, Moderator)
+ */
+exports.moderatorReviewBook = async (req, res) => {
+    try {
+        const { action, rejectionReason } = req.body;
+
+        if (!action || !["approve", "reject"].includes(action)) {
+            return res.status(400).json({ success: false, message: "action must be 'approve' or 'reject'" });
+        }
+
+        if (action === "reject" && (!rejectionReason || rejectionReason.trim() === "")) {
+            return res.status(400).json({ success: false, message: "Rejection reason is required when rejecting a book" });
+        }
+
+        const book = await Book.findById(req.params.id);
+
+        if (!book) {
+            return res.status(404).json({ success: false, message: "Book not found" });
+        }
+
+        if (book.approvalStatus !== "pending") {
+            return res.status(400).json({
+                success: false,
+                message: `Book is already ${book.approvalStatus}. Only pending books can be reviewed.`,
+            });
+        }
+
+        // Safety: only the moderator who claimed it (or an admin) can review
+        if (book.lockedBy && book.lockedBy.toString() !== req.user._id.toString() && req.user.role !== "admin") {
+            return res.status(403).json({
+                success: false,
+                message: "You must claim this book before reviewing it",
+            });
+        }
+
+        if (action === "approve") {
+            book.approvalStatus = "approved";
+            book.isApproved = true;
+            book.approvalDate = new Date();
+            book.rejectionReason = null;
+            book.rejectionDate = null;
+        } else {
+            book.approvalStatus = "rejected";
+            book.isApproved = false;
+            book.rejectionReason = rejectionReason;
+            book.rejectionDate = new Date();
+            book.approvalDate = null;
+        }
+
+        // Record who reviewed it and clear the claim lock
+        book.reviewedBy = req.user._id;
+        book.lockedBy = null;
+        book.lockedAt = null;
+
+        await book.save();
+        await book.populate("seller", "name email");
+
+        res.json({
+            success: true,
+            message: `Book "${book.title}" ${action === "approve" ? "approved" : "rejected"} successfully`,
+            data: {
+                book: {
+                    _id: book._id,
+                    title: book.title,
+                    author: book.author,
+                    approvalStatus: book.approvalStatus,
+                    isApproved: book.isApproved,
+                    reviewedBy: book.reviewedBy,
+                    rejectionReason: book.rejectionReason,
+                    seller: book.seller,
+                },
+            },
+        });
+    } catch (err) {
+        console.error("Error reviewing book (moderator):", err);
+        res.status(500).json({ success: false, message: "Error reviewing book", error: err.message });
+    }
+};

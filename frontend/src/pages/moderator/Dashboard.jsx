@@ -176,7 +176,7 @@ const Overview = () => {
                 <Card elevated padding="lg" className="lg:col-span-2">
                     <div className="flex items-center justify-between mb-6">
                         <h2 className="heading-3">Recent Activity</h2>
-                        <Button variant="ghost" size="sm" onClick={() => navigate('/moderator/orders')}>See All</Button>
+                        <button onClick={() => navigate('/moderator/orders')} className="text-sm font-medium text-accent-brown hover:underline transition-colors">See All →</button>
                     </div>
                     {/* Placeholder for now or actual recent orders from global stats if available */}
                     <div className="space-y-4">
@@ -266,7 +266,7 @@ const Overview = () => {
                         <div className="w-1 h-6 bg-accent-brown rounded-full" />
                         <h2 className="heading-3">Top Performing Sellers</h2>
                     </div>
-                    <Button variant="ghost" size="sm">Download CSV</Button>
+                    <button className="text-sm font-medium text-accent-brown hover:underline transition-colors">Download CSV</button>
                 </div>
                 <Card elevated padding="0" className="overflow-hidden">
                     <div className="overflow-x-auto">

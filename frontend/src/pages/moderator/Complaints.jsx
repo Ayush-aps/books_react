@@ -1,10 +1,10 @@
 /**
  * Moderator Complaints Page
- * View and manage user complaints for staff
+ * View and resolve user complaints
  */
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { employeeAPI } from '../../services/api';
+import { employeeAPI, moderatorAPI } from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
 import Card from '../../components/Card';
@@ -21,6 +21,13 @@ const Complaints = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalComplaints, setTotalComplaints] = useState(0);
+
+    // Resolve modal state
+    const [resolveModal, setResolveModal] = useState(null); // complaint object or null
+    const [resolutionNotes, setResolutionNotes] = useState('');
+    const [resolutionAction, setResolutionAction] = useState('resolved');
+    const [resolving, setResolving] = useState(false);
+    const [resolveError, setResolveError] = useState(null);
 
     const fetchComplaints = useCallback(async () => {
         try {
@@ -45,6 +52,42 @@ const Complaints = () => {
     useEffect(() => {
         fetchComplaints();
     }, [fetchComplaints]);
+
+    const openResolveModal = (complaint) => {
+        setResolveModal(complaint);
+        setResolutionNotes('');
+        setResolutionAction('resolved');
+        setResolveError(null);
+    };
+
+    const closeResolveModal = () => {
+        setResolveModal(null);
+        setResolveError(null);
+    };
+
+    const handleResolve = async () => {
+        if (!resolutionNotes.trim()) {
+            setResolveError('Resolution notes are required');
+            return;
+        }
+        try {
+            setResolving(true);
+            setResolveError(null);
+            await moderatorAPI.resolveComplaint(resolveModal._id, {
+                resolutionNotes,
+                resolutionAction,
+            });
+            // Optimistically update the list
+            setComplaints(prev =>
+                prev.map(c => c._id === resolveModal._id ? { ...c, status: 'resolved' } : c)
+            );
+            closeResolveModal();
+        } catch (err) {
+            setResolveError(err.message || 'Failed to resolve complaint');
+        } finally {
+            setResolving(false);
+        }
+    };
 
     const getStatusBadge = (status) => {
         const variants = {
@@ -136,8 +179,18 @@ const Complaints = () => {
                                                 </p>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                <Button variant="outline" size="sm">Details</Button>
-                                                <Button variant="primary" size="sm">Resolve</Button>
+                                                {complaint.status !== 'resolved' && (
+                                                    <Button
+                                                        variant="primary"
+                                                        size="sm"
+                                                        onClick={() => openResolveModal(complaint)}
+                                                    >
+                                                        Resolve
+                                                    </Button>
+                                                )}
+                                                {complaint.status === 'resolved' && (
+                                                    <span className="text-xs text-success font-medium px-3 py-1.5 bg-success/10 rounded-lg">✓ Resolved</span>
+                                                )}
                                             </div>
                                         </div>
 
@@ -183,6 +236,72 @@ const Complaints = () => {
                     />
                 </div>
             )}
+
+            {/* Resolve Modal */}
+            <AnimatePresence>
+                {resolveModal && (
+                    <motion.div
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={(e) => { if (e.target === e.currentTarget) closeResolveModal(); }}
+                    >
+                        <motion.div
+                            className="bg-background-primary border border-border-primary rounded-2xl w-full max-w-lg p-6 shadow-2xl"
+                            initial={{ scale: 0.92, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.92, opacity: 0 }}
+                        >
+                            <h2 className="text-lg font-bold text-text-primary mb-1">Resolve Complaint</h2>
+                            <p className="text-sm text-text-secondary mb-5 line-clamp-2">
+                                <span className="font-medium text-text-primary">{resolveModal.subject}</span>
+                                {' '}— by {resolveModal.user?.name}
+                            </p>
+
+                            {resolveError && (
+                                <p className="text-sm text-error bg-error/10 border border-error/20 rounded-lg px-3 py-2 mb-4">{resolveError}</p>
+                            )}
+
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-xs font-semibold text-text-secondary mb-1.5">Resolution Action</label>
+                                    <select
+                                        value={resolutionAction}
+                                        onChange={(e) => setResolutionAction(e.target.value)}
+                                        className="w-full bg-background-secondary border border-border-primary rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent-brown"
+                                    >
+                                        <option value="resolved">Resolved</option>
+                                        <option value="refund">Refund Issued</option>
+                                        <option value="replacement">Replacement Sent</option>
+                                        <option value="no-action">No Action Required</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-text-secondary mb-1.5">Resolution Notes <span className="text-error">*</span></label>
+                                    <textarea
+                                        rows={4}
+                                        value={resolutionNotes}
+                                        onChange={(e) => setResolutionNotes(e.target.value)}
+                                        placeholder="Describe how this complaint was resolved..."
+                                        className="w-full bg-background-secondary border border-border-primary rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent-brown resize-none"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex gap-3 mt-6">
+                                <Button variant="ghost" size="sm" onClick={closeResolveModal} className="flex-1">
+                                    Cancel
+                                </Button>
+                                <Button variant="primary" size="sm" onClick={handleResolve} disabled={resolving} className="flex-1">
+                                    {resolving ? 'Resolving...' : 'Mark as Resolved'}
+                                </Button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

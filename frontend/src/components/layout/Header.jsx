@@ -181,7 +181,7 @@ export default function Header() {
   return (
     <>
       <Navbar
-        className={`fixed !top-0 !left-0 !right-0 !w-full !rounded-none z-30 transition-all duration-300 ${isScrolled
+        className={`fixed !top-0 !left-0 !right-0 !w-full !rounded-none z-50 transition-all duration-300 ${isScrolled
           ? "bg-white shadow-lg border-b border-gray-200"
           : "bg-white border-b border-border-light"
           }`}

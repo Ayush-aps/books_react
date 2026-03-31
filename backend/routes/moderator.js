@@ -16,20 +16,24 @@ const {
     getEmployeeStats,
     getApprovedBooks,
     getApprovedUsers,
-    // New — User Management
+    // User Management
     getModeratorUsers,
     getModeratorUser,
     moderatorDeleteUser,
     moderatorPromoteEmployee,
-    // New — Analytics
+    // Analytics
     getGlobalStats,
-    // New — Book Locking
+    // Book Locking
     claimBook,
     releaseBook,
-    // New — Orders & Reports
+    // Orders & Reports
     getModeratorOrders,
     updateModeratorOrderStatus,
     getModeratorReports,
+    // Complaint Resolution
+    resolveComplaint,
+    // Book Approve/Reject
+    moderatorReviewBook,
 } = require("../controllers/moderatorController");
 
 // ============================================
@@ -64,10 +68,16 @@ router.post("/users/:id/verify", ensureAuthenticated, ensureModeratorOrAdmin, ve
 router.get("/global-stats", ensureAuthenticated, ensureModeratorOrAdmin, getGlobalStats);
 
 // ============================================
-// BOOK LOCKING
+// BOOK LOCKING & REVIEW
 // ============================================
 router.patch("/books/:id/claim", ensureAuthenticated, ensureModeratorOrAdmin, claimBook);
 router.patch("/books/:id/release", ensureAuthenticated, ensureModeratorOrAdmin, releaseBook);
+router.patch("/books/:id/review", ensureAuthenticated, ensureModeratorOrAdmin, moderatorReviewBook);
+
+// ============================================
+// COMPLAINT RESOLUTION
+// ============================================
+router.patch("/complaints/:id/resolve", ensureAuthenticated, ensureModeratorOrAdmin, resolveComplaint);
 
 // ============================================
 // ORDER MANAGEMENT & REPORTS (Admin, Moderator, Employee)

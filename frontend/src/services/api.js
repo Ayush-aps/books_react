@@ -254,6 +254,10 @@ export const moderatorAPI = {
   getOrders: (params) => api.get('/admin/moderator/orders', { params }),
   updateOrderStatus: (orderId, data) => api.patch(`/admin/moderator/orders/${orderId}/status`, data),
   getReports: () => api.get('/admin/moderator/reports'),
+  // Complaint Resolution
+  resolveComplaint: (complaintId, data) => api.patch(`/admin/moderator/complaints/${complaintId}/resolve`, data),
+  // Book Approve/Reject
+  reviewBook: (bookId, data) => api.patch(`/admin/moderator/books/${bookId}/review`, data),
 };
 
 // =====================

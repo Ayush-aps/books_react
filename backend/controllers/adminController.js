@@ -198,6 +198,44 @@ exports.seedAdmin = async (req, res) => {
   }
 };
 
+// @desc    Create initial moderator account
+// @route   GET /api/admin/seed-moderator
+// @access  Public (only for initial setup)
+exports.seedModerator = async (req, res) => {
+  try {
+    const moderatorExists = await User.findOne({ role: "moderator" });
+
+    if (moderatorExists) {
+      return res.status(400).json({
+        success: false,
+        message: "Moderator account already exists",
+      });
+    }
+
+    const moderator = new User({
+      name: "Moderator",
+      email: "moderator1@gmail.com",
+      password: "Moderator@1",
+      role: "moderator",
+      isVerified: true,
+    });
+
+    await moderator.save();
+
+    res.json({
+      success: true,
+      message: "Moderator account created successfully. Please login with email: moderator1@gmail.com and password: Moderator@1",
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: "Error creating moderator account",
+      error: err.message,
+    });
+  }
+};
+
 // ============================================
 // REPORTS & ANALYTICS
 // ============================================
@@ -387,7 +425,7 @@ exports.getReports = async (req, res) => {
     const newUsersThisMonth = await User.countDocuments({
       createdAt: { $gte: firstDayOfMonth },
     });
-    
+
     // Count active users based on isVerified status (includes buyers and sellers)
     const activeUsers = await User.countDocuments({
       isVerified: true,

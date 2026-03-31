@@ -47,8 +47,28 @@ const { requestLogger, slowRequestLogger } = require("./middleware/logger");
 // Initialize Express app
 const app = express();
 
-// Connect to MongoDB 
-connectDB();
+// Connect to MongoDB and auto-seed default accounts
+connectDB().then(async () => {
+  try {
+    const User = require("./models/User");
+
+    // Auto-seed moderator account if none exists
+    const moderatorExists = await User.findOne({ role: "moderator" });
+    if (!moderatorExists) {
+      const moderator = new User({
+        name: "Moderator",
+        email: "moderator1@gmail.com",
+        password: "Moderator@1",
+        role: "moderator",
+        isVerified: true,
+      });
+      await moderator.save();
+      console.log("✅ Default moderator account created (moderator1@gmail.com)");
+    }
+  } catch (err) {
+    console.error("⚠️ Auto-seed error:", err.message);
+  }
+});
 
 // Start subscription cron jobs (Netflix-like workflow)
 startSubscriptionJobs();
