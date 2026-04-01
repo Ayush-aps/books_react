@@ -37,6 +37,7 @@ const employeeRoutes = require("./routes/employee");
 
 // Import database connection
 const connectDB = require("./config/db");
+const { setupSwagger } = require("./config/swagger");
 
 // Import subscription cron jobs
 const { startSubscriptionJobs } = require("./config/subscriptionCron");
@@ -160,6 +161,9 @@ app.use("/api/orders", ordersRoutes);
 app.get("/api/health", (req, res) => {
   res.json({ status: "OK", timestamp: new Date().toISOString() });
 });
+
+// Swagger API documentation
+setupSwagger(app);
 
 // 404 handler for API
 app.use("/api/*", (req, res) => {
