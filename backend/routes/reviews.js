@@ -18,6 +18,39 @@ const Library = require("../models/Library");
  * @desc    Get all reviews for a book
  * @access  Public
  */
+/**
+ * @swagger
+ * /api/reviews/book/{bookId}:
+ *   get:
+ *     tags: [Reviews]
+ *     summary: Get all approved reviews for a book
+ *     parameters:
+ *       - $ref: '#/components/parameters/BookIdParam'
+ *       - name: sort
+ *         in: query
+ *         schema: { type: string, enum: [recent, helpful, rating-high, rating-low] }
+ *         description: Sort order (default recent)
+ *       - name: rating
+ *         in: query
+ *         schema: { type: integer, minimum: 1, maximum: 5 }
+ *     responses:
+ *       200:
+ *         description: Review list
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     reviews:
+ *                       type: array
+ *                       items: { type: object, additionalProperties: true }
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
+ */
 router.get("/book/:bookId", async (req, res) => {
   try {
     const { bookId } = req.params;
@@ -79,6 +112,35 @@ router.get("/book/:bookId", async (req, res) => {
  * @desc    Check if user can review this book (purchased only - Amazon style)
  * @access  Private
  */
+/**
+ * @swagger
+ * /api/reviews/user/can-review/{bookId}:
+ *   get:
+ *     tags: [Reviews]
+ *     summary: Check if the authenticated user can review a book
+ *     description: Returns true only if the user has a delivered order containing this book and has not already reviewed it.
+ *     security:
+ *       - sessionCookie: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/BookIdParam'
+ *     responses:
+ *       200:
+ *         description: Review eligibility
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     canReview:          { type: boolean }
+ *                     isVerifiedPurchase: { type: boolean }
+ *                     reason:             { type: string }
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ */
 router.get("/user/can-review/:bookId", ensureAuthenticated, async (req, res) => {
   try {
     const { bookId } = req.params;
@@ -128,6 +190,56 @@ router.get("/user/can-review/:bookId", ensureAuthenticated, async (req, res) => 
  * @route   POST /api/reviews
  * @desc    Create a new review with text, images, and/or video
  * @access  Private
+ */
+/**
+ * @swagger
+ * /api/reviews:
+ *   post:
+ *     tags: [Reviews]
+ *     summary: Submit a new review (text, images, and/or video)
+ *     description: >
+ *       Requires a delivered order for the book. Accepts `multipart/form-data`.
+ *       Images max 5 files, video max 1 file.
+ *     security:
+ *       - sessionCookie: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required: [bookId, rating]
+ *             properties:
+ *               bookId:     { type: string }
+ *               rating:     { type: integer, minimum: 1, maximum: 5, example: 5 }
+ *               reviewText: { type: string, example: Great read! }
+ *               images:
+ *                 type: array
+ *                 items: { type: string, format: binary }
+ *               video:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       201:
+ *         description: Review submitted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       400:
+ *         description: Validation error (e.g. already reviewed)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: User has not purchased or received the book
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
  */
 router.post("/", ensureAuthenticated, reviewMediaUpload.fields([
   { name: 'images', maxCount: 5 },
@@ -270,6 +382,35 @@ router.post("/", ensureAuthenticated, reviewMediaUpload.fields([
  * @desc    Mark review as helpful/unhelpful
  * @access  Private
  */
+/**
+ * @swagger
+ * /api/reviews/{id}/helpful:
+ *   put:
+ *     tags: [Reviews]
+ *     summary: Toggle the helpful vote on a review
+ *     security:
+ *       - sessionCookie: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/IdParam'
+ *     responses:
+ *       200:
+ *         description: Vote toggled
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     isHelpful:    { type: boolean }
+ *                     helpfulCount: { type: integer }
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
 router.put("/:id/helpful", ensureAuthenticated, async (req, res) => {
   try {
     const review = await BookReview.findById(req.params.id);
@@ -317,6 +458,34 @@ router.put("/:id/helpful", ensureAuthenticated, async (req, res) => {
  * @route   DELETE /api/reviews/:id
  * @desc    Delete own review
  * @access  Private
+ */
+/**
+ * @swagger
+ * /api/reviews/{id}:
+ *   delete:
+ *     tags: [Reviews]
+ *     summary: Delete your own review (also removes associated media from Cloudinary)
+ *     security:
+ *       - sessionCookie: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/IdParam'
+ *     responses:
+ *       200:
+ *         description: Review deleted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       403:
+ *         description: Cannot delete another user's review
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
  */
 router.delete("/:id", ensureAuthenticated, async (req, res) => {
   try {

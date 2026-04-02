@@ -17,6 +17,37 @@ const Subscription = require("../models/Subscription");
  * @desc    Get user's library (Check subscription first, no DB query for non-subscribers)
  * @access  Private
  */
+/**
+ * @swagger
+ * /api/library:
+ *   get:
+ *     tags: [Library]
+ *     summary: Get the current user's digital library (requires active subscription)
+ *     security:
+ *       - sessionCookie: []
+ *     responses:
+ *       200:
+ *         description: Library contents or subscription required notice
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:              { type: boolean, example: true }
+ *                 hasSubscription:      { type: boolean }
+ *                 requiresSubscription: { type: boolean }
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     library:
+ *                       type: array
+ *                       items: { $ref: '#/components/schemas/BookSummary' }
+ *                     subscription:
+ *                       type: object
+ *                       additionalProperties: true
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ */
 router.get("/", ensureAuthenticated, async (req, res) => {
   try {
     console.log('=== Library Request for user:', req.user._id);
@@ -92,6 +123,32 @@ router.get("/", ensureAuthenticated, async (req, res) => {
  * @route   POST /api/library/add/:bookId
  * @desc    Add a book to user's library (Check subscription, return 200 with flag)
  * @access  Private
+ */
+/**
+ * @swagger
+ * /api/library/add/{bookId}:
+ *   post:
+ *     tags: [Library]
+ *     summary: Add a book to the user's library (requires active subscription)
+ *     security:
+ *       - sessionCookie: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/BookIdParam'
+ *     responses:
+ *       200:
+ *         description: Book added or subscription required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:              { type: boolean }
+ *                 requiresSubscription: { type: boolean }
+ *                 message:              { type: string }
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
  */
 router.post("/add/:bookId", ensureAuthenticated, async (req, res) => {
   try {
@@ -174,6 +231,37 @@ router.post("/add/:bookId", ensureAuthenticated, async (req, res) => {
  * @desc    Get book details from library for reading (Requires active subscription)
  * @access  Private + Active Subscription
  */
+/**
+ * @swagger
+ * /api/library/book/{bookId}:
+ *   get:
+ *     tags: [Library]
+ *     summary: Get a book from the library for reading (requires active subscription)
+ *     security:
+ *       - sessionCookie: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/BookIdParam'
+ *     responses:
+ *       200:
+ *         description: Book data for the reader
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     book:         { $ref: '#/components/schemas/BookSummary' }
+ *                     currentPage:  { type: integer }
+ *                     progress:     { type: number }
+ *                     isBookmarked: { type: boolean }
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
 router.get("/book/:bookId", ensureAuthenticated, requireActiveSubscription, async (req, res) => {
   try {
     const bookId = req.params.bookId;
@@ -241,6 +329,46 @@ router.get("/book/:bookId", ensureAuthenticated, requireActiveSubscription, asyn
  * @route   PUT /api/library/update-progress
  * @desc    Update reading progress for a book (Requires active subscription)
  * @access  Private + Active Subscription
+ */
+/**
+ * @swagger
+ * /api/library/update-progress:
+ *   put:
+ *     tags: [Library]
+ *     summary: Update reading progress and CFI for a book
+ *     security:
+ *       - sessionCookie: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [bookId]
+ *             properties:
+ *               bookId:      { type: string }
+ *               progress:    { type: number, minimum: 0, maximum: 100, example: 45.5 }
+ *               currentPage: { type: integer, example: 5 }
+ *               cfi:         { type: string, description: ePub Canonical Fragment Identifier }
+ *     responses:
+ *       200:
+ *         description: Progress updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:     { type: boolean, example: true }
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     progress:    { type: number }
+ *                     currentPage: { type: integer }
+ *                     cfi:         { type: string }
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
  */
 router.put("/update-progress", ensureAuthenticated, requireActiveSubscription, async (req, res) => {
   try {
@@ -311,6 +439,28 @@ router.put("/update-progress", ensureAuthenticated, requireActiveSubscription, a
  * @desc    Remove a book from user's library (Requires active subscription)
  * @access  Private + Active Subscription
  */
+/**
+ * @swagger
+ * /api/library/remove/{bookId}:
+ *   delete:
+ *     tags: [Library]
+ *     summary: Remove a book from the library
+ *     security:
+ *       - sessionCookie: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/BookIdParam'
+ *     responses:
+ *       200:
+ *         description: Book removed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
 router.delete("/remove/:bookId", ensureAuthenticated, requireActiveSubscription, async (req, res) => {
   try {
     const bookId = req.params.bookId;
@@ -358,6 +508,25 @@ router.delete("/remove/:bookId", ensureAuthenticated, requireActiveSubscription,
  * @desc    Get progress data for user's library items (Requires active subscription)
  * @access  Private + Active Subscription
  */
+/**
+ * @swagger
+ * /api/library/progress-data:
+ *   get:
+ *     tags: [Library]
+ *     summary: Get reading progress for all books in the library
+ *     security:
+ *       - sessionCookie: []
+ *     responses:
+ *       200:
+ *         description: Progress data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               additionalProperties: true
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ */
 router.get("/progress-data", ensureAuthenticated, requireActiveSubscription, async (req, res) => {
   try {
     const userId = req.user._id;
@@ -388,6 +557,37 @@ router.get("/progress-data", ensureAuthenticated, requireActiveSubscription, asy
  * @route   POST /api/library/bookmark
  * @desc    Save or remove a bookmark (Requires active subscription)
  * @access  Private + Active Subscription
+ */
+/**
+ * @swagger
+ * /api/library/bookmark:
+ *   post:
+ *     tags: [Library]
+ *     summary: Save or remove a page bookmark
+ *     security:
+ *       - sessionCookie: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [bookId, isBookmarked]
+ *             properties:
+ *               bookId:       { type: string }
+ *               currentPage:  { type: integer, example: 7 }
+ *               isBookmarked: { type: boolean, example: true }
+ *     responses:
+ *       200:
+ *         description: Bookmark state updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
  */
 router.post("/bookmark", ensureAuthenticated, requireActiveSubscription, async (req, res) => {
   try {
@@ -441,6 +641,33 @@ router.post("/bookmark", ensureAuthenticated, requireActiveSubscription, async (
  * @desc    Check if a book is bookmarked (Requires active subscription)
  * @access  Private + Active Subscription
  */
+/**
+ * @swagger
+ * /api/library/bookmark/{bookId}:
+ *   get:
+ *     tags: [Library]
+ *     summary: Check whether a book is bookmarked
+ *     security:
+ *       - sessionCookie: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/BookIdParam'
+ *     responses:
+ *       200:
+ *         description: Bookmark status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:      { type: boolean, example: true }
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     isBookmarked: { type: boolean }
+ *                     bookmarkPage: { type: integer }
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ */
 router.get("/bookmark/:bookId", ensureAuthenticated, requireActiveSubscription, async (req, res) => {
   try {
     const bookId = req.params.bookId;
@@ -476,6 +703,37 @@ router.get("/bookmark/:bookId", ensureAuthenticated, requireActiveSubscription, 
  * @route   POST /api/library/annotations
  * @desc    Add or update an annotation for a book (Requires active subscription)
  * @access  Private + Active Subscription
+ */
+/**
+ * @swagger
+ * /api/library/annotations:
+ *   post:
+ *     tags: [Library]
+ *     summary: Add or update a text annotation
+ *     security:
+ *       - sessionCookie: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [bookId, cfi, text]
+ *             properties:
+ *               bookId: { type: string }
+ *               cfi:    { type: string, description: ePub CFI location }
+ *               text:   { type: string }
+ *               note:   { type: string }
+ *               color:  { type: string, example: "#FFD700" }
+ *     responses:
+ *       200:
+ *         description: Annotation saved
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
  */
 router.post("/annotations", ensureAuthenticated, requireActiveSubscription, async (req, res) => {
   try {
@@ -540,6 +798,41 @@ router.post("/annotations", ensureAuthenticated, requireActiveSubscription, asyn
  * @desc    Get all annotations for a book (Requires active subscription)
  * @access  Private + Active Subscription
  */
+/**
+ * @swagger
+ * /api/library/annotations/{bookId}:
+ *   get:
+ *     tags: [Library]
+ *     summary: Get all annotations for a book
+ *     security:
+ *       - sessionCookie: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/BookIdParam'
+ *     responses:
+ *       200:
+ *         description: Annotation list
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     annotations:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           _id:   { type: string }
+ *                           cfi:   { type: string }
+ *                           text:  { type: string }
+ *                           note:  { type: string }
+ *                           color: { type: string }
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ */
 router.get("/annotations/:bookId", ensureAuthenticated, requireActiveSubscription, async (req, res) => {
   try {
     const bookId = req.params.bookId;
@@ -572,6 +865,32 @@ router.get("/annotations/:bookId", ensureAuthenticated, requireActiveSubscriptio
  * @route   DELETE /api/library/annotations/:bookId/:annotationId
  * @desc    Delete an annotation (Requires active subscription)
  * @access  Private + Active Subscription
+ */
+/**
+ * @swagger
+ * /api/library/annotations/{bookId}/{annotationId}:
+ *   delete:
+ *     tags: [Library]
+ *     summary: Delete an annotation
+ *     security:
+ *       - sessionCookie: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/BookIdParam'
+ *       - name: annotationId
+ *         in: path
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Annotation deleted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
  */
 router.delete("/annotations/:bookId/:annotationId", ensureAuthenticated, requireActiveSubscription, async (req, res) => {
   try {
@@ -613,6 +932,31 @@ router.delete("/annotations/:bookId/:annotationId", ensureAuthenticated, require
  * @route   GET /api/library/pdf/:bookId
  * @desc    Stream PDF file for a book (Requires active subscription)
  * @access  Private + Active Subscription
+ */
+/**
+ * @swagger
+ * /api/library/pdf/{bookId}:
+ *   get:
+ *     tags: [Library]
+ *     summary: Stream the PDF/ePub file for a book in the user's library
+ *     security:
+ *       - sessionCookie: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/BookIdParam'
+ *     responses:
+ *       200:
+ *         description: PDF binary stream
+ *         content:
+ *           application/pdf:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
  */
 router.get("/pdf/:bookId", ensureAuthenticated, requireActiveSubscription, async (req, res) => {
   try {
