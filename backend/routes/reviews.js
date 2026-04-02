@@ -5,6 +5,7 @@
 
 const express = require("express");
 const router = express.Router();
+const fs = require("fs");
 const { ensureAuthenticated } = require("../middleware/auth");
 const { reviewMediaUpload } = require("../middleware/upload");
 const { uploadImage, uploadVideo, deleteImage, deleteVideo } = require("../config/cloudinary");
