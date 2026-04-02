@@ -148,3 +148,9 @@ ecosystem.config.js
 
 # Documentation build
 docs/_build/
+
+# Agents
+.agents/
+.agent/
+_agents/
+_agent/
