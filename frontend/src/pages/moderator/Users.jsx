@@ -5,7 +5,7 @@
  */
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { moderatorAPI } from '../../services/api';
+import { managerAPI } from '../../services/api';
 import Card from '../../components/Card';
 import Badge from '../../components/Badge';
 import Button from '../../components/Button';
@@ -77,7 +77,7 @@ const ProfileDrawer = ({ userId, onClose, onDelete, onPromote, onStatusChange })
         const fetch = async () => {
             try {
                 setLoading(true);
-                const res = await moderatorAPI.getUser(userId);
+                const res = await managerAPI.getUser(userId);
                 setProfile(res.data?.data?.user || null);
             } catch { setProfile(null); }
             finally { setLoading(false); }
@@ -88,7 +88,7 @@ const ProfileDrawer = ({ userId, onClose, onDelete, onPromote, onStatusChange })
     const handleStatusChange = async (uid, action) => {
         try {
             setActionLoading('status');
-            await moderatorAPI.verifyUser(uid, action);
+            await managerAPI.verifyUser(uid, action);
             setProfile(p => ({ ...p, verificationStatus: action === 'approve' ? 'approved' : 'rejected' }));
             onStatusChange(uid, action);
         } finally { setActionLoading(null); }
@@ -97,7 +97,7 @@ const ProfileDrawer = ({ userId, onClose, onDelete, onPromote, onStatusChange })
     const handleDelete = async () => {
         try {
             setActionLoading('delete');
-            await moderatorAPI.deleteUser(userId);
+            await managerAPI.deleteUser(userId);
             onDelete(userId);
             onClose();
         } finally { setActionLoading(null); setConfirmDelete(false); }
@@ -106,7 +106,7 @@ const ProfileDrawer = ({ userId, onClose, onDelete, onPromote, onStatusChange })
     const handlePromote = async () => {
         try {
             setActionLoading('promote');
-            await moderatorAPI.promoteEmployee(userId);
+            await managerAPI.promoteEmployee(userId);
             onPromote(userId);
             onClose();
         } finally { setActionLoading(null); setConfirmPromote(false); }
@@ -215,7 +215,7 @@ const ProfileDrawer = ({ userId, onClose, onDelete, onPromote, onStatusChange })
                                         <p className="text-xs text-text-tertiary mt-0.5">
                                             {profile.verificationStatus === 'approved' ? 'Account is fully active'
                                                 : profile.verificationStatus === 'rejected' ? 'Account access denied'
-                                                    : 'Awaiting moderator review'}
+                                                    : 'Awaiting manager review'}
                                         </p>
                                     </div>
                                     <VerificationWidget
@@ -235,14 +235,14 @@ const ProfileDrawer = ({ userId, onClose, onDelete, onPromote, onStatusChange })
                         {profile.role === 'employee' && !confirmPromote && !confirmDelete && (
                             <Button variant="success" fullWidth disabled={!!actionLoading}
                                 onClick={() => setConfirmPromote(true)}>
-                                ↑ Promote to Moderator
+                                ↑ Promote to Manager
                             </Button>
                         )}
 
                         {confirmPromote && (
                             <div className="p-4 rounded-xl bg-success/10 border border-success/30 space-y-3">
                                 <p className="text-sm text-success font-medium">Confirm promotion?</p>
-                                <p className="text-xs text-text-secondary">{profile.name} will gain Moderator dashboard access.</p>
+                                <p className="text-xs text-text-secondary">{profile.name} will gain Manager dashboard access.</p>
                                 <div className="flex gap-2">
                                     <Button size="sm" variant="ghost" fullWidth onClick={() => setConfirmPromote(false)}>Cancel</Button>
                                     <Button size="sm" variant="success" fullWidth disabled={actionLoading === 'promote'} onClick={handlePromote}>
@@ -295,7 +295,7 @@ const Users = () => {
             const params = { limit: 20 };
             if (q) params.search = q;
             if (role !== 'all') params.role = role;
-            const res = await moderatorAPI.getUsers(params);
+            const res = await managerAPI.getUsers(params);
             setUsers(res.data?.data?.users || []);
             setTotal(res.data?.data?.pagination?.totalUsers || 0);
             setError(null);
@@ -325,7 +325,7 @@ const Users = () => {
     const handleTableStatusChange = async (userId, action) => {
         try {
             setActionLoading(userId);
-            await moderatorAPI.verifyUser(userId, action);
+            await managerAPI.verifyUser(userId, action);
             handleStatusChange(userId, action);
         } catch (err) {
             setError(err.message || 'Failed to update status');

@@ -1,319 +1,582 @@
 /**
- * Moderator — Overview Page
- * Clickable platform stats · Revenue breakdown · Seller leaderboard
- * Active buyers · Active subscribers
+ * Manager Dashboard — Department-Aware
+ * Tabs: Tasks | Manager Chat | Employee Reports | Analytics
+ * Reads user.department from Redux to show relevant UI.
  */
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { moderatorAPI, employeeAPI } from '../../services/api';
-import Card from '../../components/Card';
-import Badge from '../../components/Badge';
-import LoadingSpinner from '../../components/LoadingSpinner';
-import ErrorMessage from '../../components/ErrorMessage';
-import { staggerContainer, staggerItem } from '../../utils/animations';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useSelector } from 'react-redux';
+import { taskAPI, deptMessagesAPI } from '../../services/api';
 
-// ─── Clickable Stat Card ────────────────────────────────────────────────────
-const StatCard = ({ label, value, icon, color, bg, note, onClick, clickLabel }) => (
-    <motion.div whileHover={onClick ? { scale: 1.02, y: -2 } : {}} whileTap={onClick ? { scale: 0.98 } : {}}>
-        <Card elevated padding="lg" className={`h-full ${onClick ? 'cursor-pointer hover:border-accent-brown/40 transition-colors' : ''}`} onClick={onClick}>
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${bg} ${color} mb-4`}>{icon}</div>
-            <p className="text-sm text-text-secondary mb-1">{label}</p>
-            <h3 className="heading-2 mb-1">{value ?? '—'}</h3>
-            {note && <p className="text-xs text-text-tertiary">{note}</p>}
-            {onClick && clickLabel && (
-                <p className="text-xs text-accent-brown font-medium mt-2 flex items-center gap-1">
-                    {clickLabel} <span>→</span>
-                </p>
-            )}
-        </Card>
-    </motion.div>
-);
-
-const Icon = ({ d }) => (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={d} />
-    </svg>
-);
-
-const fmtCurrency = (n) => n ? `₹${Number(n).toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : '₹0';
-const fmt = (n) => n?.toLocaleString('en-IN') ?? '0';
-
-const Overview = () => {
-    const navigate = useNavigate();
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [stats, setStats] = useState(null);
-    const [pendingUsersCount, setPendingUsersCount] = useState(0);
-    const [pendingBooksCount, setPendingBooksCount] = useState(0);
-    const [pendingComplaintsCount, setPendingComplaintsCount] = useState(0);
-
-    const fetchData = async () => {
-        try {
-            setLoading(true);
-            const [globalRes, usersRes, booksRes, complaintsRes] = await Promise.all([
-                moderatorAPI.getGlobalStats(),
-                moderatorAPI.getPendingUsers(),
-                employeeAPI.getPendingBooks({ limit: 1 }),
-                employeeAPI.getComplaints({ limit: 1, status: 'pending' })
-            ]);
-            setStats(globalRes.data?.data || null);
-            setPendingUsersCount(usersRes.data?.data?.users?.length || 0);
-            setPendingBooksCount(booksRes.data?.data?.pagination?.totalBooks || 0);
-            setPendingComplaintsCount(complaintsRes.data?.data?.pagination?.totalComplaints || 0);
-            setError(null);
-        } catch (err) {
-            setError(err.message || 'Failed to load stats');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => { fetchData(); }, []);
-
-    if (loading) return (
-        <div className="flex items-center justify-center py-32">
-            <LoadingSpinner size="lg" message="Loading overview..." />
-        </div>
-    );
-
-    const physical = stats?.revenue?.physical || 0;
-    const taxRev = stats?.revenue?.tax || 0;
-    const shippingRev = stats?.revenue?.shipping || 0;
-    const subscriptionRev = stats?.revenue?.subscriptions || 0;
-    const totalRev = stats?.revenue?.platform || stats?.totalRevenue || 0;
-    const physicalPct = totalRev > 0 ? Math.round((physical / totalRev) * 100) : 0;
-    const taxPct = totalRev > 0 ? Math.round((taxRev / totalRev) * 100) : 0;
-    const shippingPct = totalRev > 0 ? Math.round((shippingRev / totalRev) * 100) : 0;
-    const subPct = totalRev > 0 ? Math.round((subscriptionRev / totalRev) * 100) : 0;
-
-    const quickActions = [
-        {
-            label: 'Manage Users',
-            link: '/moderator/users',
-            icon: 'M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z',
-            color: 'bg-accent-brown'
-        },
-        {
-            label: 'Moderate Content',
-            link: '/moderator/books',
-            icon: 'M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z',
-            badge: pendingBooksCount > 0 ? `${pendingBooksCount} pending` : null,
-            color: 'bg-accent-green'
-        },
-        {
-            label: 'View All Orders',
-            link: '/moderator/orders',
-            icon: 'M9 2a1 1 0 000 2h2a1 1 0 100-2H9z M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z',
-            color: 'bg-info'
-        },
-        {
-            label: 'View Complaints',
-            link: '/moderator/complaints',
-            icon: 'M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z',
-            badge: pendingComplaintsCount > 0 ? `${pendingComplaintsCount} pending` : null,
-            color: 'bg-error'
-        },
-        {
-            label: 'View Reports',
-            link: '/moderator/reports',
-            icon: 'M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z',
-            color: 'bg-warning'
-        }
-    ];
-
-    return (
-        <div className="container-custom py-10 space-y-12">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-                <div>
-                    <h1 className="heading-1 mb-1 text-text-primary">Staff Dashboard</h1>
-                    <p className="body text-text-secondary italic">Manage orders, books, and user relations</p>
-                </div>
-                <div className="flex gap-3">
-                    <Badge variant="info" size="lg">Role: {stats?.currentUserRole || 'Employee'}</Badge>
-                    <button onClick={fetchData} className="w-10 h-10 rounded-full bg-background-secondary flex items-center justify-center hover:bg-background-tertiary transition-colors">
-                        🔄
-                    </button>
-                </div>
-            </div>
-
-            {error && <ErrorMessage message={error} onRetry={() => { fetchData(); setError(null); }} />}
-
-            {/* Global Metrics */}
-            <section>
-                <div className="flex items-center gap-3 mb-6">
-                    <div className="w-1 h-6 bg-accent-brown rounded-full" />
-                    <h2 className="heading-3">Real-time Performance</h2>
-                </div>
-                <motion.div variants={staggerContainer} initial="hidden" animate="visible"
-                    className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-                    <StatCard label="Total Books" value={fmt(stats?.totalBooks)} color="text-info" bg="bg-info/10"
-                        icon={<Icon d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />}
-                        note="Verified library size"
-                        onClick={() => navigate('/moderator/library')} clickLabel="View Library" />
-
-                    <StatCard label="Total Users" value={fmt(stats?.totalUsers)} color="text-accent-brown" bg="bg-accent-brown/10"
-                        icon={<Icon d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />}
-                        note="Onboarded platform members"
-                        onClick={() => navigate('/moderator/users')} clickLabel="Manage Users" />
-
-                    <StatCard label="Platform Orders" value={fmt(stats?.totalOrders)} color="text-success" bg="bg-success/10"
-                        icon={<Icon d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />}
-                        note="Completed transactions"
-                        onClick={() => navigate('/moderator/orders')} clickLabel="Track Orders" />
-
-                    <StatCard label="Gross Revenue" value={fmtCurrency(totalRev)} color="text-warning" bg="bg-warning/10"
-                        icon={<Icon d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />}
-                        note="Lifetime platform value"
-                        onClick={() => navigate('/moderator/reports')} clickLabel="View Analytics" />
-                </motion.div>
-            </section>
-
-            {/* Two Column Section: Recent Activity & Quick Actions */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Recent Activity */}
-                <Card elevated padding="lg" className="lg:col-span-2">
-                    <div className="flex items-center justify-between mb-6">
-                        <h2 className="heading-3">Recent Activity</h2>
-                        <Button variant="ghost" size="sm" onClick={() => navigate('/moderator/orders')}>See All</Button>
-                    </div>
-                    {/* Placeholder for now or actual recent orders from global stats if available */}
-                    <div className="space-y-4">
-                        {stats?.recentOrders?.length > 0 ? stats.recentOrders.slice(0, 5).map(order => (
-                            <div key={order._id} className="flex items-center gap-4 p-4 bg-background-secondary rounded-xl hover:bg-background-tertiary transition-colors">
-                                <div className="w-10 h-10 rounded-full bg-accent-brown/10 flex items-center justify-center text-accent-brown">📦</div>
-                                <div className="flex-1">
-                                    <p className="text-sm font-bold text-text-primary">Order #{order.orderId || order._id.slice(-8)}</p>
-                                    <p className="text-xs text-text-tertiary">{fmtCurrency(order.totalAmount)} • {order.buyer?.name}</p>
-                                </div>
-                                <Badge variant={order.orderStatus === 'delivered' ? 'success' : 'info'}>{order.orderStatus}</Badge>
-                            </div>
-                        )) : (
-                            <div className="text-center py-10 opacity-50">No recent orders found.</div>
-                        )}
-                    </div>
-                </Card>
-
-                {/* Quick Actions Card */}
-                <Card elevated padding="lg" className="h-fit">
-                    <h2 className="heading-3 mb-6">Quick Actions</h2>
-                    <div className="space-y-3">
-                        {quickActions.map((action, index) => (
-                            <button
-                                key={index}
-                                onClick={() => navigate(action.link)}
-                                className="w-full flex items-center gap-4 p-4 bg-background-secondary rounded-xl border border-transparent hover:border-accent-brown hover:bg-accent-brown/5 transition-all group"
-                            >
-                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${action.color} text-white shadow-sm group-hover:scale-110 transition-transform`}>
-                                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fillRule="evenodd" d={action.icon} clipRule="evenodd" />
-                                    </svg>
-                                </div>
-                                <div className="flex-1 text-left">
-                                    <p className="text-sm font-bold text-text-primary">{action.label}</p>
-                                    {action.badge && (
-                                        <p className="text-[10px] text-accent-brown font-bold mt-0.5">{action.badge}</p>
-                                    )}
-                                </div>
-                                <div className="text-text-tertiary group-hover:text-accent-brown opacity-0 group-hover:opacity-100 transition-all">
-                                    →
-                                </div>
-                            </button>
-                        ))}
-                    </div>
-                </Card>
-            </div>
-
-            {/* Revenue Deep Dive */}
-            <section>
-                <div className="flex items-center gap-3 mb-6">
-                    <div className="w-1 h-6 bg-accent-brown rounded-full" />
-                    <h2 className="heading-3">Revenue Deep Dive</h2>
-                </div>
-                <Card elevated padding="lg" className="mb-6 bg-gradient-to-br from-background-primary to-background-secondary">
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-8">
-                        <div>
-                            <p className="text-sm text-text-secondary mb-1">Gross Cumulative Revenue</p>
-                            <h3 className="text-4xl font-black text-accent-brown">{fmtCurrency(totalRev)}</h3>
-                            <div className="flex items-center gap-2 mt-2">
-                                <Badge variant="success">+{subPct}% Subscriptions</Badge>
-                                <span className="text-xs text-text-tertiary">Platform Growth Mode</span>
-                            </div>
-                        </div>
-                        <div className="flex-1 w-full space-y-4">
-                            <div className="h-4 rounded-full bg-background-tertiary overflow-hidden flex shadow-inner">
-                                <div className="h-full bg-info" style={{ width: `${physicalPct}%` }} />
-                                <div className="h-full bg-warning" style={{ width: `${taxPct}%` }} />
-                                <div className="h-full bg-error/70" style={{ width: `${shippingPct}%` }} />
-                                <div className="h-full bg-success" style={{ width: `${subPct}%` }} />
-                            </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-info" /><span className="text-[10px] text-text-secondary">Books {physicalPct}%</span></div>
-                                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-warning" /><span className="text-[10px] text-text-secondary">Tax {taxPct}%</span></div>
-                                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-error/70" /><span className="text-[10px] text-text-secondary">Shipping {shippingPct}%</span></div>
-                                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-success" /><span className="text-[10px] text-text-secondary">Subs {subPct}%</span></div>
-                            </div>
-                        </div>
-                    </div>
-                </Card>
-            </section>
-
-            {/* Seller Leaderboard */}
-            <section>
-                <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                        <div className="w-1 h-6 bg-accent-brown rounded-full" />
-                        <h2 className="heading-3">Top Performing Sellers</h2>
-                    </div>
-                    <Button variant="ghost" size="sm">Download CSV</Button>
-                </div>
-                <Card elevated padding="0" className="overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-left">
-                            <thead className="bg-background-secondary text-text-tertiary border-b border-border-primary">
-                                <tr>
-                                    <th className="py-4 px-6 font-bold uppercase tracking-tight">Rank</th>
-                                    <th className="py-4 px-6 font-bold uppercase tracking-tight">Seller Account</th>
-                                    <th className="py-4 px-6 font-bold uppercase tracking-tight text-center">Units</th>
-                                    <th className="py-4 px-6 font-bold uppercase tracking-tight text-right">Revenue Generated</th>
-                                    <th className="py-4 px-6 font-bold uppercase tracking-tight text-right">Mkt Share</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {stats?.sellerLeaderboard?.map((s, idx) => {
-                                    const share = totalRev > 0 ? ((s.totalRevenue / totalRev) * 100).toFixed(1) : 0;
-                                    return (
-                                        <tr key={s.sellerId} className="border-b border-border-primary last:border-0 hover:bg-background-secondary transition-colors">
-                                            <td className="py-4 px-6">
-                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold font-mono ${idx < 3 ? 'bg-accent-brown text-white shadow-sm' : 'bg-background-tertiary text-text-secondary'}`}>
-                                                    {idx + 1}
-                                                </div>
-                                            </td>
-                                            <td className="py-4 px-6">
-                                                <p className="font-bold text-text-primary">{s.name}</p>
-                                                <p className="text-xs text-text-tertiary">{s.email}</p>
-                                            </td>
-                                            <td className="py-4 px-6 text-center font-medium bg-background-secondary/30">{s.totalSales}</td>
-                                            <td className="py-4 px-6 text-right font-black text-accent-brown">{fmtCurrency(s.totalRevenue)}</td>
-                                            <td className="py-4 px-6 text-right">
-                                                <div className="flex items-center justify-end gap-3">
-                                                    <div className="w-20 h-1.5 rounded-full bg-background-tertiary overflow-hidden shadow-inner">
-                                                        <div className="h-full bg-accent-brown rounded-full" style={{ width: `${share}%` }} />
-                                                    </div>
-                                                    <span className="text-xs font-bold text-text-primary w-8">{share}%</span>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                </Card>
-            </section>
-        </div>
-    );
+// ─── Per-department configuration ─────────────────────────────────────────
+const DEPT_CONFIG = {
+  marketplace: {
+    label: 'Marketplace',
+    color: 'from-[#8B7355] to-[#6F5C44]',
+    icon: '🛒',
+    description: 'Book listings, seller verification, and catalog quality',
+    taskTypeLabels: {
+      book_upload: 'Book Upload Review',
+      seller_verification: 'Seller Verification',
+      manual: 'Manual Task',
+    },
+  },
+  support: {
+    label: 'Support',
+    color: 'from-[#4A5D4F] to-[#3A4D3F]',
+    icon: '💬',
+    description: 'Customer complaints, buyer issues, and dispute resolution',
+    taskTypeLabels: {
+      complaint: 'Customer Complaint',
+      manual: 'Manual Task',
+    },
+  },
+  finance: {
+    label: 'Finance',
+    color: 'from-[#C9A96E] to-[#9D7F4F]',
+    icon: '💰',
+    description: 'Refunds, payouts, payment failures, and financial audits',
+    taskTypeLabels: {
+      refund_request: 'Refund Request',
+      payout_request: 'Payout Request',
+      payment_failure: 'Payment Failure',
+      manual: 'Manual Task',
+    },
+  },
+  tech: {
+    label: 'Tech',
+    color: 'from-[#4A4A4A] to-[#2C2C2C]',
+    icon: '⚙️',
+    description: 'Bug reports, server errors, payment gateway issues',
+    taskTypeLabels: {
+      bug_report: 'Bug Report',
+      server_error: 'Server Error',
+      payment_failure: 'Payment Failure',
+      manual: 'Manual Task',
+    },
+  },
+};
+const STATUS_COLORS = {
+  pending: 'bg-background-secondary text-text-secondary',
+  assigned: 'bg-blue-100 text-blue-700',
+  in_progress: 'bg-yellow-100 text-yellow-700',
+  resolved: 'bg-green-100 text-green-700',
+  escalated: 'bg-red-100 text-red-700',
 };
 
-export default Overview;
+const PRIORITY_COLORS = {
+  low: 'bg-slate-100 text-slate-600',
+  medium: 'bg-orange-100 text-orange-600',
+  high: 'bg-red-100 text-red-600',
+  critical: 'bg-red-200 text-red-800 font-semibold',
+};
+
+const ALL_DEPARTMENTS = ['marketplace', 'support', 'finance', 'tech'];
+
+function Badge({ text, colorClass }) {
+  return <span className={`px-2 py-0.5 rounded-full text-xs capitalize ${colorClass}`}>{text}</span>;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// TAB: TASKS
+// ══════════════════════════════════════════════════════════════════
+function TasksTab({ department }) {
+  const [tasks, setTasks] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [statusFilter, setStatusFilter] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [escalateModal, setEscalateModal] = useState(null);
+  const [escalateTarget, setEscalateTarget] = useState('');
+  const [escalateReason, setEscalateReason] = useState('');
+  const [msg, setMsg] = useState('');
+  const cfg = DEPT_CONFIG[department] || {};
+
+  const flash = (m) => { setMsg(m); setTimeout(() => setMsg(''), 3500); };
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [tRes, eRes] = await Promise.all([
+        taskAPI.getTasks(statusFilter ? { status: statusFilter } : {}),
+        taskAPI.getEmployees(),
+      ]);
+      setTasks(tRes.data.data.tasks || []);
+      setEmployees(eRes.data.data.employees || []);
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
+  }, [statusFilter]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const autoAssign = async (id) => {
+    try { await taskAPI.autoAssignTask(id); flash('Auto-assigned to least-busy employee.'); load(); }
+    catch (err) { flash(err.response?.data?.message || 'Assignment failed'); }
+  };
+
+  const manualAssign = async (id, empId) => {
+    try { await taskAPI.assignTask(id, empId); flash('Task assigned.'); load(); }
+    catch (err) { flash(err.response?.data?.message || 'Assignment failed'); }
+  };
+
+  const doEscalate = async () => {
+    if (!escalateTarget || !escalateReason) return;
+    try {
+      await taskAPI.escalateTask(escalateModal._id, escalateTarget, escalateReason);
+      flash(`Escalated to ${DEPT_CONFIG[escalateTarget]?.label || escalateTarget} department.`);
+      setEscalateModal(null); setEscalateTarget(''); setEscalateReason('');
+      load();
+    } catch (err) { flash(err.response?.data?.message || 'Escalation failed'); }
+  };
+
+  return (
+    <div>
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <h2 className="text-lg font-semibold text-text-primary">{cfg.icon} {cfg.label} Tasks</h2>
+        <div className="ml-auto flex flex-wrap gap-2">
+          {['', 'pending', 'assigned', 'in_progress', 'resolved', 'escalated'].map((s) => (
+            <button key={s} onClick={() => setStatusFilter(s)}
+              className={`px-3 py-1 rounded-full text-xs border transition ${
+                statusFilter === s ? 'bg-accent-brown text-white border-accent-brown' : 'border-border-primary text-text-secondary hover:bg-background-secondary'
+              }`}>
+              {s ? s.replace('_', ' ') : 'All'}
+            </button>
+          ))}
+        </div>
+      </div>
+      {msg && <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded text-green-700 text-sm">{msg}</div>}
+      {loading ? (
+        <div className="text-center py-10 text-text-light">Loading tasks…</div>
+      ) : tasks.length === 0 ? (
+        <div className="text-center py-10 text-text-light">No tasks found.</div>
+      ) : (
+        <div className="space-y-3">
+          {tasks.map((task) => (
+            <div key={task._id} className="bg-white border border-border-light rounded-lg p-4 shadow-sm">
+              <div className="flex flex-wrap gap-2 items-start mb-2">
+                <span className="font-medium text-text-primary flex-1">{task.title}</span>
+                <Badge text={task.status.replace('_',' ')} colorClass={STATUS_COLORS[task.status] || ''} />
+                <Badge text={task.priority} colorClass={PRIORITY_COLORS[task.priority] || ''} />
+              </div>
+              <p className="text-sm text-text-tertiary mb-2">{task.description}</p>
+              <div className="flex flex-wrap gap-x-4 text-xs text-text-light mb-3">
+                <span>Type: {cfg.taskTypeLabels?.[task.eventType] || task.eventType}</span>
+                {task.assignedTo && <span>Assigned: <strong>{task.assignedTo.name || task.assignedTo.email}</strong></span>}
+                <span>{new Date(task.createdAt).toLocaleDateString()}</span>
+              </div>
+              {task.status === 'pending' && (
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={() => autoAssign(task._id)}
+                    className="px-3 py-1 rounded bg-accent-brown text-white text-xs hover:bg-accent-brown-hover">
+                    Auto-Assign (Least Workload)
+                  </button>
+                  <select className="border border-border-primary rounded px-2 py-1 text-xs"
+                    defaultValue=""
+                    onChange={(e) => e.target.value && manualAssign(task._id, e.target.value)}>
+                    <option value="">Manual assign…</option>
+                    {employees.map((e) => (
+                      <option key={e._id} value={e._id}>{e.name} ({e.activeTasks} active)</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {['assigned','in_progress'].includes(task.status) && (
+                <button onClick={() => { setEscalateModal(task); setEscalateTarget(''); setEscalateReason(''); }}
+                  className="mt-2 px-3 py-1 rounded border border-red-300 text-red-600 text-xs hover:bg-red-50">
+                  Escalate to Another Department
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {escalateModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
+            <h3 className="font-semibold text-text-primary mb-4">Escalate: {escalateModal.title}</h3>
+            <label className="block text-sm font-medium text-text-secondary mb-1">Target Department</label>
+            <select value={escalateTarget} onChange={(e) => setEscalateTarget(e.target.value)}
+              className="w-full border border-border-primary rounded px-3 py-2 mb-3 text-sm">
+              <option value="">Select department…</option>
+              {ALL_DEPARTMENTS.filter((d) => d !== department).map((d) => (
+                <option key={d} value={d}>{DEPT_CONFIG[d]?.label || d}</option>
+              ))}
+            </select>
+            <label className="block text-sm font-medium text-text-secondary mb-1">Reason</label>
+            <textarea value={escalateReason} onChange={(e) => setEscalateReason(e.target.value)}
+              rows={3} className="w-full border border-border-primary rounded px-3 py-2 text-sm mb-4 resize-none"
+              placeholder="Why does this need escalation?" />
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setEscalateModal(null)} className="px-4 py-2 rounded border text-sm">Cancel</button>
+              <button onClick={doEscalate} disabled={!escalateTarget || !escalateReason}
+                className="px-4 py-2 rounded bg-red-600 text-white text-sm disabled:opacity-50">
+                Escalate
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════
+// TAB: MANAGER CHAT
+// ══════════════════════════════════════════════════════════════════
+function ManagerChatTab({ userDept }) {
+  const [view, setView] = useState('inbox');
+  const [messages, setMessages] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [replyText, setReplyText] = useState('');
+  const [compose, setCompose] = useState({ toDepartment: '', subject: '', body: '' });
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState('');
+
+  const flash = (m) => { setMsg(m); setTimeout(() => setMsg(''), 3500); };
+
+  const load = useCallback(async (type) => {
+    setLoading(true);
+    try {
+      const res = await deptMessagesAPI.getManagerMessages(type !== 'compose' ? type : undefined);
+      setMessages(res.data.data.messages || []);
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { if (view !== 'compose') load(view); }, [view, load]);
+
+  const sendReply = async (id) => {
+    if (!replyText.trim()) return;
+    try {
+      await deptMessagesAPI.replyManagerMessage(id, replyText);
+      flash('Reply sent.'); setReplyText(''); setSelected(null); load(view);
+    } catch { flash('Reply failed'); }
+  };
+
+  const sendCompose = async () => {
+    if (!compose.toDepartment || !compose.subject || !compose.body) return;
+    try {
+      await deptMessagesAPI.sendManagerMessage(compose);
+      flash('Message sent!'); setCompose({ toDepartment: '', subject: '', body: '' }); setView('sent');
+    } catch (err) { flash(err.response?.data?.message || 'Failed to send'); }
+  };
+
+  return (
+    <div>
+      <div className="flex gap-2 mb-5">
+        {[['inbox','📥 Inbox'],['sent','📤 Sent'],['compose','✉️ Compose']].map(([v, lbl]) => (
+          <button key={v} onClick={() => { setView(v); setSelected(null); }}
+            className={`px-4 py-2 rounded-lg text-sm transition ${
+              view === v ? 'bg-accent-brown text-white' : 'bg-background-secondary text-text-secondary hover:bg-border-light'
+            }`}>{lbl}</button>
+        ))}
+      </div>
+      {msg && <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded text-green-700 text-sm">{msg}</div>}
+
+      {view === 'compose' ? (
+        <div className="bg-white border border-border-light rounded-lg p-5 max-w-lg">
+          <h2 className="text-base font-semibold text-text-primary mb-4">New Inter-Department Message</h2>
+          <label className="block text-sm font-medium text-text-secondary mb-1">To Department</label>
+          <select value={compose.toDepartment}
+            onChange={(e) => setCompose({ ...compose, toDepartment: e.target.value })}
+            className="w-full border border-border-primary rounded px-3 py-2 mb-3 text-sm">
+            <option value="">Select department…</option>
+            {ALL_DEPARTMENTS.filter((d) => d !== userDept).map((d) => (
+              <option key={d} value={d}>{DEPT_CONFIG[d]?.label || d}</option>
+            ))}
+          </select>
+          <label className="block text-sm font-medium text-text-secondary mb-1">Subject</label>
+          <input type="text" value={compose.subject}
+            onChange={(e) => setCompose({ ...compose, subject: e.target.value })}
+            className="w-full border border-border-primary rounded px-3 py-2 mb-3 text-sm" placeholder="Subject…" />
+          <label className="block text-sm font-medium text-text-secondary mb-1">Message</label>
+          <textarea rows={5} value={compose.body}
+            onChange={(e) => setCompose({ ...compose, body: e.target.value })}
+            className="w-full border border-border-primary rounded px-3 py-2 mb-4 text-sm resize-none" placeholder="Write your message…" />
+          <button onClick={sendCompose}
+            disabled={!compose.toDepartment || !compose.subject || !compose.body}
+            className="px-5 py-2 rounded bg-accent-brown text-white text-sm disabled:opacity-50">
+            Send Message
+          </button>
+        </div>
+      ) : loading ? (
+        <div className="text-center py-10 text-text-light">Loading…</div>
+      ) : (
+        <div className="flex gap-4">
+          <div className="w-2/5 space-y-2">
+            {messages.length === 0 && <div className="text-center py-8 text-text-light text-sm">No messages.</div>}
+            {messages.map((m) => (
+              <div key={m._id + (m.direction||'')} onClick={() => setSelected(m)}
+                className={`p-3 rounded-lg border cursor-pointer transition ${
+                  selected?._id === m._id ? 'border-accent-brown/40 bg-accent-brown/10' : 'border-border-light hover:bg-background-secondary'
+                }`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs text-text-light">{m.direction === 'sent' ? '→' : '←'}</span>
+                  <span className="text-sm font-medium text-text-primary truncate flex-1">
+                    {m.direction === 'sent'
+                      ? `To: ${m.toManager?.name || m.toManager?.email} (${m.toManager?.department})`
+                      : `From: ${m.fromManager?.name || m.fromManager?.email} (${m.fromManager?.department})`}
+                  </span>
+                </div>
+                <p className="text-xs text-text-secondary truncate">{m.subject}</p>
+                <p className="text-xs text-text-light">{new Date(m.createdAt).toLocaleDateString()}</p>
+              </div>
+            ))}
+          </div>
+          {selected ? (
+            <div className="flex-1 bg-white border border-border-light rounded-lg p-5">
+              <h3 className="font-semibold text-text-primary mb-1">{selected.subject}</h3>
+              <p className="text-xs text-text-light mb-3">
+                {selected.fromManager?.name} ({selected.fromManager?.department}) → {selected.toManager?.name} ({selected.toManager?.department})
+              </p>
+              <p className="text-sm text-text-secondary whitespace-pre-wrap mb-4">{selected.body}</p>
+              {(selected.replies || []).map((r, i) => (
+                <div key={i} className="bg-background-secondary rounded p-2 text-sm mb-1">
+                  <span className="font-medium text-text-secondary">{r.from?.name || 'Unknown'}: </span>
+                  <span className="text-text-secondary">{r.body}</span>
+                </div>
+              ))}
+              <textarea value={replyText} onChange={(e) => setReplyText(e.target.value)}
+                rows={3} className="w-full border border-border-light rounded px-3 py-2 text-sm resize-none mt-3 mb-2"
+                placeholder="Write a reply…" />
+              <button onClick={() => sendReply(selected._id)} disabled={!replyText.trim()}
+                className="px-4 py-2 rounded bg-accent-brown text-white text-sm disabled:opacity-50">Reply</button>
+            </div>
+          ) : (
+            <div className="flex-1 flex items-center justify-center text-text-light text-sm">
+              Select a message to view
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════
+// TAB: EMPLOYEE REPORTS
+// ══════════════════════════════════════════════════════════════════
+function EmployeeReportsTab() {
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState(null);
+  const [response, setResponse] = useState('');
+  const [msg, setMsg] = useState('');
+  const flash = (m) => { setMsg(m); setTimeout(() => setMsg(''), 3500); };
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const res = await deptMessagesAPI.getEmployeeReports();
+      setReports(res.data.data.reports || []);
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const respond = async (id) => {
+    if (!response.trim()) return;
+    try {
+      await deptMessagesAPI.respondToReport(id, response);
+      flash('Response sent!'); setResponse(''); setSelected(null); load();
+    } catch { flash('Failed to respond'); }
+  };
+
+  return (
+    <div>
+      <h2 className="text-lg font-semibold text-text-primary mb-4">📋 Employee Reports</h2>
+      {msg && <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded text-green-700 text-sm">{msg}</div>}
+      {loading ? (
+        <div className="text-center py-10 text-text-light">Loading…</div>
+      ) : (
+        <div className="flex gap-4">
+          <div className="w-2/5 space-y-2">
+            {reports.length === 0 && <div className="text-center py-8 text-text-light text-sm">No reports yet.</div>}
+            {reports.map((r) => (
+              <div key={r._id} onClick={() => { setSelected(r); setResponse(''); }}
+                className={`p-3 rounded-lg border cursor-pointer transition ${
+                  selected?._id === r._id ? 'border-accent-brown/40 bg-accent-brown/10' : 'border-border-light hover:bg-background-secondary'
+                }`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm font-medium text-text-primary truncate flex-1">{r.subject}</span>
+                  <Badge text={r.status}
+                    colorClass={r.status === 'resolved' ? 'bg-green-100 text-green-700' : r.status === 'acknowledged' ? 'bg-blue-100 text-blue-700' : 'bg-background-secondary text-text-secondary'} />
+                </div>
+                <p className="text-xs text-text-tertiary">From: {r.fromEmployee?.name || r.fromEmployee?.email}</p>
+                <p className="text-xs text-text-light">{new Date(r.createdAt).toLocaleDateString()}</p>
+              </div>
+            ))}
+          </div>
+          {selected ? (
+            <div className="flex-1 bg-white border border-border-light rounded-lg p-5">
+              <h3 className="font-semibold text-text-primary mb-1">{selected.subject}</h3>
+              <p className="text-xs text-text-light mb-3">
+                From: {selected.fromEmployee?.name} ({selected.fromEmployee?.email}) — {new Date(selected.createdAt).toLocaleString()}
+              </p>
+              <p className="text-sm text-text-secondary whitespace-pre-wrap mb-4">{selected.body}</p>
+              {selected.managerResponse ? (
+                <div className="bg-green-50 border border-green-200 rounded p-3 text-sm text-green-800">
+                  <strong>Your response:</strong> {selected.managerResponse}
+                </div>
+              ) : (
+                <>
+                  <textarea value={response} onChange={(e) => setResponse(e.target.value)}
+                    rows={3} className="w-full border border-border-light rounded px-3 py-2 text-sm resize-none mb-2"
+                    placeholder="Write your response…" />
+                  <button onClick={() => respond(selected._id)} disabled={!response.trim()}
+                    className="px-4 py-2 rounded bg-accent-brown text-white text-sm disabled:opacity-50">
+                    Send Response
+                  </button>
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="flex-1 flex items-center justify-center text-text-light text-sm">
+              Select a report to respond
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════
+// TAB: ANALYTICS
+// ══════════════════════════════════════════════════════════════════
+function AnalyticsTab({ department }) {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const cfg = DEPT_CONFIG[department] || {};
+
+  useEffect(() => {
+    taskAPI.getStats()
+      .then((res) => setStats(res.data.data))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="text-center py-10 text-text-light">Loading analytics…</div>;
+  if (!stats) return <div className="text-center py-10 text-text-light">No data.</div>;
+
+  const statusCards = [
+    { label: 'Pending',     value: stats.byStatus?.pending     || 0, color: 'bg-background-secondary   border-border-light   text-text-secondary'  },
+    { label: 'Assigned',    value: stats.byStatus?.assigned    || 0, color: 'bg-blue-50   border-blue-200   text-blue-700'  },
+    { label: 'In Progress', value: stats.byStatus?.in_progress || 0, color: 'bg-yellow-50 border-yellow-200 text-yellow-700'},
+    { label: 'Resolved',    value: stats.byStatus?.resolved    || 0, color: 'bg-green-50  border-green-200  text-green-700' },
+    { label: 'Escalated',   value: stats.byStatus?.escalated   || 0, color: 'bg-red-50    border-red-200    text-red-700'   },
+  ];
+
+  const total    = Object.values(stats.byStatus || {}).reduce((a, b) => a + b, 0);
+  const resolved = stats.byStatus?.resolved || 0;
+  const rate     = total > 0 ? ((resolved / total) * 100).toFixed(1) : 0;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-5">
+        <h2 className="text-lg font-semibold text-text-primary">{cfg.icon} {cfg.label} Analytics</h2>
+        <span className="text-sm text-text-tertiary">
+          Resolution rate: <strong className="text-green-600">{rate}%</strong>
+        </span>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+        {statusCards.map((c) => (
+          <div key={c.label} className={`border rounded-lg p-4 text-center ${c.color}`}>
+            <div className="text-2xl font-bold">{c.value}</div>
+            <div className="text-xs mt-1">{c.label}</div>
+          </div>
+        ))}
+      </div>
+      {stats.employeePerformance?.length > 0 && (
+        <>
+          <h3 className="text-base font-semibold text-text-secondary mb-3">Employee Performance</h3>
+          <div className="overflow-x-auto rounded-lg border border-border-light">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-background-secondary text-left text-text-tertiary text-xs uppercase">
+                  <th className="px-4 py-2">Employee</th>
+                  <th className="px-4 py-2 text-center">Active</th>
+                  <th className="px-4 py-2 text-center">Resolved</th>
+                  <th className="px-4 py-2 text-center">Total</th>
+                  <th className="px-4 py-2 text-center">Rate</th>
+                </tr>
+              </thead>
+              <tbody>
+                {stats.employeePerformance.map((emp) => (
+                  <tr key={emp._id} className="border-t hover:bg-background-secondary">
+                    <td className="px-4 py-2">
+                      <div className="font-medium text-text-primary">{emp.name || 'N/A'}</div>
+                      <div className="text-xs text-text-light">{emp.email || emp._id}</div>
+                    </td>
+                    <td className="px-4 py-2 text-center text-yellow-600 font-medium">{emp.activeTasks}</td>
+                    <td className="px-4 py-2 text-center text-green-600 font-medium">{emp.resolvedTasks}</td>
+                    <td className="px-4 py-2 text-center text-text-secondary">{emp.totalTasks}</td>
+                    <td className="px-4 py-2 text-center">
+                      <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                        {emp.totalTasks > 0 ? ((emp.resolvedTasks / emp.totalTasks) * 100).toFixed(0) : 0}%
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ROOT COMPONENT
+// ══════════════════════════════════════════════════════════════════
+export default function ManagerDashboard() {
+  const user = useSelector((state) => state.auth.user);
+  const department = user?.department || 'marketplace';
+  const cfg = DEPT_CONFIG[department] || DEPT_CONFIG.marketplace;
+
+  const TABS = [
+    { id: 'tasks',    label: `${cfg.icon} Tasks`          },
+    { id: 'chat',     label: '🗨 Manager Chat'             },
+    { id: 'reports',  label: '📋 Employee Reports'         },
+    { id: 'analytics',label: '📊 Analytics'                },
+  ];
+  const [activeTab, setActiveTab] = useState('tasks');
+
+  return (
+    <div className="min-h-screen bg-background-primary">
+      {/* Header */}
+      <div className={`bg-gradient-to-r ${cfg.color} text-white`}>
+        <div className="container-custom py-6">
+          <h1 className="text-2xl font-bold mb-1">{cfg.icon} {cfg.label} Manager Dashboard</h1>
+          <p className="text-sm opacity-80">{cfg.description}</p>
+          <p className="text-xs opacity-60 mt-1">{user?.name || user?.email}</p>
+        </div>
+      </div>
+
+      {/* Tab bar */}
+      <div className="bg-background-primary border-b border-border-light sticky top-0 z-10">
+        <div className="container-custom flex gap-1 overflow-x-auto">
+          {TABS.map((tab) => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition ${
+                activeTab === tab.id
+                  ? 'border-accent-brown text-accent-brown'
+                  : 'border-transparent text-text-tertiary hover:text-text-secondary'
+              }`}>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="container-custom py-8">
+        {activeTab === 'tasks'     && <TasksTab department={department} />}
+        {activeTab === 'chat'      && <ManagerChatTab userDept={department} />}
+        {activeTab === 'reports'   && <EmployeeReportsTab />}
+        {activeTab === 'analytics' && <AnalyticsTab department={department} />}
+      </div>
+    </div>
+  );
+}

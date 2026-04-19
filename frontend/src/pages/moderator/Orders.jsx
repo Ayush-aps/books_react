@@ -4,7 +4,7 @@
  */
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { moderatorAPI } from '../../services/api';
+import { managerAPI } from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
 import Card from '../../components/Card';
@@ -31,7 +31,7 @@ const Orders = () => {
                 limit: 10,
                 status: statusFilter !== 'all' ? statusFilter : undefined
             };
-            const response = await moderatorAPI.getOrders(params);
+            const response = await managerAPI.getOrders(params);
             setOrders(response.data?.data?.orders || []);
             setTotalPages(response.data?.data?.pagination?.totalPages || 1);
             setTotalOrders(response.data?.data?.pagination?.totalOrders || 0);
@@ -50,7 +50,7 @@ const Orders = () => {
     const handleStatusUpdate = async (orderId, newStatus) => {
         try {
             setUpdatingOrderId(orderId);
-            await moderatorAPI.updateOrderStatus(orderId, { orderStatus: newStatus });
+            await managerAPI.updateOrderStatus(orderId, { orderStatus: newStatus });
             setOrders(prev => prev.map(order =>
                 order._id === orderId ? { ...order, orderStatus: newStatus } : order
             ));

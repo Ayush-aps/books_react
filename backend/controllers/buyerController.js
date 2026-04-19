@@ -11,6 +11,7 @@ const Cart = require("../models/Cart");
 const Address = require("../models/Address");
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
+const { createTask } = require("../services/taskService");
 
 // ============================================
 // DASHBOARD
@@ -1005,6 +1006,24 @@ exports.createComplaint = async (req, res) => {
     });
 
     await complaint.save();
+
+    // Auto-create support or finance task for new complaint
+    try {
+      const isPaymentIssue = ['Payment Issue', 'Refund Issue'].includes(category);
+      const newTask = await createTask({
+        title: `Handle Complaint: "${subject}"`,
+        description,
+        department: isPaymentIssue ? 'finance' : 'support',
+        eventType: isPaymentIssue ? 'refund_request' : 'complaint',
+        priority: 'medium',
+        relatedEntity: { entityType: 'Complaint', entityId: complaint._id },
+      });
+      if (!newTask) {
+        console.error(`[buyerController] createTask returned null for complaint ${complaint._id}. Check taskService logs.`);
+      }
+    } catch (taskErr) {
+      console.error('[buyerController] Unexpected error creating complaint task:', taskErr.stack || taskErr);
+    }
 
     res.status(201).json({
       success: true,

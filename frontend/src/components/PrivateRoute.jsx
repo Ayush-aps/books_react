@@ -27,10 +27,10 @@ const PrivateRoute = ({ children, role }) => {
     if (!hasRole) {
       // Redirect based on user's actual role
       const roleRedirects = {
-        buyer: '/buyer/browse',
+        buyer: '/',
         seller: '/seller/dashboard',
         admin: '/admin/dashboard',
-        moderator: '/moderator/dashboard',
+        manager: '/manager/dashboard',
         employee: '/employee/dashboard',
       };
       return <Navigate to={roleRedirects[user.role] || '/'} />;

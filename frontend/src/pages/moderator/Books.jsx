@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
-import { moderatorAPI, employeeAPI } from '../../services/api';
+import { managerAPI, employeeAPI } from '../../services/api';
 import Card from '../../components/Card';
 import Badge from '../../components/Badge';
 import Button from '../../components/Button';
@@ -51,7 +51,7 @@ const Books = () => {
     const handleClaim = async (bookId) => {
         try {
             setActionLoading(bookId);
-            await moderatorAPI.claimBook(bookId);
+            await managerAPI.claimBook(bookId);
             setBooks(prev => prev.map(b =>
                 b._id === bookId
                     ? { ...b, lockedBy: { _id: currentUser._id, name: currentUser.name }, lockedAt: new Date() }
@@ -65,7 +65,7 @@ const Books = () => {
     const handleRelease = async (bookId) => {
         try {
             setActionLoading(bookId);
-            await moderatorAPI.releaseBook(bookId);
+            await managerAPI.releaseBook(bookId);
             setBooks(prev => prev.map(b =>
                 b._id === bookId ? { ...b, lockedBy: null, lockedAt: null } : b
             ));

@@ -54,10 +54,10 @@ const Register = () => {
       const role = user.role;
       const redirects = {
         admin: '/admin/dashboard',
-        moderator: '/moderator/dashboard',
+        manager: '/manager/dashboard',
         employee: '/employee/dashboard',
         seller: '/seller/dashboard',
-        buyer: '/buyer/browse',
+        buyer: '/',
       };
       navigate(redirects[role] || '/');
     }
@@ -76,8 +76,13 @@ const Register = () => {
 
   const onSubmit = async (data) => {
     // RHF guarantees data is valid based on registerSchema
-    // Note: RHF is role-agnostic; it just passes the form data.
-    const result = await dispatch(registerAction(data));
+    // Split employee_xxx roles into role + employee_type for backend
+    const submitData = { ...data };
+    if (data.role.startsWith('employee_')) {
+      submitData.employee_type = data.role.replace('employee_', '');
+      submitData.role = 'employee';
+    }
+    const result = await dispatch(registerAction(submitData));
 
     if (result.success) {
       navigate('/login', {
@@ -167,7 +172,10 @@ const Register = () => {
                   <option value="">Select your role</option>
                   <option value="buyer">Buyer — Browse and purchase books</option>
                   <option value="seller">Seller — List and sell books</option>
-                  <option value="employee">Employee — Book approvals & support tickets</option>
+                  <option value="employee_marketplace">Employee — Marketplace Department</option>
+                  <option value="employee_support">Employee — Support Department</option>
+                  <option value="employee_finance">Employee — Finance Department</option>
+                  <option value="employee_tech">Employee — Tech Department</option>
                 </Input.Select>
               </div>
 

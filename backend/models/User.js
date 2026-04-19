@@ -26,8 +26,18 @@ const UserSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ["buyer", "seller", "admin", "moderator", "employee"],
+    enum: ["buyer", "seller", "admin", "manager", "employee"],
     default: "buyer",
+  },
+  department: {
+    type: String,
+    enum: ["marketplace", "support", "finance", "tech"],
+    default: null,
+  },
+  employee_type: {
+    type: String,
+    enum: ["marketplace", "support", "finance", "tech"],
+    default: null,
   },
   verificationStatus: {
     type: String,

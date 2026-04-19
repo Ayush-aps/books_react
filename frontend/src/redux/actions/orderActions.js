@@ -118,7 +118,7 @@ export const updateOrderStatus = (orderId, status) => async (dispatch) => {
   try {
     dispatch({ type: UPDATE_ORDER_STATUS_REQUEST });
 
-    const response = await api.put(`/seller/order/${orderId}/status`, { status });
+    const response = await api.put(`/seller/orders/${orderId}/status`, { status });
 
     if (response.data.success) {
       dispatch({

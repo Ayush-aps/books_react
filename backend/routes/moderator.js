@@ -1,12 +1,12 @@
 /**
- * Moderator Routes
+ * Manager Routes (previously Moderator)
  */
 
 const express = require("express");
 const router = express.Router();
 const {
     ensureAuthenticated,
-    ensureModeratorOrAdmin,
+    ensureManagerOrAdmin,
     checkRole,
 } = require("../middleware/auth");
 const {
@@ -35,44 +35,44 @@ const {
 // ============================================
 // USER VERIFICATION QUEUE
 // ============================================
-router.get("/pending-users", ensureAuthenticated, ensureModeratorOrAdmin, getPendingUsers);
-router.post("/verify-user", ensureAuthenticated, ensureModeratorOrAdmin, verifyUser);
+router.get("/pending-users", ensureAuthenticated, ensureManagerOrAdmin, getPendingUsers);
+router.post("/verify-user", ensureAuthenticated, ensureManagerOrAdmin, verifyUser);
 
 // ============================================
 // EMPLOYEE COMPLAINT STATISTICS
 // ============================================
-router.get("/employee-stats", ensureAuthenticated, ensureModeratorOrAdmin, getEmployeeStats);
+router.get("/employee-stats", ensureAuthenticated, ensureManagerOrAdmin, getEmployeeStats);
 
 // ============================================
 // VERIFIED LIBRARY
 // ============================================
-router.get("/approved-books", ensureAuthenticated, ensureModeratorOrAdmin, getApprovedBooks);
-router.get("/approved-users", ensureAuthenticated, ensureModeratorOrAdmin, getApprovedUsers);
+router.get("/approved-books", ensureAuthenticated, ensureManagerOrAdmin, getApprovedBooks);
+router.get("/approved-users", ensureAuthenticated, ensureManagerOrAdmin, getApprovedUsers);
 
 // ============================================
 // USER MANAGEMENT (MODERATOR-SCOPED)
 // ============================================
-router.get("/users", ensureAuthenticated, ensureModeratorOrAdmin, getModeratorUsers);
-router.get("/users/:id", ensureAuthenticated, ensureModeratorOrAdmin, getModeratorUser);
-router.delete("/users/:id", ensureAuthenticated, ensureModeratorOrAdmin, moderatorDeleteUser);
-router.put("/users/:id/promote", ensureAuthenticated, ensureModeratorOrAdmin, moderatorPromoteEmployee);
-router.post("/users/:id/verify", ensureAuthenticated, ensureModeratorOrAdmin, verifyUser);
+router.get("/users", ensureAuthenticated, ensureManagerOrAdmin, getModeratorUsers);
+router.get("/users/:id", ensureAuthenticated, ensureManagerOrAdmin, getModeratorUser);
+router.delete("/users/:id", ensureAuthenticated, ensureManagerOrAdmin, moderatorDeleteUser);
+router.put("/users/:id/promote", ensureAuthenticated, ensureManagerOrAdmin, moderatorPromoteEmployee);
+router.post("/users/:id/verify", ensureAuthenticated, ensureManagerOrAdmin, verifyUser);
 
 // ============================================
 // GLOBAL ANALYTICS
 // ============================================
-router.get("/global-stats", ensureAuthenticated, ensureModeratorOrAdmin, getGlobalStats);
+router.get("/global-stats", ensureAuthenticated, ensureManagerOrAdmin, getGlobalStats);
 
 // ============================================
 // BOOK LOCKING
 // ============================================
-router.patch("/books/:id/claim", ensureAuthenticated, ensureModeratorOrAdmin, claimBook);
-router.patch("/books/:id/release", ensureAuthenticated, ensureModeratorOrAdmin, releaseBook);
+router.patch("/books/:id/claim", ensureAuthenticated, ensureManagerOrAdmin, claimBook);
+router.patch("/books/:id/release", ensureAuthenticated, ensureManagerOrAdmin, releaseBook);
 
 // ============================================
 // ORDER MANAGEMENT & REPORTS (Admin, Moderator, Employee)
 // ============================================
-const ensureStaffAccess = checkRole("admin", "moderator", "employee");
+const ensureStaffAccess = checkRole("admin", "manager", "employee");
 
 router.get("/orders", ensureAuthenticated, ensureStaffAccess, getModeratorOrders);
 router.patch("/orders/:id/status", ensureAuthenticated, ensureStaffAccess, updateModeratorOrderStatus);

@@ -118,9 +118,11 @@ module.exports.checkRole = function (...roles) {
 };
 
 /**
- * Ensures user has moderator or admin role
+ * Ensures user has manager or admin role
  */
-module.exports.ensureModeratorOrAdmin = module.exports.checkRole('admin', 'moderator');
+module.exports.ensureManagerOrAdmin = module.exports.checkRole('admin', 'manager');
+// Backward-compatible alias
+module.exports.ensureModeratorOrAdmin = module.exports.ensureManagerOrAdmin;
 
 /**
  * Ensures user's verificationStatus is 'approved'
@@ -128,7 +130,7 @@ module.exports.ensureModeratorOrAdmin = module.exports.checkRole('admin', 'moder
  * Buyers and admins bypass this check.
  */
 module.exports.ensureApprovedUser = function (req, res, next) {
-  const rolesRequiringApproval = ['seller', 'employee', 'moderator'];
+  const rolesRequiringApproval = ['seller', 'employee', 'manager'];
   if (
     req.isAuthenticated() &&
     rolesRequiringApproval.includes(req.user.role) &&

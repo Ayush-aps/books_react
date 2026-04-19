@@ -29,6 +29,8 @@ module.exports = (passport) => {
           name: user.name,
           email: user.email,
           role: user.role,
+          department: user.department,
+          employee_type: user.employee_type,
           avatar: user.avatar,
           isVerified: user.isVerified,
         };

@@ -325,9 +325,9 @@ export default function Header() {
                               <DropdownLink to="/admin/users">Manage Users</DropdownLink>
                             </>
                           )}
-                          {user?.role === "moderator" && (
+                          {user?.role === "manager" && (
                             <>
-                              <DropdownLink to="/moderator/dashboard">Dashboard</DropdownLink>
+                              <DropdownLink to="/manager/dashboard">Dashboard</DropdownLink>
                               <DropdownLink to="/employee/dashboard">Employee View</DropdownLink>
                             </>
                           )}
@@ -464,10 +464,10 @@ export default function Header() {
                 </>
               )}
 
-              {isAuthenticated && user?.role === "moderator" && (
+              {isAuthenticated && user?.role === "manager" && (
                 <>
                   <div className="my-4 border-t border-border-light"></div>
-                  <MobileNavLink to="/moderator/dashboard">Dashboard</MobileNavLink>
+                  <MobileNavLink to="/manager/dashboard">Dashboard</MobileNavLink>
                   <MobileNavLink to="/employee/dashboard">Employee View</MobileNavLink>
                 </>
               )}

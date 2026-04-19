@@ -4,7 +4,7 @@
  */
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { moderatorAPI } from '../../services/api';
+import { managerAPI } from '../../services/api';
 import Card from '../../components/Card';
 import Badge from '../../components/Badge';
 import Button from '../../components/Button';
@@ -23,8 +23,8 @@ const Verification = () => {
         try {
             setLoading(true);
             const [usersRes, statsRes] = await Promise.all([
-                moderatorAPI.getPendingUsers(),
-                moderatorAPI.getEmployeeStats(),
+                managerAPI.getPendingUsers(),
+                managerAPI.getEmployeeStats(),
             ]);
             setPendingUsers(usersRes.data?.data?.users || []);
             setEmployeeStats(statsRes.data?.data?.employees || []);
@@ -41,7 +41,7 @@ const Verification = () => {
     const handleVerify = async (userId, action) => {
         try {
             setActionLoading(userId);
-            await moderatorAPI.verifyUser(userId, action);
+            await managerAPI.verifyUser(userId, action);
             setPendingUsers(prev => prev.filter(u => u._id !== userId));
         } catch (err) {
             setError(err.message);

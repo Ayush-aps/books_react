@@ -32,7 +32,7 @@ const ComplaintSchema = new mongoose.Schema({
   },
   userRole: {
     type: String,
-    enum: ['buyer', 'seller', 'guest', 'moderator', 'employee'],
+    enum: ['buyer', 'seller', 'guest', 'manager', 'employee'],
     required: true
   },
   // Guest user information (for non-authenticated users)
@@ -88,7 +88,7 @@ const ComplaintSchema = new mongoose.Schema({
     },
     userRole: {
       type: String,
-      enum: ['buyer', 'seller', 'admin', 'guest', 'moderator', 'employee'],
+      enum: ['buyer', 'seller', 'admin', 'guest', 'manager', 'employee'],
       required: true
     },
     message: {

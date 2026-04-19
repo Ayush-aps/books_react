@@ -4,7 +4,7 @@
  */
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { moderatorAPI } from '../../services/api';
+import { managerAPI } from '../../services/api';
 import Card from '../../components/Card';
 import Badge from '../../components/Badge';
 import Button from '../../components/Button';
@@ -27,7 +27,7 @@ const Library = () => {
     const fetchBooks = useCallback(async (p = 1, q = '') => {
         try {
             setLoading(true);
-            const res = await moderatorAPI.getApprovedBooks({ page: p, limit: LIMIT, search: q });
+            const res = await managerAPI.getApprovedBooks({ page: p, limit: LIMIT, search: q });
             setBooks(res.data?.data?.books || []);
             setBooksTotal(res.data?.data?.pagination?.totalBooks || 0);
             setError(null);
@@ -38,7 +38,7 @@ const Library = () => {
     const fetchUsers = useCallback(async (p = 1, q = '') => {
         try {
             setLoading(true);
-            const res = await moderatorAPI.getApprovedUsers({ page: p, limit: LIMIT, search: q });
+            const res = await managerAPI.getApprovedUsers({ page: p, limit: LIMIT, search: q });
             setUsers(res.data?.data?.users || []);
             setUsersTotal(res.data?.data?.pagination?.totalUsers || 0);
             setError(null);

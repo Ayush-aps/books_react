@@ -53,7 +53,14 @@ const Login = () => {
   useEffect(() => {
     if (isAuthenticated && user) {
       const role = user.role;
-      navigate(role === 'admin' ? '/admin/dashboard' : '/');
+      const redirects = {
+        admin: '/admin/dashboard',
+        manager: '/manager/dashboard',
+        employee: '/employee/dashboard',
+        seller: '/seller/dashboard',
+        buyer: '/',
+      };
+      navigate(redirects[role] || '/');
     }
   }, [isAuthenticated, user, navigate]);
 
@@ -61,15 +68,10 @@ const Login = () => {
     const result = await dispatch(login(data.email, data.password));
 
     if (result.success) {
-      // Show success toast
+      // Show success toast — redirect is handled by the useEffect above
+      // which fires once Redux updates the user, so we don't use a stale closure here
       setSuccessMessage('Login successful! Redirecting...');
       setShowSuccessToast(true);
-
-      // Redirect after short delay
-      setTimeout(() => {
-        const role = user?.role || 'buyer';
-        navigate(role === 'admin' ? '/admin/dashboard' : '/');
-      }, 1500);
     } else {
       // Check if error indicates user not found
       const errorMessage = result.message || error || '';

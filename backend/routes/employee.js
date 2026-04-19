@@ -21,8 +21,8 @@ const {
     updateOrderStatus,
 } = require("../controllers/employeeController");
 
-// Shared middleware: employee, moderator, or admin
-const ensureEmployeeAccess = checkRole("employee", "moderator", "admin");
+// Shared middleware: employee, manager, or admin
+const ensureEmployeeAccess = checkRole("employee", "manager", "admin");
 
 // ============================================
 // BOOK VERIFICATION ROUTES

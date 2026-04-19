@@ -5,7 +5,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
-import { moderatorAPI } from '../../services/api';
+import { managerAPI } from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
 import Card from '../../components/Card';
@@ -19,7 +19,7 @@ const Reports = () => {
     const fetchReports = useCallback(async () => {
         try {
             setLoading(true);
-            const response = await moderatorAPI.getReports();
+            const response = await managerAPI.getReports();
             setReports(response.data?.data || {});
             setError(null);
         } catch (err) {

@@ -127,16 +127,16 @@ export const sellerAPI = {
   // Inventory & Books
   getInventory: (params) => api.get('/seller/inventory', { params }),
   getBooks: (params) => api.get('/seller/books', { params }),
-  getBook: (id) => api.get(`/seller/book/${id}`),
-  uploadBook: (data) => api.post('/seller/upload', data),
-  updateBook: (id, data) => api.put(`/seller/book/${id}`, data),
-  deleteBook: (id) => api.delete(`/seller/book/${id}`),
+  getBook: (id) => api.get(`/seller/books/${id}`),
+  uploadBook: (data) => api.post('/seller/books', data),
+  updateBook: (id, data) => api.put(`/seller/books/${id}`, data),
+  deleteBook: (id) => api.delete(`/seller/books/${id}`),
 
   // Orders
   getOrders: (params) => api.get('/seller/orders', { params }),
   getSellerOrders: () => api.get('/orders/seller-orders'),
   getOrder: (id) => api.get(`/seller/orders/${id}`),
-  updateOrderStatus: (id, status) => api.put(`/seller/order/${id}/status`, { status }),
+  updateOrderStatus: (id, status) => api.put(`/seller/orders/${id}/status`, { status }),
 
   // Complaints
   getComplaints: () => api.get('/seller/complaints'),
@@ -149,9 +149,9 @@ export const sellerAPI = {
 export const adminAPI = {
   // Users
   getUsers: (params) => api.get('/admin/users', { params }),
-  updateUserRole: (id, role) => api.put(`/admin/user/${id}/role`, { role }),
-  updateUserStatus: (id, status) => api.put(`/admin/user/${id}/status`, { status }),
-  deleteUser: (id) => api.delete(`/admin/user/${id}`),
+  updateUserRole: (id, role) => api.put(`/admin/users/${id}/role`, { role }),
+  updateUserStatus: (id, status) => api.put(`/admin/users/${id}/status`, { status }),
+  deleteUser: (id) => api.delete(`/admin/users/${id}`),
 
   // Books & Content
   getBooks: (params) => api.get('/admin/books', { params }),
@@ -163,7 +163,7 @@ export const adminAPI = {
   // Orders
   getOrders: (params) => api.get('/admin/orders', { params }),
   getAdminOrders: () => api.get('/orders/admin/orders'),
-  updateOrder: (id, data) => api.put(`/admin/order/${id}`, data),
+  updateOrder: (id, data) => api.put(`/admin/orders/${id}`, data),
 
   // Reports
   getReports: (params) => api.get('/admin/reports', { params }),
@@ -171,7 +171,7 @@ export const adminAPI = {
   // Complaints
   getComplaints: (params) => api.get('/admin/complaints', { params }),
   getComplaint: (id) => api.get(`/admin/complaints/${id}`),
-  respondToComplaint: (id, response) => api.post(`/admin/complaints/${id}/respond`, { response }),
+  respondToComplaint: (id, response) => api.post(`/admin/complaints/${id}/resolve`, { response }),
 };
 
 // =====================
@@ -232,29 +232,32 @@ export const paymentAPI = {
 };
 
 // =====================
-// Moderator API
+// Manager API (previously Moderator)
 // =====================
-export const moderatorAPI = {
-  getPendingUsers: (params) => api.get('/admin/moderator/pending-users', { params }),
-  verifyUser: (userId, action) => api.post('/admin/moderator/verify-user', { userId, action }),
-  getEmployeeStats: () => api.get('/admin/moderator/employee-stats'),
-  getApprovedBooks: (params) => api.get('/admin/moderator/approved-books', { params }),
-  getApprovedUsers: (params) => api.get('/admin/moderator/approved-users', { params }),
+export const managerAPI = {
+  getPendingUsers: (params) => api.get('/admin/manager/pending-users', { params }),
+  verifyUser: (userId, action) => api.post('/admin/manager/verify-user', { userId, action }),
+  getEmployeeStats: () => api.get('/admin/manager/employee-stats'),
+  getApprovedBooks: (params) => api.get('/admin/manager/approved-books', { params }),
+  getApprovedUsers: (params) => api.get('/admin/manager/approved-users', { params }),
   // User Management
-  getUsers: (params) => api.get('/admin/moderator/users', { params }),
-  getUser: (userId) => api.get(`/admin/moderator/users/${userId}`),
-  deleteUser: (userId) => api.delete(`/admin/moderator/users/${userId}`),
-  promoteEmployee: (userId) => api.put(`/admin/moderator/users/${userId}/promote`),
+  getUsers: (params) => api.get('/admin/manager/users', { params }),
+  getUser: (userId) => api.get(`/admin/manager/users/${userId}`),
+  deleteUser: (userId) => api.delete(`/admin/manager/users/${userId}`),
+  promoteEmployee: (userId) => api.put(`/admin/manager/users/${userId}/promote`),
   // Global Stats
-  getGlobalStats: () => api.get('/admin/moderator/global-stats'),
+  getGlobalStats: () => api.get('/admin/manager/global-stats'),
   // Book Locking
-  claimBook: (bookId) => api.patch(`/admin/moderator/books/${bookId}/claim`),
-  releaseBook: (bookId) => api.patch(`/admin/moderator/books/${bookId}/release`),
+  claimBook: (bookId) => api.patch(`/admin/manager/books/${bookId}/claim`),
+  releaseBook: (bookId) => api.patch(`/admin/manager/books/${bookId}/release`),
   // Orders & Reports
-  getOrders: (params) => api.get('/admin/moderator/orders', { params }),
-  updateOrderStatus: (orderId, data) => api.patch(`/admin/moderator/orders/${orderId}/status`, data),
-  getReports: () => api.get('/admin/moderator/reports'),
+  getOrders: (params) => api.get('/admin/manager/orders', { params }),
+  updateOrderStatus: (orderId, data) => api.patch(`/admin/manager/orders/${orderId}/status`, data),
+  getReports: () => api.get('/admin/manager/reports'),
 };
+
+// Backward compatibility alias
+export const moderatorAPI = managerAPI;
 
 // =====================
 // Employee API
@@ -270,6 +273,32 @@ export const employeeAPI = {
   claimComplaint: (complaintId) => api.patch('/employee/claim-complaint', { complaintId }),
   resolveComplaint: (data) => api.post('/employee/resolve-complaint', data),
   escalateComplaint: (data) => api.post('/employee/escalate-complaint', data),
+};
+
+// ─── Task Management API ────────────────────────────────────────────────────
+export const taskAPI = {
+  getTasks: (params) => api.get('/tasks', { params }),
+  getStats: () => api.get('/tasks/stats'),
+  getEmployees: () => api.get('/tasks/employees'),
+  assignTask: (id, employeeId) => api.post(`/tasks/${id}/assign`, { employeeId }),
+  autoAssignTask: (id) => api.post(`/tasks/${id}/assign`, {}),
+  updateStatus: (id, status, notes) => api.patch(`/tasks/${id}/status`, { status, notes }),
+  escalateTask: (id, targetDepartment, reason) => api.post(`/tasks/${id}/escalate`, { targetDepartment, reason }),
+};
+
+// ─── Department Messages API ─────────────────────────────────────────────────
+export const deptMessagesAPI = {
+  // Manager ↔ Manager
+  getManagerMessages: (type) => api.get('/dept-messages/manager-messages', { params: type ? { type } : {} }),
+  sendManagerMessage: (data) => api.post('/dept-messages/manager-messages', data),
+  replyManagerMessage: (id, body) => api.post(`/dept-messages/manager-messages/${id}/reply`, { body }),
+  resolveManagerMessage: (id) => api.patch(`/dept-messages/manager-messages/${id}/resolve`),
+  getManagersList: () => api.get('/dept-messages/managers-list'),
+  // Employee → Manager reports
+  getEmployeeReports: (status) => api.get('/dept-messages/employee-reports', { params: status ? { status } : {} }),
+  getMyReports: () => api.get('/dept-messages/my-reports'),
+  sendReport: (data) => api.post('/dept-messages/report', data),
+  respondToReport: (id, response) => api.post(`/dept-messages/employee-reports/${id}/respond`, { response }),
 };
 
 export default api;

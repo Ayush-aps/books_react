@@ -10,7 +10,7 @@ const { securityLogger } = require("../middleware/logger");
 // @route   POST /api/auth/register
 // @access  Public
 exports.register = async (req, res) => {
-  const { name, email, password, password2, role } = req.body;
+  const { name, email, password, password2, role, employee_type } = req.body;
   const errors = [];
 
   // Check required fields
@@ -28,10 +28,18 @@ exports.register = async (req, res) => {
     errors.push({ msg: "Password should be at least 6 characters" });
   }
 
-  // Validate role
+  // Validate role — admin and manager cannot self-register
   const validRoles = ["buyer", "seller", "employee"];
   if (!validRoles.includes(role)) {
     errors.push({ msg: "Invalid role selected" });
+  }
+
+  // For employees, department (employee_type) is required
+  const validDepartments = ["marketplace", "support", "finance", "tech"];
+  if (role === "employee") {
+    if (!employee_type || !validDepartments.includes(employee_type)) {
+      errors.push({ msg: "Please select a valid department for employee registration" });
+    }
   }
 
   if (errors.length > 0) {
@@ -52,13 +60,27 @@ exports.register = async (req, res) => {
       });
     }
 
-    // Create new user
-    const newUser = new User({
-      name,
-      email,
-      password,
-      role,
-    });
+    // Build user object
+    const userData = { name, email, password, role };
+
+    // For employees, assign department and find their manager
+    if (role === "employee") {
+      userData.employee_type = employee_type;
+      userData.department = employee_type;
+
+      // Auto-link to the manager of this department
+      const manager = await User.findOne({ role: "manager", department: employee_type });
+      if (manager) {
+        userData.managedBy = manager._id;
+      }
+    }
+
+    // Buyers are auto-approved, sellers and employees need verification
+    if (role === "buyer") {
+      userData.verificationStatus = "approved";
+    }
+
+    const newUser = new User(userData);
 
     await newUser.save();
 
@@ -130,6 +152,8 @@ exports.login = (req, res, next) => {
           name: user.name,
           email: user.email,
           role: user.role,
+          department: user.department,
+          employee_type: user.employee_type,
           avatar: user.avatar,
           isVerified: user.isVerified,
         },
@@ -202,6 +226,8 @@ exports.checkAuth = async (req, res) => {
             name: freshUser.name,
             email: freshUser.email,
             role: freshUser.role,
+            department: freshUser.department,
+            employee_type: freshUser.employee_type,
             avatar: freshUser.avatar,
             phone: freshUser.phone,
           },

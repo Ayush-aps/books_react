@@ -420,6 +420,21 @@ exports.createBook = async (req, res) => {
 
     await newBook.save();
 
+    // Auto-create marketplace task for new book review
+    try {
+      const { createTask } = require('../services/taskService');
+      await createTask({
+        title: `Review New Book: "${newBook.title}"`,
+        description: `Seller ${req.user.name || req.user.email} uploaded a new book requiring review and approval.`,
+        department: 'marketplace',
+        eventType: 'book_upload',
+        priority: 'medium',
+        relatedEntity: { entityType: 'Book', entityId: newBook._id },
+      });
+    } catch (taskErr) {
+      console.error('[taskHook] Failed to create marketplace task:', taskErr);
+    }
+
     res.status(201).json({
       success: true,
       message: "Book uploaded successfully and pending approval",

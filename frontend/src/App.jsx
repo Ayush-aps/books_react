@@ -71,16 +71,16 @@ import AdminComplaintDetails from './pages/admin/ComplaintDetails'
 import AdminViewBook from './pages/admin/ViewBook'
 import Revenue from './pages/admin/Revenue'
 
-// Moderator Pages
-import ModeratorLayout from './pages/moderator/ModeratorLayout'
-import ModeratorOverview from './pages/moderator/Dashboard'
-import ModeratorVerification from './pages/moderator/Verification'
-import ModeratorBooks from './pages/moderator/Books'
-import ModeratorUsers from './pages/moderator/Users'
-import ModeratorLibrary from './pages/moderator/Library'
-import ModeratorOrders from './pages/moderator/Orders'
-import ModeratorReports from './pages/moderator/Reports'
-import ModeratorComplaints from './pages/moderator/Complaints'
+// Manager Pages (files still in moderator/ directory)
+import ManagerLayout from './pages/moderator/ModeratorLayout'
+import ManagerOverview from './pages/moderator/Dashboard'
+import ManagerVerification from './pages/moderator/Verification'
+import ManagerBooks from './pages/moderator/Books'
+import ManagerUsers from './pages/moderator/Users'
+import ManagerLibrary from './pages/moderator/Library'
+import ManagerOrders from './pages/moderator/Orders'
+import ManagerReports from './pages/moderator/Reports'
+import ManagerComplaints from './pages/moderator/Complaints'
 
 // Employee Pages
 import EmployeeLayout from './pages/employee/EmployeeLayout'
@@ -183,20 +183,20 @@ function App() {
                 <Route path="/admin/complaints/:id" element={<PrivateRoute role="admin"><AdminComplaintDetails /></PrivateRoute>} />
                 <Route path="/admin/view-book/:id" element={<PrivateRoute role="admin"><AdminViewBook /></PrivateRoute>} />
 
-                {/* Moderator Routes - nested under shared layout */}
-                <Route element={<PrivateRoute role={['moderator', 'admin', 'employee']}><ModeratorLayout /></PrivateRoute>}>
-                  <Route path="/moderator/dashboard" element={<ModeratorOverview />} />
-                  <Route path="/moderator/verification" element={<ModeratorVerification />} />
-                  <Route path="/moderator/books" element={<ModeratorBooks />} />
-                  <Route path="/moderator/orders" element={<ModeratorOrders />} />
-                  <Route path="/moderator/reports" element={<ModeratorReports />} />
-                  <Route path="/moderator/complaints" element={<ModeratorComplaints />} />
-                  <Route path="/moderator/users" element={<ModeratorUsers />} />
-                  <Route path="/moderator/library" element={<ModeratorLibrary />} />
+                {/* Manager Routes - nested under shared layout */}
+                <Route element={<PrivateRoute role={['manager', 'admin', 'employee']}><ManagerLayout /></PrivateRoute>}>
+                  <Route path="/manager/dashboard" element={<ManagerOverview />} />
+                  <Route path="/manager/verification" element={<ManagerVerification />} />
+                  <Route path="/manager/books" element={<ManagerBooks />} />
+                  <Route path="/manager/orders" element={<ManagerOrders />} />
+                  <Route path="/manager/reports" element={<ManagerReports />} />
+                  <Route path="/manager/complaints" element={<ManagerComplaints />} />
+                  <Route path="/manager/users" element={<ManagerUsers />} />
+                  <Route path="/manager/library" element={<ManagerLibrary />} />
                 </Route>
 
                 {/* Employee Routes — nested under shared layout */}
-                <Route element={<PrivateRoute role={['employee', 'moderator', 'admin']}><EmployeeLayout /></PrivateRoute>}>
+                <Route element={<PrivateRoute role={['employee', 'manager', 'admin']}><EmployeeLayout /></PrivateRoute>}>
                   <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
                   <Route path="/employee/orders" element={<EmployeeOrders />} />
                   <Route path="/employee/complaints" element={<EmployeeComplaints />} />
