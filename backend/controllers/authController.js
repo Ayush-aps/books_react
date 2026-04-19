@@ -5,6 +5,7 @@
 const passport = require("passport");
 const User = require("../models/User");
 const { securityLogger } = require("../middleware/logger");
+const cacheService = require("../utils/cacheService");
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
@@ -167,20 +168,19 @@ exports.logout = (req, res, next) => {
 // @route   GET /api/auth/me
 // @access  Private
 exports.getMe = (req, res) => {
-  return res.status(200).json({
-    success: true,
-    user: {
-      _id: req.user._id,
-      name: req.user.name,
-      email: req.user.email,
-      role: req.user.role,
-      avatar: req.user.avatar,
-      phone: req.user.phone,
-      address: req.user.address,
-      isVerified: req.user.isVerified,
-      createdAt: req.user.createdAt,
-    },
-  });
+  const userPayload = {
+    _id: req.user._id,
+    name: req.user.name,
+    email: req.user.email,
+    role: req.user.role,
+    avatar: req.user.avatar,
+    phone: req.user.phone,
+    address: req.user.address,
+    isVerified: req.user.isVerified,
+    createdAt: req.user.createdAt,
+  };
+
+  return res.status(200).json({ success: true, user: userPayload });
 };
 
 // @desc    Check if user is authenticated
@@ -189,22 +189,40 @@ exports.getMe = (req, res) => {
 exports.checkAuth = async (req, res) => {
   if (req.isAuthenticated()) {
     try {
-      // Fetch fresh user data from database to get updated avatar and other fields
-      const User = require('../models/User');
-      const freshUser = await User.findById(req.user._id).select('-password');
+      const userId = req.user._id.toString();
+      const cacheKey = `user:${userId}`;
+      const totalTimer = "[PERF] GET /api/auth/check total";
+      const dbTimer = "[PERF] GET /api/auth/check db";
+      console.time(totalTimer);
 
-      if (freshUser) {
+      const cachedUser = await cacheService.get(cacheKey);
+      if (cachedUser) {
+        console.log(`[CACHE HIT] ${cacheKey}`);
+        console.timeEnd(totalTimer);
         return res.status(200).json({
           success: true,
           authenticated: true,
-          user: {
-            _id: freshUser._id,
-            name: freshUser.name,
-            email: freshUser.email,
-            role: freshUser.role,
-            avatar: freshUser.avatar,
-            phone: freshUser.phone,
-          },
+          user: cachedUser,
+          source: "redis",
+        });
+      }
+
+      // Fetch fresh user data from database when cache misses.
+      console.time(dbTimer);
+      const freshUser = await User.findById(req.user._id)
+        .select("_id name email role avatar phone address isVerified createdAt")
+        .lean();
+      console.timeEnd(dbTimer);
+
+      if (freshUser) {
+        await cacheService.set(cacheKey, freshUser, 300);
+        console.log(`[CACHE SET] ${cacheKey} ttl=300s`);
+        console.timeEnd(totalTimer);
+        return res.status(200).json({
+          success: true,
+          authenticated: true,
+          user: freshUser,
+          source: "db",
         });
       }
     } catch (error) {

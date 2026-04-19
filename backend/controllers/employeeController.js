@@ -11,6 +11,7 @@
 const Book = require("../models/Book");
 const Complaint = require("../models/Complaint");
 const Order = require("../models/Order");
+const cacheService = require("../utils/cacheService");
 
 // ============================================
 // BOOK VERIFICATION
@@ -122,6 +123,7 @@ exports.reviewBook = async (req, res) => {
         book.reviewedBy = req.user._id;
 
         await book.save();
+        await cacheService.del("list:books");
 
         await book.populate("seller", "name email");
 

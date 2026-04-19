@@ -85,6 +85,11 @@ const UserSchema = new mongoose.Schema({
   },
 });
 
+// Hot query indexes: login, admin list filters, moderation queues.
+UserSchema.index({ role: 1, createdAt: -1 });
+UserSchema.index({ verificationStatus: 1, role: 1, createdAt: -1 });
+UserSchema.index({ isVerified: 1, createdAt: -1 });
+
 // Encrypt password using bcrypt
 UserSchema.pre("save", async function (next) {
   if (!this.isModified("password")) {

@@ -5,12 +5,26 @@
 const LocalStrategy = require("passport-local").Strategy;
 const User = require("../models/User");
 
+const findUserByEmail = async (email) => {
+  return User.findOne({ email }).select("name email role avatar isVerified +password");
+};
+
+const normalizeEmail = (email = "") => email.trim().toLowerCase();
+
 module.exports = (passport) => {
   passport.use(
     new LocalStrategy({ usernameField: "email" }, async (email, password, done) => {
       try {
+        const normalizedEmail = normalizeEmail(email);
+
         // Match user
-        const user = await User.findOne({ email }).select("+password");
+        let user = await findUserByEmail(normalizedEmail);
+
+        // Gracefully handle a common typo when no exact email exists.
+        if (!user && normalizedEmail.endsWith("@gamil.com")) {
+          const correctedEmail = normalizedEmail.replace(/@gamil\.com$/i, "@gmail.com");
+          user = await findUserByEmail(correctedEmail);
+        }
 
         if (!user) {
           return done(null, false, { message: "Invalid email or password" });

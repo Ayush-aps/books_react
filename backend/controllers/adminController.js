@@ -7,6 +7,7 @@ const User = require("../models/User");
 const Book = require("../models/Book");
 const Order = require("../models/Order");
 const Complaint = require("../models/Complaint");
+const cacheService = require("../utils/cacheService");
 
 // ============================================
 // USER MANAGEMENT
@@ -35,12 +36,42 @@ exports.getAllUsers = async (req, res) => {
       query.isVerified = false;
     }
 
-    const users = await User.find(query).sort({ createdAt: -1 });
+    const cacheKey = "list:users";
+    const canUseListCache = !search && !role && !status;
+    const totalTimer = "[PERF] GET /api/admin/users total";
+    const dbTimer = "[PERF] GET /api/admin/users db";
+    console.time(totalTimer);
+
+    if (canUseListCache) {
+      const cachedUsers = await cacheService.get(cacheKey);
+      if (cachedUsers) {
+        console.log("[CACHE HIT] list:users");
+        console.timeEnd(totalTimer);
+        return res.json({
+          success: true,
+          message: "Users retrieved successfully",
+          data: { users: cachedUsers, source: "redis" },
+        });
+      }
+    }
+
+    console.time(dbTimer);
+    const users = await User.find(query)
+      .select("name email role isVerified verificationStatus avatar createdAt")
+      .sort({ createdAt: -1 })
+      .lean();
+    console.timeEnd(dbTimer);
+
+    if (canUseListCache) {
+      await cacheService.set(cacheKey, users, 120);
+      console.log("[CACHE SET] list:users ttl=120s");
+    }
+    console.timeEnd(totalTimer);
 
     res.json({
       success: true,
       message: "Users retrieved successfully",
-      data: { users },
+      data: { users, source: canUseListCache ? "db" : "db-no-cache" },
     });
   } catch (err) {
     console.error(err);
@@ -76,6 +107,8 @@ exports.updateUserRole = async (req, res) => {
       });
     }
 
+    await cacheService.del([`user:${user._id.toString()}`, "list:users"]);
+
     res.json({
       success: true,
       message: "User role updated successfully",
@@ -107,6 +140,7 @@ exports.toggleUserStatus = async (req, res) => {
 
     user.isVerified = !user.isVerified;
     await user.save();
+    await cacheService.del([`user:${user._id.toString()}`, "list:users"]);
 
     res.json({
       success: true,
@@ -145,6 +179,7 @@ exports.deleteUser = async (req, res) => {
     }
 
     await User.findByIdAndDelete(req.params.id);
+    await cacheService.del([`user:${req.params.id}`, "list:users"]);
 
     res.json({
       success: true,
@@ -544,6 +579,8 @@ exports.approveBook = async (req, res) => {
       });
     }
 
+    await cacheService.del("list:books");
+
     res.json({
       success: true,
       message: "Book approved successfully",
@@ -590,6 +627,8 @@ exports.rejectBook = async (req, res) => {
         message: "Book not found",
       });
     }
+
+    await cacheService.del("list:books");
 
     res.json({
       success: true,

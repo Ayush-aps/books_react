@@ -6,6 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const Book = require('../models/Book');
+const cacheService = require('../utils/cacheService');
 
 /**
  * @route   GET /api/books/browse
@@ -15,6 +16,26 @@ const Book = require('../models/Book');
 router.get('/browse', async (req, res) => {
     try {
         const { search, genre, condition, minPrice, maxPrice, sort, page = 1, limit = 12 } = req.query;
+        const totalTimer = '[PERF] GET /api/books/browse total';
+        const dbTimer = '[PERF] GET /api/books/browse db';
+        console.time(totalTimer);
+
+        // Cache only the default list endpoint to avoid stale/mismatched filtered payloads.
+        const defaultBrowse = !search && !genre && !condition && !minPrice && !maxPrice && !sort
+            && parseInt(page) === 1 && parseInt(limit) === 12;
+        const cacheKey = 'list:books';
+
+        if (defaultBrowse) {
+            const cachedPayload = await cacheService.get(cacheKey);
+            if (cachedPayload) {
+                console.log('[CACHE HIT] list:books');
+                console.timeEnd(totalTimer);
+                return res.json({
+                    ...cachedPayload,
+                    source: 'redis',
+                });
+            }
+        }
 
         // Build query
         const query = { isApproved: true, isAvailable: true };
@@ -72,14 +93,18 @@ router.get('/browse', async (req, res) => {
         if (sort === 'price-desc') sortOption = { price: -1 };
         if (sort === 'rating') sortOption = { rating: -1 };
 
+        console.time(dbTimer);
         const totalBooks = await Book.countDocuments(query);
         const books = await Book.find(query)
+            .select('title author coverImage price discountPrice discountPercentage condition rating reviewCount seller isApproved isAvailable createdAt')
             .sort(sortOption)
             .populate('seller', 'name')
             .skip((parseInt(page) - 1) * parseInt(limit))
-            .limit(parseInt(limit));
+            .limit(parseInt(limit))
+            .lean();
+        console.timeEnd(dbTimer);
 
-        res.json({
+        const responsePayload = {
             success: true,
             data: {
                 books,
@@ -90,6 +115,17 @@ router.get('/browse', async (req, res) => {
                     limit: parseInt(limit)
                 }
             }
+        };
+
+        if (defaultBrowse) {
+            await cacheService.set(cacheKey, responsePayload, 120);
+            console.log('[CACHE SET] list:books ttl=120s');
+        }
+        console.timeEnd(totalTimer);
+
+        res.json({
+            ...responsePayload,
+            source: defaultBrowse ? 'db' : 'db-no-cache'
         });
     } catch (err) {
         console.error('Error browsing books:', err);

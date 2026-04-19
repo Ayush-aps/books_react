@@ -46,4 +46,8 @@ const SubscriptionSchema = new mongoose.Schema({
   }
 });
 
+SubscriptionSchema.index({ user: 1, isActive: 1, endDate: -1 });
+SubscriptionSchema.index({ stripeSubscriptionId: 1 }, { sparse: true });
+SubscriptionSchema.index({ stripeCustomerId: 1 }, { sparse: true });
+
 module.exports = mongoose.model("Subscription", SubscriptionSchema);

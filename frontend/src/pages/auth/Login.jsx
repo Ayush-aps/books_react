@@ -19,6 +19,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema } from '../../schemas/allFormSchemas';
 
+const autoCorrectCommonEmailTypos = (email) =>
+  email.trim().toLowerCase().replace(/@gamil\.com$/i, '@gmail.com');
+
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -58,11 +61,25 @@ const Login = () => {
   }, [isAuthenticated, user, navigate]);
 
   const onSubmit = async (data) => {
-    const result = await dispatch(login(data.email, data.password));
+    const normalizedEmail = data.email.trim().toLowerCase();
+    let result = await dispatch(login(normalizedEmail, data.password));
+    let successMessageToShow = 'Login successful! Redirecting...';
+
+    // Retry once for a very common domain typo to reduce login friction.
+    if (!result.success) {
+      const correctedEmail = autoCorrectCommonEmailTypos(normalizedEmail);
+      if (correctedEmail !== normalizedEmail) {
+        const retryResult = await dispatch(login(correctedEmail, data.password));
+        if (retryResult.success) {
+          result = retryResult;
+          successMessageToShow = `Login successful! Email corrected to ${correctedEmail}. Redirecting...`;
+        }
+      }
+    }
 
     if (result.success) {
       // Show success toast
-      setSuccessMessage('Login successful! Redirecting...');
+      setSuccessMessage(successMessageToShow);
       setShowSuccessToast(true);
 
       // Redirect after short delay

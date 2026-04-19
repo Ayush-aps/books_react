@@ -87,4 +87,7 @@ const LibrarySchema = new mongoose.Schema({
   }
 });
 
+LibrarySchema.index({ user: 1 }, { unique: true });
+LibrarySchema.index({ "items.book": 1 });
+
 module.exports = mongoose.model("Library", LibrarySchema);

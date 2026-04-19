@@ -7,6 +7,7 @@ const Book = require("../models/Book");
 const Order = require("../models/Order");
 const Complaint = require("../models/Complaint");
 const axios = require("axios");
+const cacheService = require("../utils/cacheService");
 
 // ============================================
 // DASHBOARD
@@ -419,6 +420,7 @@ exports.createBook = async (req, res) => {
     });
 
     await newBook.save();
+    await cacheService.del("list:books");
 
     res.status(201).json({
       success: true,
@@ -556,6 +558,7 @@ exports.updateBook = async (req, res) => {
     }
 
     await book.save();
+    await cacheService.del("list:books");
 
     res.json({
       success: true,
@@ -592,6 +595,7 @@ exports.deleteBook = async (req, res) => {
     }
 
     await Book.findByIdAndDelete(req.params.id);
+    await cacheService.del("list:books");
 
     res.json({
       success: true,

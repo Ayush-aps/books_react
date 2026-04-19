@@ -151,6 +151,10 @@ BookSchema.index({
   publisher: "text",
   genres: "text",
 });
+BookSchema.index({ isApproved: 1, isAvailable: 1, createdAt: -1 });
+BookSchema.index({ seller: 1, createdAt: -1 });
+BookSchema.index({ condition: 1, price: 1 });
+BookSchema.index({ genres: 1, createdAt: -1 });
 BookSchema.index({ approvalStatus: 1 });
 BookSchema.index({ lockedBy: 1 });
 

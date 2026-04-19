@@ -10,6 +10,21 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    cssCodeSplit: true,
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          reactVendor: ['react', 'react-dom', 'react-router-dom', 'react-redux'],
+          motionVendor: ['framer-motion'],
+          chartsVendor: ['recharts'],
+          pdfVendor: ['react-pdf', '@react-pdf/renderer'],
+          stripeVendor: ['@stripe/stripe-js', '@stripe/react-stripe-js'],
+        },
+      },
+    },
+  },
   server: {
     port: 5173,
     proxy: {

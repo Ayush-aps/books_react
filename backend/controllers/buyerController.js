@@ -11,6 +11,7 @@ const Cart = require("../models/Cart");
 const Address = require("../models/Address");
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
+const cacheService = require("../utils/cacheService");
 
 // ============================================
 // DASHBOARD
@@ -837,12 +838,37 @@ exports.deleteAddress = async (req, res) => {
 // @access  Private (Buyer)
 exports.getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select("-password");
+    const userId = req.user._id.toString();
+    const cacheKey = `user:${userId}`;
+    const totalTimer = "[PERF] GET /api/buyer/profile total";
+    const dbTimer = "[PERF] GET /api/buyer/profile db";
+    console.time(totalTimer);
+
+    const cachedUser = await cacheService.get(cacheKey);
+    if (cachedUser) {
+      console.log(`[CACHE HIT] ${cacheKey}`);
+      console.timeEnd(totalTimer);
+      return res.json({
+        success: true,
+        message: "Profile retrieved successfully",
+        data: { user: cachedUser, source: "redis" },
+      });
+    }
+
+    console.time(dbTimer);
+    const user = await User.findById(req.user._id).select("-password").lean();
+    console.timeEnd(dbTimer);
+
+    if (user) {
+      await cacheService.set(cacheKey, user, 300);
+      console.log(`[CACHE SET] ${cacheKey} ttl=300s`);
+    }
+    console.timeEnd(totalTimer);
 
     res.json({
       success: true,
       message: "Profile retrieved successfully",
-      data: { user },
+      data: { user, source: "db" },
     });
   } catch (err) {
     console.error(err);
@@ -928,6 +954,8 @@ exports.updateProfile = async (req, res) => {
 
     await user.save();
     console.log('User saved successfully');
+
+    await cacheService.del(`user:${req.user._id.toString()}`);
 
     const updatedUser = user.toObject();
     delete updatedUser.password;

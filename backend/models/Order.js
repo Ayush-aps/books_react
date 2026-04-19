@@ -162,6 +162,12 @@ const OrderSchema = new mongoose.Schema({
   timestamps: true  // This will add createdAt and updatedAt fields
 });
 
+// Hot query indexes for buyer/seller/admin order listing and filtering.
+OrderSchema.index({ buyer: 1, createdAt: -1 });
+OrderSchema.index({ "items.seller": 1, createdAt: -1 });
+OrderSchema.index({ orderStatus: 1, createdAt: -1 });
+OrderSchema.index({ buyer: 1, orderStatus: 1, createdAt: -1 });
+
 // Generate orderId before saving
 OrderSchema.pre("save", async function (next) {
   try {

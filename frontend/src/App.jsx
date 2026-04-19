@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { checkAuth } from './redux/actions/authActions'
@@ -14,93 +14,97 @@ import { ToastProvider } from './components/Toast'
 import { ThemeProvider } from './context/ThemeContext'
 import ThemeToggle from './components/ThemeToggle'
 
-// Public Pages
-import Home from './pages/Home'
-import About from './pages/About'
-import Contact from './pages/Contact'
-import Pricing from './pages/Pricing'
-
-// Auth Pages
-import Login from './pages/auth/Login'
-import Register from './pages/auth/Register'
-
-// Buyer Pages
-import BuyerDashboard from './pages/buyer/Dashboard'
-import BuyerBrowse from './pages/buyer/Browse'
-import BookDetails from './pages/buyer/BookDetails'
-import Cart from './pages/buyer/Cart'
-import Checkout from './pages/buyer/Checkout'
-import BuyerOrders from './pages/buyer/Orders'
-import OrderDetails from './pages/buyer/OrderDetails'
-import Profile from './pages/buyer/Profile'
-import Library from './pages/buyer/Library'
-import VideoFeed from './pages/buyer/VideoFeed'
-import VideoWatch from './pages/buyer/VideoWatch'
-import Addresses from './pages/buyer/Addresses'
-import Reader from './pages/buyer/PdfReader'
-import RegisterComplaint from './pages/buyer/RegisterComplaint'
-import BuyerComplaints from './pages/buyer/Complaints'
-import BuyerComplaintDetails from './pages/buyer/ComplaintDetails'
-import UploadVideo from './pages/buyer/UploadVideo'
-import PaymentSuccess from './pages/buyer/PaymentSuccess'
-
-// Seller Pages
-import SellerDashboard from './pages/seller/Dashboard'
-import Inventory from './pages/seller/Inventory'
-import UploadBook from './pages/seller/UploadBook'
-import EditBook from './pages/seller/EditBook'
-import SellerBookDetails from './pages/seller/BookDetails'
-import SellerOrders from './pages/seller/Orders'
-import SellerOrderDetails from './pages/seller/OrderDetails'
-import SellerComplaints from './pages/seller/Complaints'
-import SellerRegisterComplaint from './pages/seller/RegisterComplaint'
-import SellerComplaintDetails from './pages/seller/ComplaintDetails'
-import SellerViewBook from './pages/seller/ViewBook'
-import SellerRevenue from './pages/seller/Revenue'
-
-// Admin Pages
-import AdminDashboard from './pages/admin/Dashboard'
-import AdminUsers from './pages/admin/Users'
-import AdminBooks from './pages/admin/Books'
-import AdminBookDetails from './pages/admin/BookDetails'
-import AdminOrders from './pages/admin/Orders'
-import AdminOrderDetails from './pages/admin/OrderDetails'
-import AdminReports from './pages/admin/Reports'
-import AdminComplaints from './pages/admin/Complaints'
-import AdminComplaintDetails from './pages/admin/ComplaintDetails'
-import AdminViewBook from './pages/admin/ViewBook'
-import Revenue from './pages/admin/Revenue'
-
-// Moderator Pages
-import ModeratorLayout from './pages/moderator/ModeratorLayout'
-import ModeratorOverview from './pages/moderator/Dashboard'
-import ModeratorVerification from './pages/moderator/Verification'
-import ModeratorBooks from './pages/moderator/Books'
-import ModeratorUsers from './pages/moderator/Users'
-import ModeratorLibrary from './pages/moderator/Library'
-import ModeratorOrders from './pages/moderator/Orders'
-import ModeratorReports from './pages/moderator/Reports'
-import ModeratorComplaints from './pages/moderator/Complaints'
-
-// Employee Pages
-import EmployeeLayout from './pages/employee/EmployeeLayout'
-import EmployeeDashboard from './pages/employee/Dashboard'
-import EmployeeOrders from './pages/employee/Orders'
-import EmployeeComplaints from './pages/employee/Complaints'
-
-// Subscription Pages
-import SubscriptionCheckout from './pages/subscription/SubscriptionCheckout'
-import SubscriptionSuccess from './pages/subscription/SubscriptionSuccess'
-
-// Error Pages
-import NotFound from './pages/errors/NotFound'
-import ServerError from './pages/errors/ServerError'
-
 // Protected Route Component
 import PrivateRoute from './components/PrivateRoute'
 import ErrorBoundary from './components/ErrorBoundary'
 
 import ScrollToTop from './components/ScrollToTop'
+
+// Public Pages
+const Home = lazy(() => import('./pages/Home'))
+const About = lazy(() => import('./pages/About'))
+const Contact = lazy(() => import('./pages/Contact'))
+const Pricing = lazy(() => import('./pages/Pricing'))
+
+// Auth Pages
+const Login = lazy(() => import('./pages/auth/Login'))
+const Register = lazy(() => import('./pages/auth/Register'))
+
+// Buyer Pages
+const BuyerDashboard = lazy(() => import('./pages/buyer/Dashboard'))
+const BuyerBrowse = lazy(() => import('./pages/buyer/Browse'))
+const BookDetails = lazy(() => import('./pages/buyer/BookDetails'))
+const Cart = lazy(() => import('./pages/buyer/Cart'))
+const Checkout = lazy(() => import('./pages/buyer/Checkout'))
+const BuyerOrders = lazy(() => import('./pages/buyer/Orders'))
+const OrderDetails = lazy(() => import('./pages/buyer/OrderDetails'))
+const Profile = lazy(() => import('./pages/buyer/Profile'))
+const Library = lazy(() => import('./pages/buyer/Library'))
+const VideoFeed = lazy(() => import('./pages/buyer/VideoFeed'))
+const VideoWatch = lazy(() => import('./pages/buyer/VideoWatch'))
+const Addresses = lazy(() => import('./pages/buyer/Addresses'))
+const Reader = lazy(() => import('./pages/buyer/PdfReader'))
+const RegisterComplaint = lazy(() => import('./pages/buyer/RegisterComplaint'))
+const BuyerComplaints = lazy(() => import('./pages/buyer/Complaints'))
+const BuyerComplaintDetails = lazy(() => import('./pages/buyer/ComplaintDetails'))
+const UploadVideo = lazy(() => import('./pages/buyer/UploadVideo'))
+const PaymentSuccess = lazy(() => import('./pages/buyer/PaymentSuccess'))
+
+// Seller Pages
+const SellerDashboard = lazy(() => import('./pages/seller/Dashboard'))
+const Inventory = lazy(() => import('./pages/seller/Inventory'))
+const UploadBook = lazy(() => import('./pages/seller/UploadBook'))
+const EditBook = lazy(() => import('./pages/seller/EditBook'))
+const SellerBookDetails = lazy(() => import('./pages/seller/BookDetails'))
+const SellerOrders = lazy(() => import('./pages/seller/Orders'))
+const SellerOrderDetails = lazy(() => import('./pages/seller/OrderDetails'))
+const SellerComplaints = lazy(() => import('./pages/seller/Complaints'))
+const SellerRegisterComplaint = lazy(() => import('./pages/seller/RegisterComplaint'))
+const SellerComplaintDetails = lazy(() => import('./pages/seller/ComplaintDetails'))
+const SellerViewBook = lazy(() => import('./pages/seller/ViewBook'))
+const SellerRevenue = lazy(() => import('./pages/seller/Revenue'))
+
+// Admin Pages
+const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'))
+const AdminUsers = lazy(() => import('./pages/admin/Users'))
+const AdminBooks = lazy(() => import('./pages/admin/Books'))
+const AdminBookDetails = lazy(() => import('./pages/admin/BookDetails'))
+const AdminOrders = lazy(() => import('./pages/admin/Orders'))
+const AdminOrderDetails = lazy(() => import('./pages/admin/OrderDetails'))
+const AdminReports = lazy(() => import('./pages/admin/Reports'))
+const AdminComplaints = lazy(() => import('./pages/admin/Complaints'))
+const AdminComplaintDetails = lazy(() => import('./pages/admin/ComplaintDetails'))
+const AdminViewBook = lazy(() => import('./pages/admin/ViewBook'))
+const Revenue = lazy(() => import('./pages/admin/Revenue'))
+
+// Moderator Pages
+const ModeratorLayout = lazy(() => import('./pages/moderator/ModeratorLayout'))
+const ModeratorOverview = lazy(() => import('./pages/moderator/Dashboard'))
+const ModeratorVerification = lazy(() => import('./pages/moderator/Verification'))
+const ModeratorBooks = lazy(() => import('./pages/moderator/Books'))
+const ModeratorUsers = lazy(() => import('./pages/moderator/Users'))
+const ModeratorLibrary = lazy(() => import('./pages/moderator/Library'))
+const ModeratorOrders = lazy(() => import('./pages/moderator/Orders'))
+const ModeratorReports = lazy(() => import('./pages/moderator/Reports'))
+const ModeratorComplaints = lazy(() => import('./pages/moderator/Complaints'))
+
+// Employee Pages
+const EmployeeLayout = lazy(() => import('./pages/employee/EmployeeLayout'))
+const EmployeeDashboard = lazy(() => import('./pages/employee/Dashboard'))
+const EmployeeOrders = lazy(() => import('./pages/employee/Orders'))
+const EmployeeComplaints = lazy(() => import('./pages/employee/Complaints'))
+
+// Subscription Pages
+const SubscriptionCheckout = lazy(() => import('./pages/subscription/SubscriptionCheckout'))
+const SubscriptionSuccess = lazy(() => import('./pages/subscription/SubscriptionSuccess'))
+
+// Error Pages
+const NotFound = lazy(() => import('./pages/errors/NotFound'))
+const ServerError = lazy(() => import('./pages/errors/ServerError'))
+
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-[50vh]">Loading page...</div>
+)
 
 function App() {
   const dispatch = useDispatch()
@@ -123,7 +127,8 @@ function App() {
             <Header />
             <ThemeToggle />
             <main className="flex-grow">
-              <Routes>
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<Home />} />
                 <Route path="/about" element={<About />} />
@@ -211,7 +216,8 @@ function App() {
 
                 {/* Catch all - 404 */}
                 <Route path="*" element={<NotFound />} />
-              </Routes>
+                </Routes>
+              </Suspense>
             </main>
             <Footer />
           </div>

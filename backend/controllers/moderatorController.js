@@ -8,6 +8,7 @@ const User = require("../models/User");
 const Complaint = require("../models/Complaint");
 const Book = require("../models/Book");
 const Order = require("../models/Order");
+const cacheService = require("../utils/cacheService");
 
 // ============================================
 // USER VERIFICATION QUEUE
@@ -125,6 +126,7 @@ exports.verifyUser = async (req, res) => {
         targetUser.managedBy = req.user._id;
 
         await targetUser.save();
+        await cacheService.del([`user:${targetUser._id.toString()}`, "list:users"]);
 
         res.json({
             success: true,

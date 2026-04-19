@@ -47,36 +47,46 @@ const { requestLogger, slowRequestLogger } = require("./middleware/logger");
 
 // Initialize Express app
 const app = express();
+const isTestEnv = process.env.NODE_ENV === "test";
 
-// Connect to MongoDB and auto-seed default accounts
-connectDB().then(async () => {
-  try {
-    const User = require("./models/User");
+if (!isTestEnv) {
+  // Connect to MongoDB and auto-seed default accounts
+  connectDB().then(async () => {
+    try {
+      const User = require("./models/User");
 
-    // Auto-seed moderator account if none exists
-    const moderatorExists = await User.findOne({ role: "moderator" });
-    if (!moderatorExists) {
-      const moderator = new User({
-        name: "Moderator",
-        email: "moderator1@gmail.com",
-        password: "Moderator@1",
-        role: "moderator",
-        isVerified: true,
-      });
-      await moderator.save();
-      console.log("✅ Default moderator account created (moderator1@gmail.com)");
+      // Auto-seed moderator account if none exists
+      const moderatorExists = await User.findOne({ role: "moderator" });
+      if (!moderatorExists) {
+        const moderator = new User({
+          name: "Moderator",
+          email: "moderator1@gmail.com",
+          password: "Moderator@1",
+          role: "moderator",
+          isVerified: true,
+        });
+        await moderator.save();
+        console.log("✅ Default moderator account created (moderator1@gmail.com)");
+      }
+    } catch (err) {
+      console.error("⚠️ Auto-seed error:", err.message);
     }
-  } catch (err) {
-    console.error("⚠️ Auto-seed error:", err.message);
-  }
-});
+  });
 
-// Start subscription cron jobs (Netflix-like workflow)
-startSubscriptionJobs();
+  // Start subscription cron jobs (Netflix-like workflow)
+  startSubscriptionJobs();
+}
 
 // CORS configuration
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || "http://localhost:5173",
+  origin: (origin, callback) => {
+    // Allow requests from any origin. This keeps local dev/preview and deployments flexible.
+    // Also allow requests without Origin header (e.g., curl/Postman/health checks).
+    if (!origin) {
+      return callback(null, true);
+    }
+    return callback(null, true);
+  },
   credentials: true,
   optionsSuccessStatus: 200
 };
@@ -90,8 +100,10 @@ app.use(express.json());
 app.use(methodOverride("_method"));
 
 // Enhanced Morgan logging (replaces basic morgan)
-app.use(requestLogger);
-app.use(slowRequestLogger(1000)); // Log requests slower than 1 second
+if (!isTestEnv) {
+  app.use(requestLogger);
+  app.use(slowRequestLogger(1000)); // Log requests slower than 1 second
+}
 
 // Security middleware
 app.use(helmet({
@@ -106,31 +118,46 @@ const authLimiter = rateLimit({
   message: "Too many requests from this IP, please try again after 15 minutes",
 });
 
-// Session configuration
-app.use(session({
-  secret: process.env.SESSION_SECRET || "your-secret-key-here",
-  resave: false,
-  saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI,
-    collectionName: "sessions",
-  }),
-  cookie: {
-    maxAge: 1000 * 60 * 60 * 24, // 1 day
-    httpOnly: false, // Allow frontend to access the cookie
-    secure: false, // Set to false for development (http)
-    sameSite: 'lax' // Allow same-site requests
-  },
-  name: 'bookish.sid' // Custom session name
-}));
+if (!isTestEnv) {
+  // Session configuration
+  const sessionConfig = {
+    secret: process.env.SESSION_SECRET || "your-secret-key-here",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      maxAge: 1000 * 60 * 60 * 24, // 1 day
+      httpOnly: false, // Allow frontend to access the cookie
+      secure: false, // Set to false for development (http)
+      sameSite: 'lax' // Allow same-site requests
+    },
+    name: 'bookish.sid' // Custom session name
+  };
 
-// Flash messages
-app.use(flash());
+  if (process.env.MONGODB_URI) {
+    sessionConfig.store = MongoStore.create({
+      mongoUrl: process.env.MONGODB_URI,
+      collectionName: "sessions",
+    });
+  }
 
-// Passport initialization
-app.use(passport.initialize());
-app.use(passport.session());
-require("./config/passport")(passport);
+  app.use(session(sessionConfig));
+
+  // Flash messages
+  app.use(flash());
+
+  // Passport initialization
+  app.use(passport.initialize());
+  app.use(passport.session());
+  require("./config/passport")(passport);
+} else {
+  // Lightweight auth/session stubs for test environment.
+  app.use((req, res, next) => {
+    req.user = null;
+    req.isAuthenticated = () => false;
+    req.flash = () => [];
+    next();
+  });
+}
 
 // Global variables middleware
 app.use((req, res, next) => {
@@ -163,7 +190,9 @@ app.get("/api/health", (req, res) => {
 });
 
 // Swagger API documentation
-setupSwagger(app);
+if (!isTestEnv) {
+  setupSwagger(app);
+}
 
 // 404 handler for API
 app.use("/api/*", (req, res) => {
@@ -187,9 +216,11 @@ app.use((err, req, res, next) => {
 
 // Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Backend server running on port ${PORT}`);
-  console.log(`CORS enabled for: ${corsOptions.origin}`);
-});
+if (require.main === module) {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Backend server running on port ${PORT}`);
+    console.log("CORS enabled for all origins");
+  });
+}
 
 module.exports = app;
