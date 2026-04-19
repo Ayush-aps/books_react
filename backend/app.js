@@ -48,6 +48,12 @@ const { requestLogger, slowRequestLogger } = require("./middleware/logger");
 // Initialize Express app
 const app = express();
 const isTestEnv = process.env.NODE_ENV === "test";
+const isProduction = process.env.NODE_ENV === "production";
+
+if (isProduction) {
+  // Required on Render/Heroku-style proxies so secure cookies work correctly.
+  app.set("trust proxy", 1);
+}
 
 if (!isTestEnv) {
   // Connect to MongoDB and auto-seed default accounts
@@ -126,9 +132,9 @@ if (!isTestEnv) {
     saveUninitialized: false,
     cookie: {
       maxAge: 1000 * 60 * 60 * 24, // 1 day
-      httpOnly: false, // Allow frontend to access the cookie
-      secure: false, // Set to false for development (http)
-      sameSite: 'lax' // Allow same-site requests
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax"
     },
     name: 'bookish.sid' // Custom session name
   };
