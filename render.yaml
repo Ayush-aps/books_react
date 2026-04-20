@@ -4,6 +4,7 @@ services:
     env: node
     rootDir: backend
     branch: ujjwal-1
+    autoDeploy: true
     plan: free
     buildCommand: npm ci
     startCommand: npm start
@@ -36,6 +37,7 @@ services:
     name: bookish-frontend
     rootDir: frontend
     branch: ujjwal-1
+    autoDeploy: true
     buildCommand: npm ci && npm run build
     staticPublishPath: dist
     envVars:
