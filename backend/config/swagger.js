@@ -709,7 +709,7 @@ function buildAutoPaths(app) {
         summary: `${method} ${endpointPath}`,
         operationId: operationIdFor(method, endpointPath),
         parameters: pathParameters,
-        security: publicOperation ? [] : [{ sessionCookie: [] }],
+        security: publicOperation ? [] : [{ bearerAuth: [] }, { sessionCookie: [] }],
         responses: {
           200: {
             description: "Successful response",
@@ -797,6 +797,11 @@ function setupSwagger(app) {
     ],
     components: {
       securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+        },
         sessionCookie: {
           type: "apiKey",
           in: "cookie",
@@ -841,6 +846,7 @@ function setupSwagger(app) {
       customSiteTitle: "Bookish API Docs",
       explorer: true,
       swaggerOptions: {
+        persistAuthorization: true,
         // Force credentials so session cookies are sent with Try-It-Out calls.
         requestInterceptor: (req) => {
           req.credentials = "include";

@@ -32,3 +32,16 @@ services:
         sync: false
       - key: STRIPE_PREMIUM_PLUS_PRICE_ID
         sync: false
+  - type: static
+    name: bookish-frontend
+    rootDir: frontend
+    branch: ujjwal-1
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://bookish-backend-41i1.onrender.com/api
+      - key: VITE_STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: VITE_CLOUDINARY_URL
+        sync: false
