@@ -43,7 +43,12 @@ export const fetchBooksAsync = createAsyncThunk(
       if (filters.page) params.append('page', filters.page);
       if (filters.limit) params.append('limit', filters.limit);
 
-      const response = await api.get(`/buyer/browse?${params.toString()}`);
+      let response;
+      try {
+        response = await api.get(`/buyer/browse?${params.toString()}`);
+      } catch (primaryError) {
+        response = await api.get(`/public/books/browse?${params.toString()}`);
+      }
 
       if (response.data.success) {
         return {
@@ -65,12 +70,17 @@ export const fetchBookDetailsAsync = createAsyncThunk(
   'books/fetchBookDetails',
   async (bookId, { rejectWithValue }) => {
     try {
-      const response = await api.get(`/buyer/book/${bookId}`);
+      let response;
+      try {
+        response = await api.get(`/buyer/book/${bookId}`);
+      } catch (primaryError) {
+        response = await api.get(`/books/${bookId}`);
+      }
 
       if (response.data.success) {
         return {
           book: response.data.data.book,
-          relatedBooks: response.data.data.relatedBooks || [],
+          relatedBooks: response.data.data.relatedBooks || response.data.data.recommendedBooks || [],
         };
       } else {
         return rejectWithValue(response.data.message || 'Failed to fetch book details');
@@ -85,7 +95,12 @@ export const searchBooksAsync = createAsyncThunk(
   'books/searchBooks',
   async (searchQuery, { rejectWithValue }) => {
     try {
-      const response = await api.get(`/buyer/browse?search=${encodeURIComponent(searchQuery)}`);
+      let response;
+      try {
+        response = await api.get(`/buyer/browse?search=${encodeURIComponent(searchQuery)}`);
+      } catch (primaryError) {
+        response = await api.get(`/public/books/browse?search=${encodeURIComponent(searchQuery)}`);
+      }
 
       if (response.data.success) {
         return {

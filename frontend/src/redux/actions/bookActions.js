@@ -38,7 +38,13 @@ export const fetchBooks = (filters = {}) => async (dispatch) => {
     if (filters.page) params.append('page', filters.page);
     if (filters.limit) params.append('limit', filters.limit);
 
-    const response = await api.get(`/buyer/browse?${params.toString()}`);
+    let response;
+    try {
+      response = await api.get(`/buyer/browse?${params.toString()}`);
+    } catch (primaryError) {
+      // Fallback to public browse when buyer session is not available.
+      response = await api.get(`/public/books/browse?${params.toString()}`);
+    }
 
     if (response.data.success) {
       dispatch({
@@ -71,14 +77,20 @@ export const fetchBookDetails = (bookId) => async (dispatch) => {
   try {
     dispatch({ type: FETCH_BOOK_DETAILS_REQUEST });
 
-    const response = await api.get(`/buyer/book/${bookId}`);
+    let response;
+    try {
+      response = await api.get(`/buyer/book/${bookId}`);
+    } catch (primaryError) {
+      // Fallback to public details endpoint to avoid hard failure on expired sessions.
+      response = await api.get(`/books/${bookId}`);
+    }
 
     if (response.data.success) {
       dispatch({
         type: FETCH_BOOK_DETAILS_SUCCESS,
         payload: {
           book: response.data.data.book,
-          recommendedBooks: response.data.data.recommendedBooks,
+          recommendedBooks: response.data.data.recommendedBooks || [],
         },
       });
     } else {
