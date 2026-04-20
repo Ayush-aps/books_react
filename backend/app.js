@@ -15,6 +15,7 @@ const flash = require("connect-flash");
 const passport = require("passport");
 const dotenv = require("dotenv");
 const cors = require("cors");
+const compression = require("compression");
 
 // Load environment variables
 dotenv.config();
@@ -104,6 +105,7 @@ app.use('/uploads', express.static(path.join(__dirname, "uploads")));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(methodOverride("_method"));
+app.use(compression());
 
 // Enhanced Morgan logging (replaces basic morgan)
 if (!isTestEnv) {

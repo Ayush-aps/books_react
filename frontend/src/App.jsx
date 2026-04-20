@@ -1,6 +1,6 @@
 import { useEffect, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { useDispatch, useSelector } from 'react-redux'
+import { useDispatch } from 'react-redux'
 import { checkAuth } from './redux/actions/authActions'
 
 // Layout Components
@@ -108,15 +108,10 @@ const PageLoader = () => (
 
 function App() {
   const dispatch = useDispatch()
-  const { isAuthenticated, loading } = useSelector(state => state.auth)
 
   useEffect(() => {
     dispatch(checkAuth())
   }, [dispatch])
-
-  if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>
-  }
 
   return (
     <ErrorBoundary>

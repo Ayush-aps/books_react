@@ -8,11 +8,7 @@ import { Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 
 const PrivateRoute = ({ children, role }) => {
-  const { isAuthenticated, user, loading } = useSelector(state => state.auth);
-
-  if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
-  }
+  const { isAuthenticated, user } = useSelector(state => state.auth);
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;

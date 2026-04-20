@@ -38,8 +38,23 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background-primary flex items-center justify-center">
-        <LoadingSpinner size="lg" message="Loading dashboard..." />
+      <div className="min-h-screen bg-background-primary py-12">
+        <div className="container-custom animate-pulse space-y-8">
+          <div className="space-y-3">
+            <div className="h-10 w-72 bg-background-secondary rounded-lg" />
+            <div className="h-5 w-96 bg-background-secondary rounded-lg" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="h-40 rounded-2xl bg-background-secondary" />
+            ))}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="h-96 rounded-2xl bg-background-secondary" />
+            <div className="h-96 rounded-2xl bg-background-secondary" />
+          </div>
+          <div className="h-72 rounded-2xl bg-background-secondary" />
+        </div>
       </div>
     );
   }

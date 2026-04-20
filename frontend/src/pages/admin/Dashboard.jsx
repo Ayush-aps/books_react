@@ -35,73 +35,20 @@ const Dashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-
-      const usersResponse = await adminService.getUsers();
-      const users = usersResponse.data?.users || [];
-      const usersByRole = users.reduce((acc, user) => {
-        acc[user.role + 's'] = (acc[user.role + 's'] || 0) + 1;
-        return acc;
-      }, { buyers: 0, sellers: 0, admins: 0 });
-
-      const booksResponse = await adminService.getBooks();
-      const books = booksResponse.data?.books || [];
-      const booksByStatus = books.reduce((acc, book) => {
-        // Determine book status based on isApproved and rejectionReason fields
-        let status;
-        if (book.isApproved) {
-          status = 'approved';
-        } else if (book.rejectionReason) {
-          status = 'rejected';
-        } else {
-          status = 'pending';
-        }
-        acc[status] = (acc[status] || 0) + 1;
-        return acc;
-      }, { approved: 0, pending: 0, rejected: 0 });
-
-      // Fetch ALL delivered orders for accurate revenue calculation (no pagination)
-      const ordersResponse = await adminService.getOrders({ limit: 1000 }); // Fetch up to 1000 orders
-      const orders = ordersResponse.data?.orders || [];
-
-      // Calculate admin revenue (5% commission from delivered orders only)
-      const totalRevenue = orders
-        .filter(order => order.orderStatus === 'delivered')
-        .reduce((sum, order) => {
-          // Use adminCommission if available, otherwise calculate 5% of total
-          if (order.adminCommission && order.adminCommission > 0) {
-            return sum + order.adminCommission;
-          } else {
-            // Fallback: estimate 5% of total amount (approximation for old orders)
-            return sum + (order.totalAmount * 0.05);
-          }
-        }, 0);
-
-      const reportsResponse = await adminService.getReports();
-      const pendingComplaints = reportsResponse.data?.complaints?.filter(
-        c => c.status === 'pending'
-      ).length || 0;
+      const response = await adminService.getDashboard();
+      const payload = response.data || {};
 
       setStats({
-        totalUsers: users.length,
-        usersByRole,
-        totalBooks: books.length,
-        booksByStatus,
-        totalOrders: orders.length,
-        totalRevenue,
-        pendingComplaints
+        totalUsers: payload.totalUsers || 0,
+        usersByRole: payload.usersByRole || { buyers: 0, sellers: 0, admins: 0 },
+        totalBooks: payload.totalBooks || 0,
+        booksByStatus: payload.booksByStatus || { approved: 0, pending: 0, rejected: 0 },
+        totalOrders: payload.totalOrders || 0,
+        totalRevenue: payload.totalRevenue || 0,
+        pendingComplaints: payload.pendingComplaints || 0
       });
 
-      const recentOrders = orders
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-        .slice(0, 5)
-        .map(order => ({
-          type: 'order',
-          description: `New order #${order._id.slice(-8)} - ₹${order.totalAmount.toFixed(2)}`,
-          time: new Date(order.createdAt).toLocaleString(),
-          status: order.status
-        }));
-
-      setRecentActivity(recentOrders);
+      setRecentActivity(payload.recentActivity || []);
       setError(null);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load dashboard data');
@@ -112,8 +59,22 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background-primary flex items-center justify-center">
-        <LoadingSpinner size="lg" message="Loading dashboard..." />
+      <div className="min-h-screen bg-background-primary py-12">
+        <div className="container-custom animate-pulse space-y-8">
+          <div className="space-y-3">
+            <div className="h-10 w-72 bg-background-secondary rounded-lg" />
+            <div className="h-5 w-96 bg-background-secondary rounded-lg" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="h-40 rounded-2xl bg-background-secondary" />
+            ))}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 h-96 rounded-2xl bg-background-secondary" />
+            <div className="h-96 rounded-2xl bg-background-secondary" />
+          </div>
+        </div>
       </div>
     );
   }

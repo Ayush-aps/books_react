@@ -37,6 +37,7 @@ export const login = (email, password) => async (dispatch) => {
       } else {
         localStorage.removeItem('token');
       }
+      localStorage.setItem('user', JSON.stringify(data.user));
 
       dispatch({
         type: LOGIN_SUCCESS,
@@ -98,11 +99,13 @@ export const logout = () => async (dispatch) => {
   try {
     await authService.logout();
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     dispatch({ type: LOGOUT });
     return { success: true };
   } catch (error) {
     // Logout from frontend even if server call fails
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     dispatch({ type: LOGOUT });
     return { success: true };
   }
@@ -113,22 +116,25 @@ export const logout = () => async (dispatch) => {
  */
 export const checkAuth = () => async (dispatch) => {
   try {
-    dispatch({ type: CHECK_AUTH_REQUEST });
-
     const response = await authService.checkAuth();
     const data = response.data;
 
     if (data.success && data.authenticated) {
+      if (data.user) {
+        localStorage.setItem('user', JSON.stringify(data.user));
+      }
       dispatch({
         type: CHECK_AUTH_SUCCESS,
         payload: data.user,
       });
     } else {
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       dispatch({ type: CHECK_AUTH_FAILURE });
     }
   } catch (error) {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     dispatch({ type: CHECK_AUTH_FAILURE });
   }
 };

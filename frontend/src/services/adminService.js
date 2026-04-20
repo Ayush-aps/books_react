@@ -6,6 +6,12 @@
 import api from './api';
 
 const adminService = {
+  // Get dashboard summary
+  getDashboard: async () => {
+    const response = await api.get('/admin/dashboard');
+    return response.data;
+  },
+
   // Get all users
   getUsers: async (filters = {}) => {
     const params = new URLSearchParams();

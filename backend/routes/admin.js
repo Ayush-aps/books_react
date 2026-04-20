@@ -15,6 +15,7 @@ const {
   seedAdmin,
   seedModerator,
   // Reports & Analytics
+  getDashboard,
   getReports,
   // Content Moderation
   getContent,
@@ -47,6 +48,7 @@ router.get("/seed-moderator", seedModerator);
 // ============================================
 // REPORTS & ANALYTICS ROUTES
 // ============================================
+router.get("/dashboard", ensureAuthenticated, ensureAdmin, getDashboard);
 router.get("/reports", ensureAuthenticated, ensureAdmin, getReports);
 
 // ============================================

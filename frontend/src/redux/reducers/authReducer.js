@@ -16,8 +16,15 @@ import {
 } from '../actions/authActions';
 
 const initialState = {
-  user: null,
-  isAuthenticated: false,
+  user: (() => {
+    try {
+      const storedUser = localStorage.getItem('user');
+      return storedUser ? JSON.parse(storedUser) : null;
+    } catch {
+      return null;
+    }
+  })(),
+  isAuthenticated: Boolean(localStorage.getItem('token') && localStorage.getItem('user')),
   loading: false,
   error: null,
   registerErrors: null,

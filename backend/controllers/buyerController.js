@@ -23,6 +23,13 @@ const cacheService = require("../utils/cacheService");
 exports.getDashboard = async (req, res) => {
   try {
     const userId = req.user._id;
+    const cacheKey = `buyer:dashboard:${userId.toString()}`;
+    const cachedDashboard = await cacheService.get(cacheKey);
+
+    if (cachedDashboard) {
+      return res.json(cachedDashboard);
+    }
+
     console.log("Fetching dashboard for user:", userId);
 
     // Get library count
@@ -85,14 +92,18 @@ exports.getDashboard = async (req, res) => {
       createdAt: order.createdAt
     }));
 
-    res.json({
+    const dashboardData = {
       libraryCount,
       activeOrders,
       completedOrders,
       recentOrders: transformedRecentOrders,
       complaints,
       recentlyViewed,
-    });
+    };
+
+    await cacheService.set(cacheKey, dashboardData, 60);
+
+    res.json(dashboardData);
   } catch (err) {
     console.error("Buyer dashboard error:", err);
     console.error("Error stack:", err.stack);
@@ -147,6 +158,7 @@ exports.trackBookView = async (req, res) => {
     }
 
     await user.save();
+    await cacheService.del(`buyer:dashboard:${userId.toString()}`);
 
     res.json({
       success: true,

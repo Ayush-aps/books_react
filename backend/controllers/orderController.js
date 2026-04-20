@@ -1,4 +1,5 @@
 const Order = require('../models/Order');
+const cacheService = require('../utils/cacheService');
 
 // @desc    Create new order
 // @route   POST /api/orders
@@ -190,6 +191,15 @@ exports.createOrder = async (req, res, next) => {
       { user: buyerId },
       { $set: { items: [], savedForLater: [] } }
     );
+
+    const sellerDashboardKeys = [...new Set(orderItems.map((item) => item.seller.toString()))]
+      .map((sellerId) => `seller:dashboard:${sellerId}`);
+
+    await cacheService.del([
+      `buyer:dashboard:${buyerId.toString()}`,
+      'admin:orders:list:default',
+      ...sellerDashboardKeys,
+    ]);
 
     // Populate the order for response
     const populatedOrder = await Order.findById(order._id)

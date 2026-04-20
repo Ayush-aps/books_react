@@ -107,7 +107,7 @@ exports.updateUserRole = async (req, res) => {
       });
     }
 
-    await cacheService.del([`user:${user._id.toString()}`, "list:users"]);
+    await cacheService.del([`user:${user._id.toString()}`, "list:users", 'admin:dashboard:summary']);
 
     res.json({
       success: true,
@@ -140,7 +140,7 @@ exports.toggleUserStatus = async (req, res) => {
 
     user.isVerified = !user.isVerified;
     await user.save();
-    await cacheService.del([`user:${user._id.toString()}`, "list:users"]);
+    await cacheService.del([`user:${user._id.toString()}`, "list:users", 'admin:dashboard:summary']);
 
     res.json({
       success: true,
@@ -179,7 +179,7 @@ exports.deleteUser = async (req, res) => {
     }
 
     await User.findByIdAndDelete(req.params.id);
-    await cacheService.del([`user:${req.params.id}`, "list:users"]);
+    await cacheService.del([`user:${req.params.id}`, "list:users", 'admin:dashboard:summary']);
 
     res.json({
       success: true,
@@ -274,6 +274,110 @@ exports.seedModerator = async (req, res) => {
 // ============================================
 // REPORTS & ANALYTICS
 // ============================================
+
+// @desc    Get admin dashboard summary
+// @route   GET /api/admin/dashboard
+// @access  Private (Admin)
+exports.getDashboard = async (req, res) => {
+  try {
+    const cacheKey = 'admin:dashboard:summary';
+    const cachedSummary = await cacheService.get(cacheKey);
+
+    if (cachedSummary) {
+      return res.json({
+        success: true,
+        message: 'Dashboard summary retrieved successfully',
+        data: cachedSummary,
+        source: 'redis',
+      });
+    }
+
+    const [
+      totalUsers,
+      totalBooks,
+      totalOrders,
+      buyerCount,
+      sellerCount,
+      adminCount,
+      approvedBooks,
+      pendingBooks,
+      rejectedBooks,
+      pendingComplaints,
+      recentOrders,
+      revenueResult,
+    ] = await Promise.all([
+      User.countDocuments(),
+      Book.countDocuments(),
+      Order.countDocuments(),
+      User.countDocuments({ role: 'buyer' }),
+      User.countDocuments({ role: 'seller' }),
+      User.countDocuments({ role: 'admin' }),
+      Book.countDocuments({ isApproved: true }),
+      Book.countDocuments({ isApproved: false, $or: [{ rejectionReason: null }, { rejectionReason: { $exists: false } }] }),
+      Book.countDocuments({ isApproved: false, rejectionReason: { $exists: true, $ne: null } }),
+      Complaint.countDocuments({ status: 'pending' }),
+      Order.find()
+        .populate('buyer', 'name email')
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .select('_id orderId totalAmount status orderStatus createdAt buyer'),
+      Order.aggregate([
+        { $match: { orderStatus: 'delivered' } },
+        {
+          $group: {
+            _id: null,
+            totalRevenue: {
+              $sum: {
+                $cond: [
+                  { $gt: ['$adminCommission', 0] },
+                  '$adminCommission',
+                  { $multiply: [{ $ifNull: ['$subtotal', '$totalAmount'] }, 0.05] },
+                ],
+              },
+            },
+          },
+        },
+      ]),
+    ]);
+
+    const totalRevenue = revenueResult[0]?.totalRevenue || 0;
+
+    const recentActivity = recentOrders.map((order) => ({
+      type: 'order',
+      description: `New order #${order._id.toString().slice(-8)} - ₹${Number(order.totalAmount || 0).toFixed(2)}`,
+      time: new Date(order.createdAt).toLocaleString(),
+      status: order.status || order.orderStatus || 'processing',
+    }));
+
+    const summary = {
+      totalUsers,
+      usersByRole: { buyers: buyerCount, sellers: sellerCount, admins: adminCount },
+      totalBooks,
+      booksByStatus: { approved: approvedBooks, pending: pendingBooks, rejected: rejectedBooks },
+      totalOrders,
+      totalRevenue,
+      pendingComplaints,
+      recentActivity,
+      recentOrders,
+    };
+
+    await cacheService.set(cacheKey, summary, 60);
+
+    res.json({
+      success: true,
+      message: 'Dashboard summary retrieved successfully',
+      data: summary,
+      source: 'db',
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: 'Error generating dashboard summary',
+      error: err.message,
+    });
+  }
+};
 
 // @desc    Get system health reports and analytics
 // @route   GET /api/admin/reports
@@ -579,7 +683,8 @@ exports.approveBook = async (req, res) => {
       });
     }
 
-    await cacheService.del("list:books");
+    await cacheService.del(["list:books", 'admin:dashboard:summary']);
+    await cacheService.del('admin:books:list:default');
 
     res.json({
       success: true,
@@ -628,7 +733,8 @@ exports.rejectBook = async (req, res) => {
       });
     }
 
-    await cacheService.del("list:books");
+    await cacheService.del(["list:books", 'admin:dashboard:summary']);
+    await cacheService.del('admin:books:list:default');
 
     res.json({
       success: true,
@@ -798,6 +904,7 @@ exports.updateComplaintStatus = async (req, res) => {
 
     await complaint.save();
     await complaint.populate('assignedTo', 'name email');
+    await cacheService.del('admin:dashboard:summary');
 
     res.json({
       success: true,
@@ -849,6 +956,7 @@ exports.addComplaintComment = async (req, res) => {
 
     await complaint.save();
     await complaint.populate('comments.user', 'name role');
+    await cacheService.del('admin:dashboard:summary');
 
     res.json({
       success: true,
@@ -898,6 +1006,7 @@ exports.resolveComplaint = async (req, res) => {
 
     await complaint.save();
     await complaint.populate('resolution.resolvedBy', 'name');
+    await cacheService.del('admin:dashboard:summary');
 
     res.json({
       success: true,
@@ -924,6 +1033,16 @@ exports.resolveComplaint = async (req, res) => {
 exports.getAllOrders = async (req, res) => {
   try {
     const { status, search, page = 1, limit = 10 } = req.query;
+    const canUseCache = (!status || status === "all") && !search && parseInt(page) === 1 && parseInt(limit) === 10;
+    const cacheKey = "admin:orders:list:default";
+
+    if (canUseCache) {
+      const cachedOrders = await cacheService.get(cacheKey);
+      if (cachedOrders) {
+        return res.json(cachedOrders);
+      }
+    }
+
     let query = {};
 
     if (status && status !== "all") query.orderStatus = status;
@@ -943,7 +1062,7 @@ exports.getAllOrders = async (req, res) => {
       .skip(skip)
       .limit(parseInt(limit));
 
-    res.json({
+    const payload = {
       success: true,
       message: "Orders retrieved successfully",
       data: {
@@ -959,7 +1078,13 @@ exports.getAllOrders = async (req, res) => {
           search: search || "",
         },
       },
-    });
+    };
+
+    if (canUseCache) {
+      await cacheService.set(cacheKey, payload, 60);
+    }
+
+    res.json(payload);
   } catch (err) {
     console.error(err);
     res.status(500).json({
@@ -997,6 +1122,7 @@ exports.updateOrder = async (req, res) => {
     }
 
     await order.save();
+    await cacheService.del(['admin:dashboard:summary', 'admin:orders:list:default']);
 
     res.json({
       success: true,
@@ -1023,6 +1149,16 @@ exports.updateOrder = async (req, res) => {
 exports.getAllBooks = async (req, res) => {
   try {
     const { search, genre, condition, minPrice, maxPrice, sort, approvalStatus } = req.query;
+    const canUseCache = !search && !genre && !condition && !minPrice && !maxPrice && !sort && !approvalStatus;
+    const cacheKey = "admin:books:list:default";
+
+    if (canUseCache) {
+      const cachedBooks = await cacheService.get(cacheKey);
+      if (cachedBooks) {
+        return res.json(cachedBooks);
+      }
+    }
+
     const query = {};
 
     if (search) {
@@ -1064,7 +1200,7 @@ exports.getAllBooks = async (req, res) => {
     const genres = await Book.distinct("genres");
     const books = await Book.find(query).populate("seller", "name email").sort(sortOptions);
 
-    res.json({
+    const payload = {
       success: true,
       message: "Books retrieved successfully",
       data: {
@@ -1072,7 +1208,13 @@ exports.getAllBooks = async (req, res) => {
         genres,
         filters: { search, genre, condition, minPrice, maxPrice, sort, approvalStatus },
       },
-    });
+    };
+
+    if (canUseCache) {
+      await cacheService.set(cacheKey, payload, 60);
+    }
+
+    res.json(payload);
   } catch (err) {
     console.error(err);
     res.status(500).json({

@@ -18,15 +18,26 @@ const cacheService = require("../utils/cacheService");
 // @access  Private (Seller)
 exports.getDashboard = async (req, res) => {
   try {
-    const books = await Book.find({ seller: req.user._id });
+    const sellerId = req.user._id;
+    const cacheKey = `seller:dashboard:${sellerId.toString()}`;
+    const cachedDashboard = await cacheService.get(cacheKey);
 
-    const orders = await Order.find({
-      "items.seller": req.user._id,
-      orderStatus: { $in: ["processing", "shipped", "delivered"] },
-    })
-      .populate("buyer", "name email")
-      .populate("items.book", "title author coverImage")
-      .sort({ orderDate: -1 });
+    if (cachedDashboard) {
+      return res.json(cachedDashboard);
+    }
+
+    const [books, orders] = await Promise.all([
+      Book.find({ seller: sellerId })
+        .select("_id title reviewCount stock isApproved rejectionReason coverImage price")
+        .lean(),
+      Order.find({
+        "items.seller": sellerId,
+        orderStatus: { $in: ["processing", "shipped", "delivered"] },
+      })
+        .select("_id orderDate orderStatus items totalAmount sellerRevenue")
+        .sort({ orderDate: -1 })
+        .lean(),
+    ]);
 
     let totalSales = 0;
     let totalRevenue = 0;
@@ -48,7 +59,7 @@ exports.getDashboard = async (req, res) => {
 
     orders.forEach((order) => {
       order.items.forEach((item) => {
-        if (item.seller && item.seller.toString() === req.user._id.toString()) {
+          if (item.seller && item.seller.toString() === sellerId.toString()) {
           const itemTotal = item.price * item.quantity;
           totalSales += itemTotal;
 
@@ -96,7 +107,7 @@ exports.getDashboard = async (req, res) => {
     const outOfStockBooks = books.filter(book => book.stock === 0 && book.isApproved === true);
     const lowStockBooks = books.filter(book => book.stock > 0 && book.stock <= 5 && book.isApproved === true);
 
-    res.json({
+    const dashboardData = {
       success: true,
       message: "Dashboard data retrieved successfully",
       data: {
@@ -124,8 +135,12 @@ exports.getDashboard = async (req, res) => {
             coverImage: book.coverImage
           }))
         }
-      },
-    });
+      }
+    };
+
+    await cacheService.set(cacheKey, dashboardData, 60);
+
+    res.json(dashboardData);
   } catch (err) {
     console.error(err);
     res.status(500).json({
@@ -146,6 +161,16 @@ exports.getDashboard = async (req, res) => {
 exports.getInventory = async (req, res) => {
   try {
     const { search, status, sort } = req.query;
+    const sellerId = req.user._id.toString();
+    const canUseCache = !search && !status && !sort;
+    const cacheKey = `seller:inventory:${sellerId}:default`;
+
+    if (canUseCache) {
+      const cachedInventory = await cacheService.get(cacheKey);
+      if (cachedInventory) {
+        return res.json(cachedInventory);
+      }
+    }
 
     const query = { seller: req.user._id };
 
@@ -191,11 +216,17 @@ exports.getInventory = async (req, res) => {
 
     const books = await Book.find(query).sort(sortOptions);
 
-    res.json({
+    const payload = {
       success: true,
       message: "Inventory retrieved successfully",
       data: { books },
-    });
+    };
+
+    if (canUseCache) {
+      await cacheService.set(cacheKey, payload, 60);
+    }
+
+    res.json(payload);
   } catch (err) {
     console.error(err);
     res.status(500).json({
@@ -421,6 +452,8 @@ exports.createBook = async (req, res) => {
 
     await newBook.save();
     await cacheService.del("list:books");
+    await cacheService.del(["seller:books:browse:default", `seller:inventory:${req.user._id.toString()}:default`]);
+    await cacheService.del(`seller:dashboard:${req.user._id.toString()}`);
 
     res.status(201).json({
       success: true,
@@ -559,6 +592,8 @@ exports.updateBook = async (req, res) => {
 
     await book.save();
     await cacheService.del("list:books");
+    await cacheService.del(["seller:books:browse:default", `seller:inventory:${req.user._id.toString()}:default`]);
+    await cacheService.del(`seller:dashboard:${req.user._id.toString()}`);
 
     res.json({
       success: true,
@@ -596,6 +631,8 @@ exports.deleteBook = async (req, res) => {
 
     await Book.findByIdAndDelete(req.params.id);
     await cacheService.del("list:books");
+    await cacheService.del(["seller:books:browse:default", `seller:inventory:${req.user._id.toString()}:default`]);
+    await cacheService.del(`seller:dashboard:${req.user._id.toString()}`);
 
     res.json({
       success: true,
@@ -617,6 +654,15 @@ exports.deleteBook = async (req, res) => {
 exports.getAllBooks = async (req, res) => {
   try {
     const { search, genre, condition, minPrice, maxPrice, sort, approvalStatus } = req.query;
+    const canUseCache = !search && !genre && !condition && !minPrice && !maxPrice && !sort && !approvalStatus;
+    const cacheKey = "seller:books:browse:default";
+
+    if (canUseCache) {
+      const cachedBooks = await cacheService.get(cacheKey);
+      if (cachedBooks) {
+        return res.json(cachedBooks);
+      }
+    }
 
     const query = {};
 
@@ -662,7 +708,7 @@ exports.getAllBooks = async (req, res) => {
     const genres = await Book.distinct("genres");
     const books = await Book.find(query).populate("seller", "name").sort(sortOptions);
 
-    res.json({
+    const payload = {
       success: true,
       message: "Books retrieved successfully",
       data: {
@@ -678,7 +724,13 @@ exports.getAllBooks = async (req, res) => {
           approvalStatus,
         },
       },
-    });
+    };
+
+    if (canUseCache) {
+      await cacheService.set(cacheKey, payload, 60);
+    }
+
+    res.json(payload);
   } catch (err) {
     console.error(err);
     res.status(500).json({
@@ -850,6 +902,7 @@ exports.updateOrderStatus = async (req, res) => {
 
     order.orderStatus = status;
     await order.save();
+    await cacheService.del(`seller:dashboard:${req.user._id.toString()}`);
 
     res.json({
       success: true,
