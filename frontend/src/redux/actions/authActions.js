@@ -32,6 +32,12 @@ export const login = (email, password) => async (dispatch) => {
     const data = response.data;
 
     if (data.success) {
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+      } else {
+        localStorage.removeItem('token');
+      }
+
       dispatch({
         type: LOGIN_SUCCESS,
         payload: data.user,
@@ -91,10 +97,12 @@ export const register = (userData) => async (dispatch) => {
 export const logout = () => async (dispatch) => {
   try {
     await authService.logout();
+    localStorage.removeItem('token');
     dispatch({ type: LOGOUT });
     return { success: true };
   } catch (error) {
     // Logout from frontend even if server call fails
+    localStorage.removeItem('token');
     dispatch({ type: LOGOUT });
     return { success: true };
   }
@@ -116,9 +124,11 @@ export const checkAuth = () => async (dispatch) => {
         payload: data.user,
       });
     } else {
+      localStorage.removeItem('token');
       dispatch({ type: CHECK_AUTH_FAILURE });
     }
   } catch (error) {
+    localStorage.removeItem('token');
     dispatch({ type: CHECK_AUTH_FAILURE });
   }
 };

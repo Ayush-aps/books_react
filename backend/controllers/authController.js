@@ -3,9 +3,11 @@
  */
 
 const passport = require("passport");
+const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const { securityLogger } = require("../middleware/logger");
 const cacheService = require("../utils/cacheService");
+const { resolveAuthenticatedUser } = require("../middleware/auth");
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
@@ -123,9 +125,20 @@ exports.login = (req, res, next) => {
         role: user.role
       });
 
+      const token = jwt.sign(
+        {
+          id: user._id,
+          role: user.role,
+          email: user.email,
+        },
+        process.env.JWT_SECRET || "jwt-fallback-secret",
+        { expiresIn: process.env.JWT_EXPIRE || "7d" }
+      );
+
       return res.status(200).json({
         success: true,
         message: "Login successful",
+        token,
         user: {
           _id: user._id,
           name: user.name,
@@ -187,9 +200,11 @@ exports.getMe = (req, res) => {
 // @route   GET /api/auth/check
 // @access  Public
 exports.checkAuth = async (req, res) => {
-  if (req.isAuthenticated()) {
+  const resolvedUser = await resolveAuthenticatedUser(req);
+
+  if (resolvedUser) {
     try {
-      const userId = req.user._id.toString();
+      const userId = resolvedUser._id.toString();
       const cacheKey = `user:${userId}`;
       const totalTimer = "[PERF] GET /api/auth/check total";
       const dbTimer = "[PERF] GET /api/auth/check db";
@@ -209,7 +224,7 @@ exports.checkAuth = async (req, res) => {
 
       // Fetch fresh user data from database when cache misses.
       console.time(dbTimer);
-      const freshUser = await User.findById(req.user._id)
+      const freshUser = await User.findById(resolvedUser._id)
         .select("_id name email role avatar phone address isVerified createdAt")
         .lean();
       console.timeEnd(dbTimer);

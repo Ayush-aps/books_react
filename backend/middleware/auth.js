@@ -3,11 +3,52 @@
  * API version - returns JSON instead of redirecting
  */
 
+const jwt = require("jsonwebtoken");
+const User = require("../models/User");
+
+const getTokenFromHeader = (req) => {
+  const authHeader = req.headers?.authorization || "";
+  if (!authHeader.startsWith("Bearer ")) return null;
+  return authHeader.slice(7).trim();
+};
+
+const getSessionUser = (req) => {
+  if (typeof req.isAuthenticated === "function" && req.isAuthenticated() && req.user) {
+    return req.user;
+  }
+  return null;
+};
+
+const getTokenUser = async (req) => {
+  const token = getTokenFromHeader(req);
+  if (!token) return null;
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "jwt-fallback-secret");
+    const user = await User.findById(decoded.id)
+      .select("_id name email role avatar isVerified verificationStatus")
+      .lean();
+    if (!user) return null;
+
+    req.user = user;
+    return user;
+  } catch (error) {
+    return null;
+  }
+};
+
+const resolveUser = async (req) => {
+  const sessionUser = getSessionUser(req);
+  if (sessionUser) return sessionUser;
+  return getTokenUser(req);
+};
+
 /**
  * Ensures user is authenticated
  */
-module.exports.ensureAuthenticated = function (req, res, next) {
-  if (req.isAuthenticated()) {
+module.exports.ensureAuthenticated = async function (req, res, next) {
+  const user = await resolveUser(req);
+  if (user) {
     return next();
   }
   return res.status(401).json({
@@ -19,16 +60,18 @@ module.exports.ensureAuthenticated = function (req, res, next) {
 /**
  * Ensures user has buyer role
  */
-module.exports.ensureBuyer = function (req, res, next) {
-  if (req.isAuthenticated() && req.user.role === 'buyer') {
+module.exports.ensureBuyer = async function (req, res, next) {
+  const user = await resolveUser(req);
+
+  if (user && user.role === 'buyer') {
     return next();
   }
 
-  if (req.isAuthenticated()) {
+  if (user) {
     let message = 'Access denied. This resource is only accessible to buyers.';
-    if (req.user.role === 'seller') {
+    if (user.role === 'seller') {
       message = 'This section is only accessible to buyers. Please use the seller dashboard.';
-    } else if (req.user.role === 'admin') {
+    } else if (user.role === 'admin') {
       message = 'This section is only accessible to buyers. Please use the admin dashboard.';
     }
     return res.status(403).json({ success: false, message });
@@ -43,8 +86,9 @@ module.exports.ensureBuyer = function (req, res, next) {
 /**
  * Ensures user has seller role
  */
-module.exports.ensureSeller = function (req, res, next) {
-  if (req.isAuthenticated() && req.user.role === 'seller') {
+module.exports.ensureSeller = async function (req, res, next) {
+  const user = await resolveUser(req);
+  if (user && user.role === 'seller') {
     return next();
   }
   return res.status(403).json({
@@ -56,8 +100,9 @@ module.exports.ensureSeller = function (req, res, next) {
 /**
  * Ensures user has buyer role (simplified version for videos/content)
  */
-module.exports.ensureBuyerOnly = function (req, res, next) {
-  if (req.isAuthenticated() && req.user.role === 'buyer') {
+module.exports.ensureBuyerOnly = async function (req, res, next) {
+  const user = await resolveUser(req);
+  if (user && user.role === 'buyer') {
     return next();
   }
   return res.status(403).json({
@@ -69,8 +114,9 @@ module.exports.ensureBuyerOnly = function (req, res, next) {
 /**
  * Ensures user has admin role
  */
-module.exports.ensureAdmin = function (req, res, next) {
-  if (req.isAuthenticated() && req.user.role === 'admin') {
+module.exports.ensureAdmin = async function (req, res, next) {
+  const user = await resolveUser(req);
+  if (user && user.role === 'admin') {
     return next();
   }
   return res.status(403).json({
@@ -106,8 +152,9 @@ module.exports.forwardAuthenticated = function (req, res, next) {
  * Usage: checkRole('admin', 'moderator')
  */
 module.exports.checkRole = function (...roles) {
-  return function (req, res, next) {
-    if (req.isAuthenticated() && roles.includes(req.user.role)) {
+  return async function (req, res, next) {
+    const user = await resolveUser(req);
+    if (user && roles.includes(user.role)) {
       return next();
     }
     return res.status(403).json({
@@ -129,15 +176,21 @@ module.exports.ensureModeratorOrAdmin = module.exports.checkRole('admin', 'moder
  */
 module.exports.ensureApprovedUser = function (req, res, next) {
   const rolesRequiringApproval = ['seller', 'employee', 'moderator'];
-  if (
-    req.isAuthenticated() &&
-    rolesRequiringApproval.includes(req.user.role) &&
-    req.user.verificationStatus !== 'approved'
-  ) {
-    return res.status(403).json({
-      success: false,
-      message: 'Your account is pending verification. Please wait for approval.'
-    });
-  }
-  return next();
+  resolveUser(req)
+    .then((user) => {
+      if (
+        user &&
+        rolesRequiringApproval.includes(user.role) &&
+        user.verificationStatus !== 'approved'
+      ) {
+        return res.status(403).json({
+          success: false,
+          message: 'Your account is pending verification. Please wait for approval.'
+        });
+      }
+      return next();
+    })
+    .catch(() => next());
 };
+
+module.exports.resolveAuthenticatedUser = resolveUser;
