@@ -100,8 +100,17 @@ exports.createOrder = async (req, res, next) => {
     const paymentStatus = paymentMethod === 'cash_on_delivery' || paymentMethod === 'cod' ? 'pending' : 'completed';
 
     // Prepare order data
+    const buyerId = req.user?._id || req.user?.id;
+
+    if (!buyerId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Please log in to place an order'
+      });
+    }
+
     const orderData = {
-      buyer: req.user.id,
+      buyer: buyerId,
       items: orderItems,
       totalAmount: calculatedTotal,
       subtotal: subtotal || orderItems.reduce((t, item) => t + (item.price * item.quantity), 0),
@@ -178,7 +187,7 @@ exports.createOrder = async (req, res, next) => {
 
     // Clear buyer's cart after successful order
     await Cart.findOneAndUpdate(
-      { user: req.user.id },
+      { user: buyerId },
       { $set: { items: [], savedForLater: [] } }
     );
 
@@ -207,7 +216,8 @@ exports.createOrder = async (req, res, next) => {
 // @access  Private (Buyer)
 exports.getMyOrders = async (req, res, next) => {
   try {
-    const orders = await Order.find({ buyer: req.user.id })
+    const buyerId = req.user?._id || req.user?.id;
+    const orders = await Order.find({ buyer: buyerId })
       .populate('items.book', 'title author coverImage condition')
       .populate('items.seller', 'name email')
       .sort({ createdAt: -1 });
@@ -230,7 +240,8 @@ exports.getMyOrders = async (req, res, next) => {
 // @access  Private (Seller)
 exports.getSellerOrders = async (req, res, next) => {
   try {
-    const orders = await Order.find({ 'items.seller': req.user.id })
+    const sellerId = req.user?._id || req.user?.id;
+    const orders = await Order.find({ 'items.seller': sellerId })
       .populate('buyer', 'name email')
       .populate('items.book', 'title author coverImage condition');
 
@@ -290,10 +301,11 @@ exports.getOrder = async (req, res, next) => {
     // Check if user is authorized to view this order
     const buyerId = order.buyer._id ? order.buyer._id.toString() : order.buyer.toString();
     if (req.user.role !== 'admin' &&
-      buyerId !== req.user.id &&
+      buyerId !== (req.user?._id?.toString ? req.user._id.toString() : req.user?.id) &&
       !order.items.some(item => {
         const sellerId = item.seller._id ? item.seller._id.toString() : item.seller.toString();
-        return sellerId === req.user.id;
+        const currentUserId = req.user?._id?.toString ? req.user._id.toString() : req.user?.id;
+        return sellerId === currentUserId;
       })) {
       return res.status(403).json({
         success: false,
@@ -332,7 +344,7 @@ exports.updateOrderStatus = async (req, res, next) => {
 
     // Check if user is authorized to update this order
     if (req.user.role !== 'admin' &&
-      !order.items.some(item => item.seller.toString() === req.user.id)) {
+      !order.items.some(item => item.seller.toString() === (req.user?._id?.toString ? req.user._id.toString() : req.user?.id))) {
       return res.status(403).json({
         success: false,
         message: 'Not authorized to update this order'

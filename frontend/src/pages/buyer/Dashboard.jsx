@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import axios from 'axios';
+import api from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
 import Card from '../../components/Card';
@@ -29,8 +29,16 @@ function BuyerDashboard() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/buyer/dashboard');
-      setDashboardData(response.data);
+      const response = await api.get('/buyer/dashboard');
+      const payload = response.data?.data || response.data || {};
+      setDashboardData({
+        recentOrders: payload.recentOrders || [],
+        libraryCount: payload.libraryCount || 0,
+        activeOrders: payload.activeOrders || 0,
+        completedOrders: payload.completedOrders || 0,
+        complaints: payload.complaints || [],
+        recentlyViewed: payload.recentlyViewed || []
+      });
       setError('');
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
@@ -96,7 +104,7 @@ function BuyerDashboard() {
     },
     {
       label: 'Open Complaints',
-      value: dashboardData.complaints.length,
+      value: dashboardData.complaints?.length || 0,
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -191,7 +199,7 @@ function BuyerDashboard() {
                   </button>
                 </Link>
               </div>
-              {dashboardData.recentOrders.length === 0 ? (
+              {(dashboardData.recentOrders?.length || 0) === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-text-secondary">No orders yet</p>
                 </div>
@@ -258,7 +266,7 @@ function BuyerDashboard() {
                   </button>
                 </Link>
               </div>
-              {dashboardData.recentlyViewed.length === 0 ? (
+              {(dashboardData.recentlyViewed?.length || 0) === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-text-secondary">No recently viewed books</p>
                 </div>
@@ -316,7 +324,7 @@ function BuyerDashboard() {
         </motion.div>
 
         {/* Active Complaints (if any) */}
-        {dashboardData.complaints.length > 0 && (
+        {(dashboardData.complaints?.length || 0) > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
