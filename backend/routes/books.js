@@ -118,7 +118,7 @@ router.get('/browse', async (req, res) => {
         };
 
         if (defaultBrowse) {
-            await cacheService.set(cacheKey, responsePayload, 120);
+            await cacheService.set(cacheKey, responsePayload, 118);
             console.log('[CACHE SET] list:books ttl=120s');
         }
         console.timeEnd(totalTimer);
