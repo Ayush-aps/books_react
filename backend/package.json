@@ -41,6 +41,7 @@
     "node-cron": "^3.0.3",
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
+    "pdf-parse": "^2.4.5",
     "rotating-file-stream": "^3.2.7",
     "stripe": "^18.1.0",
     "swagger-jsdoc": "^6.2.8",

@@ -204,6 +204,7 @@ const PdfReader = () => {
         const response = await fetch(backendPdfUrl, {
           method: 'GET',
           credentials: 'include', // Include cookies for authentication
+          cache: 'no-cache', // Bypass browser cache if the backend previously sent a default pdf
         });
 
         if (!response.ok) {

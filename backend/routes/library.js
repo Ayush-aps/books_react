@@ -648,20 +648,26 @@ router.get("/pdf/:bookId", ensureAuthenticated, requireActiveSubscription, async
       });
     }
 
-    // Check if book has a PDF file
-    if (!book.epubFile) {
-      return res.status(404).json({
-        success: false,
-        message: "This book does not have a PDF file available.",
-      });
+    // Sherlock Holmes PDF is used as the fallback for books without their own PDF,
+    // or books that only have an .epub file (which the PDF reader cannot render).
+    const FALLBACK_PDF_URL = 'https://res.cloudinary.com/dbodtotmz/raw/upload/v1764671834/book-files/advs.pdf';
+
+    // A valid PDF must exist and must not be an .epub file
+    const hasPdf = book.epubFile && !book.epubFile.toLowerCase().endsWith('.epub');
+
+    const pdfUrl = hasPdf ? book.epubFile : FALLBACK_PDF_URL;
+
+    if (!hasPdf) {
+      const reason = !book.epubFile ? 'no file' : 'file is .epub (not a PDF)';
+      console.log(`[PDF] Book "${book.title}" has no readable PDF (${reason}) — serving Sherlock Holmes fallback.`);
     }
 
     // **FIX: Stream the PDF through the backend to bypass Cloudinary 401 errors**
     try {
-      // Fetch the PDF from Cloudinary
+      // Fetch the PDF from Cloudinary (or the fallback URL)
       const pdfResponse = await axios({
         method: 'GET',
-        url: book.epubFile,
+        url: pdfUrl,
         responseType: 'stream',
         timeout: 30000, // 30 second timeout
       });
@@ -669,7 +675,9 @@ router.get("/pdf/:bookId", ensureAuthenticated, requireActiveSubscription, async
       // Set appropriate headers for PDF streaming
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `inline; filename="${book.title}.pdf"`);
-      res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
+      // Use private/no-store to prevent the browser from serving a cached PDF
+      // from one book to another (which caused the Count of Monte Cristo issue)
+      res.setHeader('Cache-Control', 'private, no-store');
 
       // If Cloudinary provides content-length, forward it
       if (pdfResponse.headers['content-length']) {
