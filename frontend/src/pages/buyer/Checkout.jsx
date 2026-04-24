@@ -72,9 +72,7 @@ const Checkout = () => {
 
   const calculateSubtotal = () => {
     return items.reduce((total, item) => {
-      const price = item.discountPercentage
-        ? item.price - (item.price * item.discountPercentage / 100)
-        : item.price;
+      const price = item.price;
       return total + (price * item.quantity);
     }, 0);
   };
@@ -106,9 +104,7 @@ const Checkout = () => {
           items: items.map(item => ({
             bookId: item.book?._id || item._id,
             quantity: item.quantity,
-            price: item.discountPercentage
-              ? item.price - (item.price * item.discountPercentage / 100)
-              : item.price
+            price: item.price
           })),
           shippingAddress: fullAddress
         });
@@ -145,9 +141,7 @@ const Checkout = () => {
           items: items.map(item => ({
             book: item.book?._id || item._id,
             quantity: item.quantity,
-            price: item.discountPercentage
-              ? item.price - (item.price * item.discountPercentage / 100)
-              : item.price
+            price: item.price
           })),
           shippingAddress: transformedAddress,
           paymentMethod: 'cash_on_delivery', // Use enum value from Order model
@@ -199,9 +193,7 @@ const Checkout = () => {
         items: items.map(item => ({
           book: item.book?._id || item._id,
           quantity: item.quantity,
-          price: item.discountPercentage
-            ? item.price - (item.price * item.discountPercentage / 100)
-            : item.price
+          price: item.price
         })),
         shippingAddress: transformedAddress,
         paymentMethod: 'credit_card', // Use enum value from Order model
@@ -511,9 +503,8 @@ const Checkout = () => {
                   <div className="space-y-4 mb-6 max-h-80 overflow-y-auto pr-2">
                     {items.map((item) => {
                       const book = item.book || item;
-                      const price = item.discountPercentage
-                        ? item.price - (item.price * item.discountPercentage / 100)
-                        : item.price;
+                      const price = item.price;
+                      const hasDiscount = book.discountPrice && book.discountPrice < book.price;
                       return (
                         <div key={item._id} className="flex gap-3 pb-4 border-b border-surface last:border-0 last:pb-0">
                           <img
@@ -525,8 +516,8 @@ const Checkout = () => {
                             <p className="body font-medium text-charcoal truncate mb-1">{book.title || item.title}</p>
                             <div className="flex items-center gap-2 mb-2">
                               <span className="body-sm text-charcoal/60">Qty: {item.quantity}</span>
-                              {item.discountPercentage > 0 && (
-                                <Badge variant="success" size="sm">{item.discountPercentage}% OFF</Badge>
+                              {hasDiscount && (
+                                <Badge variant="success" size="sm">{Math.round(((book.price - book.discountPrice) / book.price) * 100)}% OFF</Badge>
                               )}
                             </div>
                             <p className="body font-semibold text-brown">

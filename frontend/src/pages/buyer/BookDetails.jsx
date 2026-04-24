@@ -212,9 +212,8 @@ const BookDetails = () => {
   }
 
   const book = currentBook;
-  const discountedPrice = book.discountPercentage
-    ? book.price - (book.price * book.discountPercentage / 100)
-    : book.price;
+  const discountedPrice = book.discountPrice || book.price;
+  const hasDiscount = book.discountPrice && book.discountPrice < book.price;
   const isOutOfStock = book.stock === 0;
   const isPending = book.isApproved === false && !book.rejectionReason;
   const isAvailable = book.isApproved === true && !isOutOfStock;
@@ -259,9 +258,9 @@ const BookDetails = () => {
 
                 {/* Status Badges */}
                 <div className="absolute top-4 right-4 flex flex-col gap-2">
-                  {book.discountPercentage > 0 && (
+                  {hasDiscount && (
                     <Badge variant="error" size="md">
-                      {book.discountPercentage}% OFF
+                      {Math.round(((book.price - book.discountPrice) / book.price) * 100)}% OFF
                     </Badge>
                   )}
                   {isPending && (
@@ -313,7 +312,7 @@ const BookDetails = () => {
                     <span className="text-4xl font-serif font-bold text-accent-brown">
                       ₹{roundPrice(discountedPrice)}
                     </span>
-                    {book.discountPercentage > 0 && (
+                    {hasDiscount && (
                       <span className="text-xl text-text-tertiary line-through">
                         ₹{roundPrice(book.price)}
                       </span>
