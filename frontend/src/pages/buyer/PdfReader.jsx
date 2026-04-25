@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { useParams, useNavigate } from 'react-router-dom';
+import api from '../../services/api';
 import {
   ZoomIn,
   ZoomOut,
@@ -196,38 +197,17 @@ const PdfReader = () => {
         setLoading(true);
         setError(null);
 
-        // **FIX: Fetch PDF as blob with credentials to ensure cookies are sent**
-        // Use VITE_API_URL so this works on both localhost and the deployed Render environment.
-        const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-        const backendPdfUrl = `${API_BASE}/library/pdf/${bookId}`;
+        // Use the configured `api` axios instance, which already has withCredentials:true
+        // and reads VITE_API_URL — this correctly sends session cookies on both localhost
+        // and the deployed Render environment (unlike a raw fetch() call).
+        console.log('[PDF Reader] Fetching PDF from backend for bookId:', bookId);
 
-        console.log('[PDF Reader] Fetching PDF from backend:', backendPdfUrl);
-
-        const response = await fetch(backendPdfUrl, {
-          method: 'GET',
-          credentials: 'include', // Include cookies for authentication
-          cache: 'no-cache', // Bypass browser cache if the backend previously sent a default pdf
+        const response = await api.get(`/library/pdf/${bookId}`, {
+          responseType: 'blob', // Receive the streamed PDF as a Blob
         });
 
-        if (!response.ok) {
-          if (response.status === 401) {
-            setError('Please log in to access this book.');
-          } else if (response.status === 403) {
-            setError('You need an active subscription to access this book.');
-          } else if (response.status === 404) {
-            setError('This book is no longer available. It may have been removed by the seller.');
-          } else {
-            setError(`Failed to load PDF (Error ${response.status})`);
-          }
-          setLoading(false);
-          return;
-        }
-
-        // Convert response to blob
-        const blob = await response.blob();
-
         // Create object URL from blob
-        const objectUrl = URL.createObjectURL(blob);
+        const objectUrl = URL.createObjectURL(response.data);
 
         console.log('[PDF Reader] PDF loaded successfully as blob');
 
@@ -238,7 +218,17 @@ const PdfReader = () => {
 
       } catch (err) {
         console.error('[PDF Reader] Error loading PDF:', err);
-        setError('Failed to load PDF. Please try again.');
+        // The api interceptor rejects with err.response?.status or a message object
+        const status = err?.status || err?.response?.status;
+        if (status === 401) {
+          setError('Please log in to access this book.');
+        } else if (status === 403) {
+          setError('You need an active subscription to access this book.');
+        } else if (status === 404) {
+          setError('This book is no longer available. It may have been removed by the seller.');
+        } else {
+          setError('Failed to load PDF. Please try again.');
+        }
         setLoading(false);
       }
     };
