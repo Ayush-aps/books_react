@@ -197,7 +197,9 @@ const PdfReader = () => {
         setError(null);
 
         // **FIX: Fetch PDF as blob with credentials to ensure cookies are sent**
-        const backendPdfUrl = `http://localhost:3000/api/library/pdf/${bookId}`;
+        // Use VITE_API_URL so this works on both localhost and the deployed Render environment.
+        const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+        const backendPdfUrl = `${API_BASE}/library/pdf/${bookId}`;
 
         console.log('[PDF Reader] Fetching PDF from backend:', backendPdfUrl);
 
