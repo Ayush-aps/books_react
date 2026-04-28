@@ -251,7 +251,7 @@ const Overview = () => {
                     <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-8">
                         <div>
                             <p className="text-sm text-text-secondary mb-1">Gross Cumulative Revenue</p>
-                            <h3 className="text-4xl font-black text-accent-brown">{fmtCurrency(totalRev)}</h3>
+                            <h3 className="text-3xl md:text-4xl font-black text-accent-brown">{fmtCurrency(totalRev)}</h3>
                             <div className="flex items-center gap-2 mt-2">
                                 <Badge variant="success">+{subPct}% Subscriptions</Badge>
                                 <span className="text-xs text-text-tertiary">Platform Growth Mode</span>

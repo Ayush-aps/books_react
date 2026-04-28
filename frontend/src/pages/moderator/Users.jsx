@@ -142,7 +142,7 @@ const ProfileDrawer = ({ userId, onClose, onDelete, onPromote, onStatusChange })
                 <div className="flex-1 overflow-y-auto relative no-scrollbar">
                     {/* Decorative background blobs */}
                     <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-accent-brown/5 to-transparent pointer-events-none" />
-                    
+
                     {loading ? (
                         <div className="flex items-center justify-center h-48">
                             <LoadingSpinner size="md" message="Loading profile..." />
@@ -155,7 +155,7 @@ const ProfileDrawer = ({ userId, onClose, onDelete, onPromote, onStatusChange })
                             <div className="relative flex flex-col items-center text-center py-8 rounded-3xl bg-background-secondary/40 border border-white/20 shadow-sm overflow-hidden group">
                                 <div className="absolute -top-12 -right-12 w-32 h-32 bg-accent-brown/10 rounded-full blur-2xl group-hover:bg-accent-brown/20 transition-all duration-700" />
                                 <div className="absolute -bottom-8 -left-8 w-24 h-24 bg-info/10 rounded-full blur-xl group-hover:bg-info/20 transition-all duration-700" />
-                                
+
                                 <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.1 }}>
                                     {profile.avatar && !profile.avatar.includes('default-avatar') ? (
                                         <img src={profile.avatar} alt={profile.name}

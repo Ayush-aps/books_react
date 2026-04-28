@@ -62,14 +62,23 @@
     margin: 0;
   }
 
-  h1 { font-size: var(--text-6xl); }
-  h2 { font-size: var(--text-5xl); }
-  h3 { font-size: var(--text-4xl); }
-  h4 { font-size: var(--text-3xl); }
-  h5 { font-size: var(--text-2xl); }
+  h1 { font-size: var(--text-4xl); }
+  h2 { font-size: var(--text-3xl); }
+  h3 { font-size: var(--text-2xl); }
+  h4 { font-size: var(--text-xl); }
+  h5 { font-size: var(--text-lg); }
   h6 { 
-    font-size: var(--text-xl); 
+    font-size: var(--text-base); 
     text-transform: uppercase;
+  }
+
+  @media (min-width: 768px) {
+    h1 { font-size: var(--text-6xl); }
+    h2 { font-size: var(--text-5xl); }
+    h3 { font-size: var(--text-4xl); }
+    h4 { font-size: var(--text-3xl); }
+    h5 { font-size: var(--text-2xl); }
+    h6 { font-size: var(--text-xl); }
   }
 
   /* Paragraphs */

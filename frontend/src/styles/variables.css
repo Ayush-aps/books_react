@@ -723,7 +723,7 @@
 /* Headings with Serif */
 .heading-1 {
   font-family: var(--font-serif);
-  font-size: var(--text-6xl);
+  font-size: var(--text-4xl);
   font-weight: var(--font-bold);
   line-height: var(--leading-tight);
   letter-spacing: var(--tracking-tight);
@@ -732,7 +732,7 @@
 
 .heading-2 {
   font-family: var(--font-serif);
-  font-size: var(--text-5xl);
+  font-size: var(--text-3xl);
   font-weight: var(--font-bold);
   line-height: var(--leading-tight);
   letter-spacing: var(--tracking-tight);
@@ -741,7 +741,7 @@
 
 .heading-3 {
   font-family: var(--font-serif);
-  font-size: var(--text-4xl);
+  font-size: var(--text-2xl);
   font-weight: var(--font-semibold);
   line-height: var(--leading-snug);
   letter-spacing: var(--tracking-tight);
@@ -750,7 +750,7 @@
 
 .heading-4 {
   font-family: var(--font-serif);
-  font-size: var(--text-3xl);
+  font-size: var(--text-xl);
   font-weight: var(--font-semibold);
   line-height: var(--leading-snug);
   color: var(--text-primary);
@@ -758,7 +758,7 @@
 
 .heading-5 {
   font-family: var(--font-sans);
-  font-size: var(--text-2xl);
+  font-size: var(--text-lg);
   font-weight: var(--font-semibold);
   line-height: var(--leading-normal);
   letter-spacing: var(--tracking-wide);
@@ -767,12 +767,21 @@
 
 .heading-6 {
   font-family: var(--font-sans);
-  font-size: var(--text-xl);
+  font-size: var(--text-base);
   font-weight: var(--font-semibold);
   line-height: var(--leading-normal);
   letter-spacing: var(--tracking-wide);
   color: var(--text-primary);
   text-transform: uppercase;
+}
+
+@media (min-width: 768px) {
+  .heading-1 { font-size: var(--text-6xl); }
+  .heading-2 { font-size: var(--text-5xl); }
+  .heading-3 { font-size: var(--text-4xl); }
+  .heading-4 { font-size: var(--text-3xl); }
+  .heading-5 { font-size: var(--text-2xl); }
+  .heading-6 { font-size: var(--text-xl); }
 }
 
 /* Body Text */
