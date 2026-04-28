@@ -37,6 +37,7 @@ const Dashboard = () => {
     const [resolutionAction, setResolutionAction] = useState('other');
     const [rejectModal, setRejectModal] = useState({ open: false, bookId: null });
     const [rejectionReason, setRejectionReason] = useState('');
+    const [reviewModal, setReviewModal] = useState({ open: false, book: null });
 
     const fetchBooks = useCallback(async () => {
         try {
@@ -253,10 +254,14 @@ const Dashboard = () => {
                                 {pendingBooks.map(book => (
                                     <motion.div key={book._id} layout className="p-4 bg-background-secondary rounded-lg border border-border-primary hover:border-accent-brown/30 transition-colors">
                                         <div className="flex items-start gap-3 mb-3">
-                                            <div className="w-12 h-16 bg-accent-brown/10 rounded flex items-center justify-center flex-shrink-0">
+                                            <div className="w-12 h-16 bg-accent-brown/10 rounded flex items-center justify-center flex-shrink-0 overflow-hidden">
+                                                {book.coverImage ? (
+                                                    <img src={book.coverImage} alt="Cover" className="w-full h-full object-cover" />
+                                                ) : (
                                                 <svg className="w-6 h-6 text-accent-brown" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                                                 </svg>
+                                                )}
                                             </div>
                                             <div className="min-w-0 flex-1">
                                                 <h4 className="font-medium text-text-primary truncate">{book.title}</h4>
@@ -270,21 +275,11 @@ const Dashboard = () => {
                                         <div className="flex gap-2">
                                             <Button
                                                 size="sm"
-                                                variant="success"
+                                                variant="primary"
                                                 fullWidth
-                                                onClick={() => handleApproveBook(book._id)}
-                                                disabled={actionLoading === book._id}
+                                                onClick={() => setReviewModal({ open: true, book })}
                                             >
-                                                {actionLoading === book._id ? '...' : 'Approve'}
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                variant="error"
-                                                fullWidth
-                                                onClick={() => setRejectModal({ open: true, bookId: book._id })}
-                                                disabled={actionLoading === book._id}
-                                            >
-                                                Reject
+                                                Review Book Details
                                             </Button>
                                         </div>
                                     </motion.div>
@@ -511,6 +506,96 @@ const Dashboard = () => {
                             </Button>
                         </div>
                     </div>
+                </Modal>
+
+                {/* Review Book Modal */}
+                <Modal
+                    isOpen={reviewModal.open}
+                    onClose={() => setReviewModal({ open: false, book: null })}
+                    title="Review Book Submission"
+                    size="lg"
+                >
+                    {reviewModal.book && (
+                        <div className="space-y-6">
+                            <div className="flex flex-col md:flex-row gap-6">
+                                <div className="w-32 h-48 bg-background-tertiary rounded shadow-sm overflow-hidden flex-shrink-0">
+                                    {reviewModal.book.coverImage ? (
+                                        <img src={reviewModal.book.coverImage} alt="Cover" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-text-tertiary">No Cover</div>
+                                    )}
+                                </div>
+                                <div className="flex-1 space-y-2">
+                                    <h3 className="heading-3">{reviewModal.book.title}</h3>
+                                    <p className="text-text-secondary font-medium">by {reviewModal.book.author}</p>
+                                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm mt-4">
+                                        <p><span className="text-text-tertiary">ISBN:</span> <span className="font-medium">{reviewModal.book.isbn || 'N/A'}</span></p>
+                                        <p><span className="text-text-tertiary">Genre:</span> <span className="font-medium">{reviewModal.book.genre || 'N/A'}</span></p>
+                                        <p><span className="text-text-tertiary">Price:</span> <span className="font-medium">₹{reviewModal.book.price || 'N/A'}</span></p>
+                                        <p><span className="text-text-tertiary">Pages:</span> <span className="font-medium">{reviewModal.book.pages || 'N/A'}</span></p>
+                                        <p><span className="text-text-tertiary">Publisher:</span> <span className="font-medium">{reviewModal.book.publisher || 'N/A'}</span></p>
+                                        <p><span className="text-text-tertiary">Language:</span> <span className="font-medium">{reviewModal.book.language || 'N/A'}</span></p>
+                                        <p><span className="text-text-tertiary">Condition:</span> <span className="font-medium">{reviewModal.book.condition || 'N/A'}</span></p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h4 className="text-sm font-semibold mb-2">Description</h4>
+                                <div className="p-4 bg-background-secondary rounded text-sm text-text-secondary leading-relaxed max-h-40 overflow-y-auto whitespace-pre-wrap">
+                                    {reviewModal.book.description || 'No description provided.'}
+                                </div>
+                            </div>
+
+                            {reviewModal.book.seller && (
+                                <div className="flex items-center gap-2 p-3 bg-info/10 text-info rounded border border-info/20">
+                                    <span className="font-semibold text-sm">Seller Info:</span>
+                                    <span className="text-sm border-l border-info/20 pl-2">{reviewModal.book.seller.name} ({reviewModal.book.seller.email})</span>
+                                </div>
+                            )}
+
+                            {reviewModal.book.epubFile && (
+                                <div>
+                                    <h4 className="text-sm font-semibold mb-2">Manuscript / Content</h4>
+                                    <a 
+                                        href={reviewModal.book.epubFile} 
+                                        target="_blank" 
+                                        rel="noreferrer"
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-background-primary border border-border-primary rounded text-sm text-accent-brown font-medium hover:bg-background-secondary transition-colors"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                                        View Digital Content
+                                    </a>
+                                </div>
+                            )}
+
+                            <div className="flex gap-3 justify-end pt-4 border-t border-border-primary">
+                                <Button variant="ghost" onClick={() => setReviewModal({ open: false, book: null })}>
+                                    Cancel
+                                </Button>
+                                <Button
+                                    variant="error"
+                                    onClick={() => {
+                                        setReviewModal({ open: false, book: null });
+                                        setRejectModal({ open: true, bookId: reviewModal.book._id });
+                                    }}
+                                    disabled={actionLoading === reviewModal.book._id}
+                                >
+                                    Reject
+                                </Button>
+                                <Button
+                                    className="btn-approve"
+                                    onClick={() => {
+                                        handleApproveBook(reviewModal.book._id);
+                                        setReviewModal({ open: false, book: null });
+                                    }}
+                                    disabled={actionLoading === reviewModal.book._id}
+                                >
+                                    {actionLoading === reviewModal.book._id ? 'Approving...' : 'Approve Book'}
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                 </Modal>
             </div>
         </div>
