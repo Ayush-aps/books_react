@@ -47,20 +47,23 @@ const Overview = () => {
     const [pendingUsersCount, setPendingUsersCount] = useState(0);
     const [pendingBooksCount, setPendingBooksCount] = useState(0);
     const [pendingComplaintsCount, setPendingComplaintsCount] = useState(0);
+    const [recentOrders, setRecentOrders] = useState([]);
 
     const fetchData = async () => {
         try {
             setLoading(true);
-            const [globalRes, usersRes, booksRes, complaintsRes] = await Promise.all([
+            const [globalRes, usersRes, booksRes, complaintsRes, ordersRes] = await Promise.all([
                 moderatorAPI.getGlobalStats(),
                 moderatorAPI.getPendingUsers(),
                 employeeAPI.getPendingBooks({ limit: 1 }),
-                employeeAPI.getComplaints({ limit: 1, status: 'pending' })
+                employeeAPI.getComplaints({ limit: 1, status: 'pending' }),
+                moderatorAPI.getOrders({ limit: 5 })
             ]);
             setStats(globalRes.data?.data || null);
             setPendingUsersCount(usersRes.data?.data?.users?.length || 0);
             setPendingBooksCount(booksRes.data?.data?.pagination?.totalBooks || 0);
             setPendingComplaintsCount(complaintsRes.data?.data?.pagination?.totalComplaints || 0);
+            setRecentOrders(ordersRes.data?.data?.orders || []);
             setError(null);
         } catch (err) {
             setError(err.message || 'Failed to load stats');
@@ -191,9 +194,9 @@ const Overview = () => {
                         <h2 className="heading-3">Recent Activity</h2>
                         <button onClick={() => navigate('/moderator/orders')} className="text-sm font-medium text-accent-brown hover:underline transition-colors">See All →</button>
                     </div>
-                    {/* Placeholder for now or actual recent orders from global stats if available */}
+                    {/* Actual recent orders from employee/moderator API */}
                     <div className="space-y-4">
-                        {stats?.recentOrders?.length > 0 ? stats.recentOrders.slice(0, 5).map(order => (
+                        {recentOrders?.length > 0 ? recentOrders.map(order => (
                             <div key={order._id} className="flex items-center gap-4 p-4 bg-background-secondary rounded-xl hover:bg-background-tertiary transition-colors">
                                 <div className="w-10 h-10 rounded-full bg-accent-brown/10 flex items-center justify-center text-accent-brown">📦</div>
                                 <div className="flex-1">
