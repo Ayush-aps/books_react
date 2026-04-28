@@ -118,28 +118,31 @@ const ProfileDrawer = ({ userId, onClose, onDelete, onPromote, onStatusChange })
         <>
             {/* Backdrop */}
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm"
+                className="fixed inset-0 bg-black/40 z-40 backdrop-blur-sm"
                 onClick={onClose} />
 
             {/* Drawer */}
             <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
-                transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-                className="fixed top-0 right-0 h-full w-full max-w-md bg-background-primary z-50 shadow-2xl flex flex-col overflow-hidden border-l border-border-primary">
+                transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                className="fixed top-0 right-0 h-full w-full max-w-md bg-background-primary/95 backdrop-blur-2xl z-50 shadow-2xl flex flex-col overflow-hidden border-l border-white/20">
 
-                {/* Header with solid color */}
-                <div className="flex items-center justify-between px-6 py-5 bg-accent-brown text-white flex-shrink-0 shadow-md">
+                {/* Glassmorphic Header */}
+                <div className="relative z-10 flex items-center justify-between px-6 py-5 border-b border-border-primary/50 bg-background-primary/80 backdrop-blur-lg">
                     <div>
-                        <h2 className="text-xl font-bold">User Profile</h2>
-                        <p className="text-white/80 text-xs">Full Registration Details</p>
+                        <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-accent-brown to-charcoal">User Profile</h2>
+                        <p className="text-text-tertiary text-xs font-medium uppercase tracking-wider">Moderator View</p>
                     </div>
                     <button onClick={onClose}
-                        className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-all text-xl">
+                        className="w-8 h-8 rounded-full bg-background-secondary flex items-center justify-center text-text-secondary hover:bg-background-tertiary hover:text-accent-brown transition-all text-sm ring-1 ring-border-primary">
                         ✕
                     </button>
                 </div>
 
                 {/* Body */}
-                <div className="flex-1 overflow-y-auto bg-background-primary">
+                <div className="flex-1 overflow-y-auto relative no-scrollbar">
+                    {/* Decorative background blobs */}
+                    <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-accent-brown/5 to-transparent pointer-events-none" />
+                    
                     {loading ? (
                         <div className="flex items-center justify-center h-48">
                             <LoadingSpinner size="md" message="Loading profile..." />
@@ -147,59 +150,68 @@ const ProfileDrawer = ({ userId, onClose, onDelete, onPromote, onStatusChange })
                     ) : !profile ? (
                         <div className="p-6 text-center text-text-secondary">Profile not available.</div>
                     ) : (
-                        <div className="p-6 space-y-6">
+                        <div className="p-6 space-y-6 relative z-10">
                             {/* Avatar + name hero */}
-                            <div className="flex flex-col items-center text-center py-4">
-                                {profile.avatar && !profile.avatar.includes('default-avatar') ? (
-                                    <img src={profile.avatar} alt={profile.name}
-                                        className="w-24 h-24 rounded-full object-cover ring-4 ring-accent-brown/20 mb-4" />
-                                ) : (
-                                    <div className="w-24 h-24 rounded-full bg-accent-brown/10 flex items-center justify-center text-accent-brown text-4xl font-bold ring-4 ring-accent-brown/20 mb-4">
-                                        {profile.name?.charAt(0).toUpperCase()}
-                                    </div>
-                                )}
-                                <h3 className="heading-2 mb-1">{profile.name}</h3>
-                                <p className="text-sm text-text-secondary mb-3">{profile.email}</p>
-                                <div className="flex items-center gap-2 flex-wrap justify-center">
-                                    <Badge variant={roleBadgeVariant(profile.role)} size="sm">{profile.role}</Badge>
-                                    <Badge variant={statusVariant(profile.verificationStatus)} size="sm">
+                            <div className="relative flex flex-col items-center text-center py-8 rounded-3xl bg-background-secondary/40 border border-white/20 shadow-sm overflow-hidden group">
+                                <div className="absolute -top-12 -right-12 w-32 h-32 bg-accent-brown/10 rounded-full blur-2xl group-hover:bg-accent-brown/20 transition-all duration-700" />
+                                <div className="absolute -bottom-8 -left-8 w-24 h-24 bg-info/10 rounded-full blur-xl group-hover:bg-info/20 transition-all duration-700" />
+                                
+                                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.1 }}>
+                                    {profile.avatar && !profile.avatar.includes('default-avatar') ? (
+                                        <img src={profile.avatar} alt={profile.name}
+                                            className="relative z-10 w-24 h-24 rounded-full object-cover ring-4 ring-white shadow-lg mb-4" />
+                                    ) : (
+                                        <div className="relative z-10 w-24 h-24 rounded-full bg-gradient-to-br from-accent-brown to-accent-brown-hover flex items-center justify-center text-white text-4xl font-bold ring-4 ring-white shadow-lg mb-4">
+                                            {profile.name?.charAt(0).toUpperCase()}
+                                        </div>
+                                    )}
+                                </motion.div>
+                                <h3 className="heading-2 mb-1 relative z-10">{profile.name}</h3>
+                                <p className="text-sm text-text-secondary mb-3 relative z-10">{profile.email}</p>
+                                <div className="flex items-center gap-2 flex-wrap justify-center relative z-10">
+                                    <Badge variant={roleBadgeVariant(profile.role)} size="sm" className="shadow-sm">{profile.role}</Badge>
+                                    <Badge variant={statusVariant(profile.verificationStatus)} size="sm" className="shadow-sm">
                                         {profile.verificationStatus || 'pending'}
                                     </Badge>
                                 </div>
                             </div>
 
                             {/* Info grid */}
-                            <div className="bg-background-secondary rounded-2xl p-5 space-y-4">
-                                <h4 className="text-xs font-semibold text-text-tertiary uppercase tracking-wider">Registration Details</h4>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <p className="text-xs text-text-tertiary mb-0.5">Phone</p>
-                                        <p className="text-sm font-medium text-text-primary">{profile.phone || '—'}</p>
+                            <div className="bg-background-secondary/50 backdrop-blur-md rounded-3xl p-6 border border-white/20 shadow-sm relative overflow-hidden">
+                                <h4 className="text-[10px] font-bold text-accent-brown uppercase tracking-widest mb-4">Registration Details</h4>
+                                <div className="grid grid-cols-2 gap-y-5 gap-x-4">
+                                    <div className="group">
+                                        <p className="text-xs text-text-tertiary mb-1 flex items-center gap-1"><span className="opacity-0 group-hover:opacity-100 transition-opacity text-accent-brown">▸</span> Phone</p>
+                                        <p className="text-sm font-semibold text-text-primary">{profile.phone || '—'}</p>
                                     </div>
-                                    <div>
-                                        <p className="text-xs text-text-tertiary mb-0.5">Member Since</p>
-                                        <p className="text-sm font-medium text-text-primary">{fmt(profile.createdAt)}</p>
+                                    <div className="group">
+                                        <p className="text-xs text-text-tertiary mb-1 flex items-center gap-1"><span className="opacity-0 group-hover:opacity-100 transition-opacity text-accent-brown">▸</span> Member Since</p>
+                                        <p className="text-sm font-semibold text-text-primary">{fmt(profile.createdAt)}</p>
                                     </div>
-                                    <div className="col-span-2">
-                                        <p className="text-xs text-text-tertiary mb-0.5">Email Verified</p>
-                                        <p className="text-sm font-medium text-text-primary">
-                                            {profile.isVerified ? '✅ Verified' : '❌ Not Verified'}
-                                        </p>
+                                    <div className="col-span-2 group">
+                                        <p className="text-xs text-text-tertiary mb-1 flex items-center gap-1"><span className="opacity-0 group-hover:opacity-100 transition-opacity text-accent-brown">▸</span> Email Verified</p>
+                                        <div className="flex items-center gap-2">
+                                            {profile.isVerified ? (
+                                                <span className="flex items-center gap-1.5 text-sm font-semibold text-success bg-success/10 px-2 py-0.5 rounded-md"><span className="w-1.5 h-1.5 rounded-full bg-success"></span>Verified</span>
+                                            ) : (
+                                                <span className="flex items-center gap-1.5 text-sm font-semibold text-error bg-error/10 px-2 py-0.5 rounded-md"><span className="w-1.5 h-1.5 rounded-full bg-error"></span>Not Verified</span>
+                                            )}
+                                        </div>
                                     </div>
                                     {profile.address?.street && (<>
-                                        <div className="col-span-2">
-                                            <p className="text-xs text-text-tertiary mb-0.5">Address</p>
-                                            <p className="text-sm font-medium text-text-primary">
+                                        <div className="col-span-2 group pt-2 border-t border-border-primary/30">
+                                            <p className="text-xs text-text-tertiary mb-1 flex items-center gap-1"><span className="opacity-0 group-hover:opacity-100 transition-opacity text-accent-brown">▸</span> Address</p>
+                                            <p className="text-sm font-medium text-text-primary leading-relaxed">
                                                 {[profile.address.street, profile.address.city, profile.address.state, profile.address.zipCode, profile.address.country]
                                                     .filter(Boolean).join(', ')}
                                             </p>
                                         </div>
                                     </>)}
                                     {profile.managedBy && (
-                                        <div className="col-span-2">
-                                            <p className="text-xs text-text-tertiary mb-0.5">Managed By</p>
+                                        <div className="col-span-2 group pt-2 border-t border-border-primary/30">
+                                            <p className="text-xs text-text-tertiary mb-1 flex items-center gap-1"><span className="opacity-0 group-hover:opacity-100 transition-opacity text-accent-brown">▸</span> Managed By</p>
                                             <p className="text-sm font-medium text-text-primary">
-                                                {profile.managedBy.name} <span className="text-text-tertiary">({profile.managedBy.role})</span>
+                                                {profile.managedBy.name} <span className="text-accent-brown">({profile.managedBy.role})</span>
                                             </p>
                                         </div>
                                     )}
@@ -207,15 +219,15 @@ const ProfileDrawer = ({ userId, onClose, onDelete, onPromote, onStatusChange })
                             </div>
 
                             {/* Verification control */}
-                            <div className="bg-background-secondary rounded-2xl p-5">
-                                <h4 className="text-xs font-semibold text-text-tertiary uppercase tracking-wider mb-3">Verification Status</h4>
+                            <div className="bg-background-secondary/50 backdrop-blur-md rounded-3xl p-6 border border-white/20 shadow-sm relative overflow-hidden">
+                                <h4 className="text-[10px] font-bold text-accent-brown uppercase tracking-widest mb-4">Verification Status</h4>
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-sm text-text-primary font-medium capitalize">{profile.verificationStatus || 'pending'}</p>
-                                        <p className="text-xs text-text-tertiary mt-0.5">
+                                        <p className="text-sm text-text-primary font-bold capitalize mb-1">{profile.verificationStatus || 'pending'}</p>
+                                        <p className="text-xs text-text-tertiary">
                                             {profile.verificationStatus === 'approved' ? 'Account is fully active'
                                                 : profile.verificationStatus === 'rejected' ? 'Account access denied'
-                                                    : 'Awaiting moderator review'}
+                                                    : 'Awaiting moderation'}
                                         </p>
                                     </div>
                                     <VerificationWidget
@@ -231,43 +243,46 @@ const ProfileDrawer = ({ userId, onClose, onDelete, onPromote, onStatusChange })
 
                 {/* Footer actions */}
                 {profile && (
-                    <div className="px-6 py-4 border-t border-border-primary flex-shrink-0 space-y-3">
+                    <div className="px-6 py-5 border-t border-white/20 bg-background-primary/80 backdrop-blur-lg flex-shrink-0 space-y-3 z-10">
                         {profile.role === 'employee' && !confirmPromote && !confirmDelete && (
-                            <Button variant="success" fullWidth disabled={!!actionLoading}
-                                onClick={() => setConfirmPromote(true)}>
-                                ↑ Promote to Moderator
-                            </Button>
+                            <button disabled={!!actionLoading} onClick={() => setConfirmPromote(true)}
+                                className="w-full relative overflow-hidden rounded-xl font-semibold text-sm transition-all text-success bg-success/10 hover:bg-success hover:text-white py-3 border border-success/20 hover:border-success hover:shadow-lg hover:shadow-success/20 disabled:opacity-50 group">
+                                <span className="relative z-10 flex items-center justify-center gap-2">↑ Promote to Moderator</span>
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full duration-1000 transition-transform"></div>
+                            </button>
                         )}
 
                         {confirmPromote && (
-                            <div className="p-4 rounded-xl bg-success/10 border border-success/30 space-y-3">
-                                <p className="text-sm text-success font-medium">Confirm promotion?</p>
-                                <p className="text-xs text-text-secondary">{profile.name} will gain Moderator dashboard access.</p>
-                                <div className="flex gap-2">
-                                    <Button size="sm" variant="ghost" fullWidth onClick={() => setConfirmPromote(false)}>Cancel</Button>
-                                    <Button size="sm" variant="success" fullWidth disabled={actionLoading === 'promote'} onClick={handlePromote}>
-                                        {actionLoading === 'promote' ? 'Promoting...' : 'Confirm Promote'}
-                                    </Button>
+                            <div className="p-5 rounded-2xl bg-success/5 border border-success/20 shadow-inner">
+                                <p className="text-sm text-success font-bold mb-1">Confirm promotion?</p>
+                                <p className="text-xs text-text-secondary mb-4">{profile.name} will gain full Moderator access.</p>
+                                <div className="flex gap-3">
+                                    <button className="flex-1 py-2 rounded-lg text-xs font-semibold bg-background-secondary text-text-secondary hover:bg-background-tertiary transition-colors" onClick={() => setConfirmPromote(false)}>Cancel</button>
+                                    <button disabled={actionLoading === 'promote'} onClick={handlePromote}
+                                        className="flex-1 py-2 rounded-lg text-xs font-semibold bg-success text-white hover:bg-success-hover hover:shadow-md transition-all">
+                                        {actionLoading === 'promote' ? 'Promoting...' : 'Confirm'}
+                                    </button>
                                 </div>
                             </div>
                         )}
 
                         {!confirmDelete && !confirmPromote && (
-                            <Button variant="error" fullWidth disabled={!!actionLoading}
-                                onClick={() => setConfirmDelete(true)}>
-                                Remove Account
-                            </Button>
+                            <button disabled={!!actionLoading} onClick={() => setConfirmDelete(true)}
+                                className="w-full relative overflow-hidden rounded-xl font-semibold text-sm transition-all text-error bg-error/10 hover:bg-error hover:text-white py-3 border border-error/20 hover:border-error hover:shadow-lg hover:shadow-error/20 disabled:opacity-50 group">
+                                <span className="relative z-10">Remove Account</span>
+                            </button>
                         )}
 
                         {confirmDelete && (
-                            <div className="p-4 rounded-xl bg-error/10 border border-error/30 space-y-3">
-                                <p className="text-sm text-error font-medium">Permanently delete this account?</p>
-                                <p className="text-xs text-text-secondary">This cannot be undone. All data will be lost.</p>
-                                <div className="flex gap-2">
-                                    <Button size="sm" variant="ghost" fullWidth onClick={() => setConfirmDelete(false)}>Cancel</Button>
-                                    <Button size="sm" variant="error" fullWidth disabled={actionLoading === 'delete'} onClick={handleDelete}>
+                            <div className="p-5 rounded-2xl bg-error/5 border border-error/20 shadow-inner">
+                                <p className="text-sm text-error font-bold mb-1">Delete this account?</p>
+                                <p className="text-xs text-text-secondary mb-4">This action is irreversible. Data will be lost.</p>
+                                <div className="flex gap-3">
+                                    <button className="flex-1 py-2 rounded-lg text-xs font-semibold bg-background-secondary text-text-secondary hover:bg-background-tertiary transition-colors" onClick={() => setConfirmDelete(false)}>Cancel</button>
+                                    <button disabled={actionLoading === 'delete'} onClick={handleDelete}
+                                        className="flex-1 py-2 rounded-lg text-xs font-semibold bg-error text-white hover:bg-error-hover hover:shadow-md transition-all">
                                         {actionLoading === 'delete' ? 'Deleting...' : 'Yes, Delete'}
-                                    </Button>
+                                    </button>
                                 </div>
                             </div>
                         )}

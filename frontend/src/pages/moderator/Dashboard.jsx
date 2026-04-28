@@ -89,36 +89,49 @@ const Overview = () => {
 
     const quickActions = [
         {
-            label: 'Manage Users',
-            link: '/moderator/users',
-            icon: 'M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z',
-            color: 'bg-accent-brown'
+            label: 'User Verification',
+            link: '/moderator/verification',
+            icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+            badge: pendingUsersCount > 0 ? `${pendingUsersCount} pending` : null,
+            color: 'bg-[var(--success-primary)] text-white'
         },
         {
-            label: 'Moderate Content',
+            label: 'Pending Books',
             link: '/moderator/books',
             icon: 'M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z',
             badge: pendingBooksCount > 0 ? `${pendingBooksCount} pending` : null,
-            color: 'bg-accent-green'
+            color: 'bg-[var(--accent-green)] text-white'
         },
         {
-            label: 'View All Orders',
+            label: 'Orders',
             link: '/moderator/orders',
             icon: 'M9 2a1 1 0 000 2h2a1 1 0 100-2H9z M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z',
-            color: 'bg-info'
+            color: 'bg-[var(--info-primary)] text-white'
         },
         {
-            label: 'View Complaints',
+            label: 'Complaints',
             link: '/moderator/complaints',
             icon: 'M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z',
             badge: pendingComplaintsCount > 0 ? `${pendingComplaintsCount} pending` : null,
-            color: 'bg-error'
+            color: 'bg-[var(--error-primary)] text-white'
         },
         {
-            label: 'View Reports',
+            label: 'Reports',
             link: '/moderator/reports',
             icon: 'M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z',
-            color: 'bg-warning'
+            color: 'bg-[var(--warning-primary)] text-white'
+        },
+        {
+            label: 'User Management',
+            link: '/moderator/users',
+            icon: 'M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z',
+            color: 'bg-[var(--accent-brown)] text-white'
+        },
+        {
+            label: 'Verified Library',
+            link: '/moderator/library',
+            icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
+            color: 'bg-[var(--primary-charcoal)] text-white'
         }
     ];
 
@@ -243,16 +256,16 @@ const Overview = () => {
                         </div>
                         <div className="flex-1 w-full space-y-4">
                             <div className="h-4 rounded-full bg-background-tertiary overflow-hidden flex shadow-inner">
-                                <div className="h-full bg-info" style={{ width: `${physicalPct}%` }} />
-                                <div className="h-full bg-warning" style={{ width: `${taxPct}%` }} />
-                                <div className="h-full bg-error/70" style={{ width: `${shippingPct}%` }} />
-                                <div className="h-full bg-success" style={{ width: `${subPct}%` }} />
+                                <div className="h-full bg-[var(--info-primary)]" style={{ width: `${physicalPct}%` }} />
+                                <div className="h-full bg-[var(--warning-primary)]" style={{ width: `${taxPct}%` }} />
+                                <div className="h-full bg-[var(--error-primary)] opacity-70" style={{ width: `${shippingPct}%` }} />
+                                <div className="h-full bg-[var(--success-primary)]" style={{ width: `${subPct}%` }} />
                             </div>
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-info" /><span className="text-[10px] text-text-secondary">Books {physicalPct}%</span></div>
-                                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-warning" /><span className="text-[10px] text-text-secondary">Tax {taxPct}%</span></div>
-                                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-error/70" /><span className="text-[10px] text-text-secondary">Shipping {shippingPct}%</span></div>
-                                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-success" /><span className="text-[10px] text-text-secondary">Subs {subPct}%</span></div>
+                                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-[var(--info-primary)]" /><span className="text-[10px] text-text-secondary">Books {physicalPct}%</span></div>
+                                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-[var(--warning-primary)]" /><span className="text-[10px] text-text-secondary">Tax {taxPct}%</span></div>
+                                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-[var(--error-primary)] opacity-70" /><span className="text-[10px] text-text-secondary">Shipping {shippingPct}%</span></div>
+                                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-[var(--success-primary)]" /><span className="text-[10px] text-text-secondary">Subs {subPct}%</span></div>
                             </div>
                         </div>
                     </div>
